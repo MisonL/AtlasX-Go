@@ -12,6 +12,7 @@ import (
 	"atlasx/internal/launcher"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/tabs"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan, tabs")
 	}
 
 	switch args[0] {
@@ -45,6 +46,8 @@ func run(args []string) error {
 		return runStop()
 	case "mirror-scan":
 		return runMirrorScan(args[1:])
+	case "tabs":
+		return runTabs(args[1:])
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -133,4 +136,44 @@ func runMirrorScan(args []string) error {
 
 	fmt.Print(snapshot.Render(paths))
 	return nil
+}
+
+func runTabs(args []string) error {
+	if len(args) == 0 {
+		return errors.New("missing tabs subcommand: list, open")
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	client, err := tabs.New(paths)
+	if err != nil {
+		return err
+	}
+
+	switch args[0] {
+	case "list":
+		targets, err := client.List()
+		if err != nil {
+			return err
+		}
+		for _, target := range tabs.PageTargets(targets) {
+			fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		}
+		return nil
+	case "open":
+		if len(args) < 2 {
+			return errors.New("missing url for tabs open")
+		}
+		target, err := client.Open(args[1])
+		if err != nil {
+			return err
+		}
+		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	default:
+		return fmt.Errorf("unknown tabs subcommand %q", args[0])
+	}
 }

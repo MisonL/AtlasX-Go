@@ -17,6 +17,8 @@ go run ./cmd/atlasctl doctor
 go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl status
 go run ./cmd/atlasctl mirror-scan
+go run ./cmd/atlasctl tabs list
+go run ./cmd/atlasctl tabs open https://openai.com
 go run ./cmd/atlasctl launch-webapp --dry-run
 go run ./cmd/atlasctl stop-webapp
 go run ./cmd/atlasd --once
@@ -29,4 +31,5 @@ go run ./cmd/atlasd --once
 - 受管 launcher management 当前只覆盖隔离 profile 模式；共享 profile 模式明确视为非受管。
 - 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。
+- 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。
