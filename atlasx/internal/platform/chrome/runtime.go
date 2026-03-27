@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"atlasx/internal/platform/macos"
 )
@@ -58,4 +59,12 @@ func isExecutable(path string) bool {
 		return false
 	}
 	return !info.IsDir() && info.Mode()&0o111 != 0
+}
+
+func AppBundlePath(binaryPath string) string {
+	index := strings.Index(binaryPath, ".app/")
+	if index == -1 {
+		return ""
+	}
+	return binaryPath[:index+4]
 }

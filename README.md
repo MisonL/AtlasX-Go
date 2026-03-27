@@ -11,7 +11,9 @@
 
 - `atlasctl blueprint`
 - `atlasctl doctor`
+- `atlasctl status`
 - `atlasctl launch-webapp --dry-run`
+- `atlasctl stop-webapp`
 - `atlasd --once`
 
 项目当前结论与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 为入口。

@@ -3,3 +3,6 @@ T001,初始化正式 Go 工程与最小控制面骨架,在 atlasx 下建立 atla
 T002,实现 Chrome runtime 探测与 fallback 启动治理,补齐 Chrome 路径探测策略和 launch-webapp 参数治理，形成隔离 profile 与共享 profile 两种入口,"doctor 输出可观测；dry-run 展示最终命令；无 Chrome 时错误显式",确认命令行参数可追踪且无静默降级,已完成,高优先级
 T003,实现 atlasd 本地健康检查与状态导出,为 atlasd 增加一次性初始化和常驻健康检查接口，固化控制面最小状态视图,"atlasd --once 输出状态；atlasd 可提供 healthz 与状态接口",确认控制面与数据面边界清晰,已完成,高优先级
 T004,初始化 git 并创建公开 GitHub 仓库,在项目根目录初始化 git 仓库并推送到公开 GitHub 仓库，保留当前 docs atlasx 与任务源,"git init 成功；存在首个提交；origin 指向公开 GitHub 仓库；主分支已推送","确认仓库公开；确认只提交当前项目边界文件；确认远端创建成功",已完成,高优先级
+T005,实现受管 fallback launcher management,为隔离 profile 模式增加 launch state 持久化 进程探测 status 与 stop-webapp，形成最小 launcher management 闭环,"go test ./... 通过；go run ./cmd/atlasctl status 在无状态时可执行；实际 launch-webapp 后 status 可观测；stop-webapp 可结束受管会话并清理状态","确认共享 profile 模式不会被误标记为受管；确认失败路径显式；确认仅修改 atlasx 与任务源文件",已完成,高优先级
+T006,接入 CDP 探测与浏览器接管基线,为受管浏览器实例预留 remote debugging 入口并补基础探测,"可获取 DevTools endpoint 或明确失败原因；doctor/status 输出可观测",确认不把 CDP 探测误写成完整浏览器接管,未开始,高优先级
+T007,实现历史 书签 下载状态镜像骨架,建立本地镜像存储与只读采集骨架，为后续浏览器能力接管做准备,"存在可测试的数据结构与采集入口；离线测试覆盖格式与边界",确认不伪造真实浏览器数据；确认状态面边界清晰,未开始,未开始

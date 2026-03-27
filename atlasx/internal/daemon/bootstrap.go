@@ -11,10 +11,11 @@ import (
 const DefaultListenAddr = settings.DefaultListenAddr
 
 type Status struct {
-	Ready        bool   `json:"ready"`
-	ChromeStatus string `json:"chrome_status"`
-	SupportRoot  string `json:"support_root"`
-	ConfigFile   string `json:"config_file"`
+	Ready              bool   `json:"ready"`
+	ChromeStatus       string `json:"chrome_status"`
+	SupportRoot        string `json:"support_root"`
+	ConfigFile         string `json:"config_file"`
+	ManagedSessionLive bool   `json:"managed_session_live"`
 }
 
 func Bootstrap() (Status, error) {
@@ -23,10 +24,11 @@ func Bootstrap() (Status, error) {
 		return Status{}, err
 	}
 	return Status{
-		Ready:        report.ChromeStatus == "ok",
-		ChromeStatus: report.ChromeStatus,
-		SupportRoot:  report.Paths.SupportRoot,
-		ConfigFile:   report.Paths.ConfigFile,
+		Ready:              report.ChromeStatus == "ok",
+		ChromeStatus:       report.ChromeStatus,
+		SupportRoot:        report.Paths.SupportRoot,
+		ConfigFile:         report.Paths.ConfigFile,
+		ManagedSessionLive: report.Session.Alive,
 	}, nil
 }
 

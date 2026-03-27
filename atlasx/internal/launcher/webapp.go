@@ -1,9 +1,11 @@
 package launcher
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"atlasx/internal/platform/chrome"
 	"atlasx/internal/platform/macos"
@@ -20,9 +22,14 @@ type Options struct {
 }
 
 type Result struct {
-	BinaryPath string
-	Args       []string
-	DryRun     bool
+	BinaryPath  string
+	Args        []string
+	DryRun      bool
+	Managed     bool
+	Mode        string
+	StateFile   string
+	UserDataDir string
+	URL         string
 }
 
 func Run(opts Options) (Result, error) {
@@ -51,14 +58,54 @@ func Run(opts Options) (Result, error) {
 		return Result{}, err
 	}
 
-	args := BuildArgs(detection.BinaryPath, selected, firstNonEmpty(opts.URLOverride, cfg.WebAppURL))
-	result := Result{BinaryPath: detection.BinaryPath, Args: args, DryRun: opts.DryRun}
+	url := firstNonEmpty(opts.URLOverride, cfg.WebAppURL)
+	args := BuildArgs(detection.BinaryPath, selected, url)
+	result := Result{
+		BinaryPath:  detection.BinaryPath,
+		Args:        args,
+		DryRun:      opts.DryRun,
+		Managed:     selected.UserDataDir != "",
+		Mode:        selected.Mode,
+		StateFile:   paths.SessionFile,
+		UserDataDir: selected.UserDataDir,
+		URL:         url,
+	}
 	if opts.DryRun {
 		return result, nil
 	}
 
 	cmd := exec.Command(detection.BinaryPath, args...)
-	return result, cmd.Start()
+	if result.Managed {
+		cmd = buildManagedLaunchCommand(detection.BinaryPath, args)
+	} else {
+		cmd = buildSharedLaunchCommand(detection.BinaryPath, args)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return Result{}, err
+	}
+
+	if result.Managed {
+		err = SaveState(paths, State{
+			Mode:        selected.Mode,
+			Managed:     true,
+			BinaryPath:  detection.BinaryPath,
+			Args:        args,
+			URL:         url,
+			UserDataDir: selected.UserDataDir,
+			StartedAt:   time.Now().UTC().Format(time.RFC3339),
+		})
+		if err != nil {
+			return Result{}, err
+		}
+
+		if err := waitForManagedSession(paths, 5*time.Second); err != nil {
+			_ = ClearState(paths)
+			return Result{}, err
+		}
+	}
+
+	return result, nil
 }
 
 func BuildArgs(binaryPath string, selected profile.Selection, url string) []string {
@@ -81,7 +128,15 @@ func (r Result) Render() string {
 	if r.DryRun {
 		mode = "dry-run"
 	}
-	return fmt.Sprintf("mode=%s\nbinary=%s\nargs=%s\n", mode, r.BinaryPath, strings.Join(r.Args, " "))
+	return fmt.Sprintf(
+		"mode=%s\nbinary=%s\nprofile_mode=%s\nmanaged=%t\nstate_file=%s\nargs=%s\n",
+		mode,
+		r.BinaryPath,
+		r.Mode,
+		r.Managed,
+		r.StateFile,
+		strings.Join(r.Args, " "),
+	)
 }
 
 func firstNonEmpty(values ...string) string {
@@ -91,4 +146,29 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return settings.DefaultWebAppURL
+}
+
+func buildManagedLaunchCommand(binaryPath string, args []string) *exec.Cmd {
+	openArgs := []string{"-na", chrome.AppBundlePath(binaryPath), "--args"}
+	openArgs = append(openArgs, args...)
+	return exec.Command("open", openArgs...)
+}
+
+func buildSharedLaunchCommand(binaryPath string, args []string) *exec.Cmd {
+	return exec.Command(binaryPath, args...)
+}
+
+func waitForManagedSession(paths macos.Paths, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		report, err := Status(paths)
+		if err != nil {
+			return err
+		}
+		if report.Alive {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return errors.New("managed browser session did not become observable before timeout")
 }
