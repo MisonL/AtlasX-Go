@@ -1,0 +1,11 @@
+.DS_Store
+*.log
+*.tmp
+.idea/
+.vscode/
+__pycache__/
+dist/
+build/
+coverage/
+target/
+venv_*/

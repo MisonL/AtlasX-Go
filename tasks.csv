@@ -1,0 +1,5 @@
+ID,标题,内容,验收标准,审查要求,状态,标签
+T001,初始化正式 Go 工程与最小控制面骨架,在 atlasx 下建立 atlasctl/atlasd 与 profile config diagnostics launcher 最小闭环，修正 go.mod 与 README 使其可编译可运行,"go test ./... 通过；go run ./cmd/atlasctl blueprint 成功；go run ./cmd/atlasctl doctor 成功；go run ./cmd/atlasctl launch-webapp --dry-run 成功；go run ./cmd/atlasd --once 成功","确认未引入 WebView 或官方 arm64 依赖；确认失败路径显式；确认仅修改 atlasx 与任务源文件",已完成,高优先级
+T002,实现 Chrome runtime 探测与 fallback 启动治理,补齐 Chrome 路径探测策略和 launch-webapp 参数治理，形成隔离 profile 与共享 profile 两种入口,"doctor 输出可观测；dry-run 展示最终命令；无 Chrome 时错误显式",确认命令行参数可追踪且无静默降级,未开始,高优先级
+T003,实现 atlasd 本地健康检查与状态导出,为 atlasd 增加一次性初始化和常驻健康检查接口，固化控制面最小状态视图,"atlasd --once 输出状态；atlasd 可提供 healthz 与状态接口",确认控制面与数据面边界清晰,未开始,未开始
+T004,初始化 git 并创建公开 GitHub 仓库,在项目根目录初始化 git 仓库并推送到公开 GitHub 仓库，保留当前 docs atlasx 与任务源,"git init 成功；存在首个提交；origin 指向公开 GitHub 仓库；主分支已推送","确认仓库公开；确认只提交当前项目边界文件；确认远端创建成功",进行中,高优先级
