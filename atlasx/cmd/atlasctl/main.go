@@ -10,6 +10,7 @@ import (
 	"atlasx/internal/blueprint"
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/launcher"
+	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 )
 
@@ -22,7 +23,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan")
 	}
 
 	switch args[0] {
@@ -42,6 +43,8 @@ func run(args []string) error {
 		return runStatus()
 	case "stop-webapp":
 		return runStop()
+	case "mirror-scan":
+		return runMirrorScan(args[1:])
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -97,5 +100,37 @@ func runStop() error {
 		return err
 	}
 	fmt.Print(report.Render())
+	return nil
+}
+
+func runMirrorScan(args []string) error {
+	fs := flag.NewFlagSet("mirror-scan", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	profileDir := fs.String("profile-dir", "", "override the browser profile directory to scan")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	targetProfileDir := *profileDir
+	if targetProfileDir == "" {
+		targetProfileDir = mirror.DefaultProfilePath(paths)
+	}
+
+	snapshot, err := mirror.Collect(targetProfileDir)
+	if err != nil {
+		return err
+	}
+	if err := mirror.Save(paths, snapshot); err != nil {
+		return err
+	}
+
+	fmt.Print(snapshot.Render(paths))
 	return nil
 }

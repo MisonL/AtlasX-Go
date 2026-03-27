@@ -12,6 +12,7 @@
 - `atlasctl blueprint`
 - `atlasctl doctor`
 - `atlasctl status`
+- `atlasctl mirror-scan`
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`
