@@ -3,7 +3,9 @@ package mirror
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,11 +23,13 @@ const (
 )
 
 type Snapshot struct {
-	GeneratedAt string           `json:"generated_at"`
-	ProfileDir  string           `json:"profile_dir"`
-	History     Artifact         `json:"history"`
-	Bookmarks   BookmarkArtifact `json:"bookmarks"`
-	Downloads   Artifact         `json:"downloads"`
+	GeneratedAt  string           `json:"generated_at"`
+	ProfileDir   string           `json:"profile_dir"`
+	History      Artifact         `json:"history"`
+	HistoryRows  []HistoryEntry   `json:"history_rows,omitempty"`
+	Bookmarks    BookmarkArtifact `json:"bookmarks"`
+	Downloads    Artifact         `json:"downloads"`
+	DownloadRows []DownloadEntry  `json:"download_rows,omitempty"`
 }
 
 type Artifact struct {
@@ -48,6 +52,21 @@ type BookmarkRootSummary struct {
 	Name        string `json:"name"`
 	FolderCount int    `json:"folder_count"`
 	URLCount    int    `json:"url_count"`
+}
+
+type HistoryEntry struct {
+	URL           string `json:"url"`
+	Title         string `json:"title"`
+	VisitCount    int    `json:"visit_count"`
+	LastVisitTime string `json:"last_visit_time"`
+}
+
+type DownloadEntry struct {
+	TargetPath string `json:"target_path"`
+	TabURL     string `json:"tab_url"`
+	TotalBytes int64  `json:"total_bytes"`
+	State      int    `json:"state"`
+	EndTime    string `json:"end_time"`
 }
 
 type chromeBookmarks struct {
@@ -95,12 +114,24 @@ func Collect(profileDir string) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	snapshot.History = historyArtifact
+	if snapshot.History.Exists {
+		snapshot.HistoryRows, err = readHistoryRows(historyPath, 10)
+		if err != nil {
+			return Snapshot{}, err
+		}
+	}
 
 	downloadsArtifact, err := scanArtifact(snapshot.Downloads, historyPath)
 	if err != nil {
 		return Snapshot{}, err
 	}
 	snapshot.Downloads = downloadsArtifact
+	if snapshot.Downloads.Exists {
+		snapshot.DownloadRows, err = readDownloadRows(historyPath, 10)
+		if err != nil {
+			return Snapshot{}, err
+		}
+	}
 
 	bookmarksArtifact, err := scanBookmarks(snapshot.Bookmarks, bookmarksPath)
 	if err != nil {
@@ -123,6 +154,19 @@ func Save(paths macos.Paths, snapshot Snapshot) error {
 	return os.WriteFile(paths.MirrorFile, append(data, '\n'), 0o644)
 }
 
+func Load(paths macos.Paths) (Snapshot, error) {
+	data, err := os.ReadFile(paths.MirrorFile)
+	if err != nil {
+		return Snapshot{}, err
+	}
+
+	var snapshot Snapshot
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		return Snapshot{}, err
+	}
+	return snapshot, nil
+}
+
 func DefaultProfilePath(paths macos.Paths) string {
 	return filepath.Join(paths.ProfilesRoot, defaultProfileDir)
 }
@@ -134,6 +178,8 @@ func (s Snapshot) Render(paths macos.Paths) string {
 		renderArtifact("history", s.History),
 		renderArtifact("downloads", s.Downloads),
 		renderArtifact("bookmarks", s.Bookmarks.Artifact),
+		fmt.Sprintf("history_rows=%d", len(s.HistoryRows)),
+		fmt.Sprintf("download_rows=%d", len(s.DownloadRows)),
 	}
 
 	if len(s.Bookmarks.RootSummaries) > 0 {
@@ -234,4 +280,116 @@ func summarizeBookmarkNode(node bookmarkNode) (folderCount int, urlCount int) {
 		}
 	}
 	return folderCount, urlCount
+}
+
+func readHistoryRows(sourcePath string, limit int) ([]HistoryEntry, error) {
+	const query = "select url, title, visit_count, last_visit_time from urls order by last_visit_time desc limit %d;"
+	rows, err := querySQLiteJSON(sourcePath, fmt.Sprintf(query, limit))
+	if err != nil {
+		return nil, err
+	}
+
+	type historyRow struct {
+		URL           string `json:"url"`
+		Title         string `json:"title"`
+		VisitCount    int    `json:"visit_count"`
+		LastVisitTime int64  `json:"last_visit_time"`
+	}
+
+	var payload []historyRow
+	if err := json.Unmarshal(rows, &payload); err != nil {
+		return nil, err
+	}
+
+	entries := make([]HistoryEntry, 0, len(payload))
+	for _, row := range payload {
+		entries = append(entries, HistoryEntry{
+			URL:           row.URL,
+			Title:         row.Title,
+			VisitCount:    row.VisitCount,
+			LastVisitTime: chromeTimeToRFC3339(row.LastVisitTime),
+		})
+	}
+	return entries, nil
+}
+
+func readDownloadRows(sourcePath string, limit int) ([]DownloadEntry, error) {
+	const query = "select target_path, tab_url, total_bytes, state, end_time from downloads order by end_time desc limit %d;"
+	rows, err := querySQLiteJSON(sourcePath, fmt.Sprintf(query, limit))
+	if err != nil {
+		return nil, err
+	}
+
+	type downloadRow struct {
+		TargetPath string `json:"target_path"`
+		TabURL     string `json:"tab_url"`
+		TotalBytes int64  `json:"total_bytes"`
+		State      int    `json:"state"`
+		EndTime    int64  `json:"end_time"`
+	}
+
+	var payload []downloadRow
+	if err := json.Unmarshal(rows, &payload); err != nil {
+		return nil, err
+	}
+
+	entries := make([]DownloadEntry, 0, len(payload))
+	for _, row := range payload {
+		entries = append(entries, DownloadEntry{
+			TargetPath: row.TargetPath,
+			TabURL:     row.TabURL,
+			TotalBytes: row.TotalBytes,
+			State:      row.State,
+			EndTime:    chromeTimeToRFC3339(row.EndTime),
+		})
+	}
+	return entries, nil
+}
+
+func querySQLiteJSON(sourcePath string, query string) ([]byte, error) {
+	tmpDir, err := os.MkdirTemp("", "atlasx-sqlite-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	copyPath := filepath.Join(tmpDir, "source.sqlite")
+	if err := copySQLiteSource(sourcePath, copyPath); err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command("sqlite3", "-json", copyPath, query)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+func copySQLiteSource(sourcePath string, destPath string) error {
+	source, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	dest, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	if _, err := io.Copy(dest, source); err != nil {
+		return err
+	}
+	return dest.Close()
+}
+
+func chromeTimeToRFC3339(value int64) string {
+	if value <= 0 {
+		return ""
+	}
+	const microsecondsBetweenWindowsAndUnixEpoch = int64(11644473600000000)
+	unixMicroseconds := value - microsecondsBetweenWindowsAndUnixEpoch
+	return time.UnixMicro(unixMicroseconds).UTC().Format(time.RFC3339)
 }

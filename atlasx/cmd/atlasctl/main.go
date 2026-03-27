@@ -9,6 +9,7 @@ import (
 
 	"atlasx/internal/blueprint"
 	"atlasx/internal/diagnostics"
+	"atlasx/internal/imports"
 	"atlasx/internal/launcher"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
@@ -24,7 +25,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan, tabs")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan, tabs, import-chrome")
 	}
 
 	switch args[0] {
@@ -48,6 +49,8 @@ func run(args []string) error {
 		return runMirrorScan(args[1:])
 	case "tabs":
 		return runTabs(args[1:])
+	case "import-chrome":
+		return runImportChrome(args[1:])
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -176,4 +179,33 @@ func runTabs(args []string) error {
 	default:
 		return fmt.Errorf("unknown tabs subcommand %q", args[0])
 	}
+}
+
+func runImportChrome(args []string) error {
+	fs := flag.NewFlagSet("import-chrome", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	sourceProfileDir := fs.String("source-profile-dir", "", "override the Chrome profile directory to import")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	targetSourceDir := *sourceProfileDir
+	if targetSourceDir == "" {
+		targetSourceDir = imports.DefaultChromeProfileDir(paths)
+	}
+
+	report, err := imports.ImportChrome(paths, targetSourceDir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Print(report.Render())
+	return nil
 }
