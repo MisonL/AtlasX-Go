@@ -73,6 +73,9 @@ func (r Report) Render() string {
 		fmt.Sprintf("managed_session_present=%t", r.Session.Present),
 		fmt.Sprintf("managed_session_alive=%t", r.Session.Alive),
 		fmt.Sprintf("managed_session_state_file=%s", r.Session.StateFile),
+		fmt.Sprintf("managed_session_cdp_status=%s", r.Session.CDP.Status),
+		fmt.Sprintf("managed_session_cdp_version_endpoint=%s", r.Session.CDP.VersionEndpoint),
+		fmt.Sprintf("managed_session_cdp_browser_ws=%s", r.Session.CDP.BrowserWebSocketURL),
 	}
 	if len(r.Chrome.Candidates) > 0 {
 		lines = append(lines, "chrome_candidates="+strings.Join(r.Chrome.Candidates, ","))

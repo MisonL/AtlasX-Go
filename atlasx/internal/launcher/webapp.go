@@ -13,7 +13,10 @@ import (
 	"atlasx/internal/settings"
 )
 
-const appModePrefix = "--app="
+const (
+	appModePrefix           = "--app="
+	autoRemoteDebuggingPort = "0"
+)
 
 type Options struct {
 	DryRun        bool
@@ -103,6 +106,11 @@ func Run(opts Options) (Result, error) {
 			_ = ClearState(paths)
 			return Result{}, err
 		}
+		if err := waitForManagedCDP(paths, 5*time.Second); err != nil {
+			_, _ = Stop(paths, 3*time.Second)
+			_ = ClearState(paths)
+			return Result{}, err
+		}
 	}
 
 	return result, nil
@@ -118,6 +126,8 @@ func BuildArgs(binaryPath string, selected profile.Selection, url string) []stri
 		return args
 	}
 	if selected.UserDataDir != "" {
+		args = append(args, "--remote-debugging-address="+defaultDevToolsHost)
+		args = append(args, "--remote-debugging-port="+autoRemoteDebuggingPort)
 		args = append(args, "--user-data-dir="+selected.UserDataDir)
 	}
 	return args
@@ -171,4 +181,19 @@ func waitForManagedSession(paths macos.Paths, timeout time.Duration) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return errors.New("managed browser session did not become observable before timeout")
+}
+
+func waitForManagedCDP(paths macos.Paths, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		report, err := Status(paths)
+		if err != nil {
+			return err
+		}
+		if report.CDP.Status == cdpStatusOK {
+			return nil
+		}
+		time.Sleep(cdpReadyPollInterval)
+	}
+	return errors.New("managed browser cdp endpoint did not become observable before timeout")
 }

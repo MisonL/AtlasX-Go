@@ -26,4 +26,5 @@ go run ./cmd/atlasd --once
 - `launch-webapp` 只会启动 Atlas Web 入口，不等于官方原生 Atlas。
 - 当前控制面只覆盖离线诊断、配置、profile 和本地健康检查。
 - 受管 launcher management 当前只覆盖隔离 profile 模式；共享 profile 模式明确视为非受管。
+- 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。
