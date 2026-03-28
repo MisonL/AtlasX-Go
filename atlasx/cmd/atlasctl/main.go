@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"atlasx/internal/blueprint"
+	"atlasx/internal/browserdata"
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
 	"atlasx/internal/launcher"
@@ -25,7 +26,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan, tabs, import-chrome")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, mirror-scan, tabs, import-chrome, import-safari, history, downloads, bookmarks")
 	}
 
 	switch args[0] {
@@ -51,6 +52,14 @@ func run(args []string) error {
 		return runTabs(args[1:])
 	case "import-chrome":
 		return runImportChrome(args[1:])
+	case "import-safari":
+		return runImportSafari()
+	case "history":
+		return runHistory(args[1:])
+	case "downloads":
+		return runDownloads(args[1:])
+	case "bookmarks":
+		return runBookmarks(args[1:])
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -207,5 +216,80 @@ func runImportChrome(args []string) error {
 	}
 
 	fmt.Print(report.Render())
+	return nil
+}
+
+func runImportSafari() error {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	report, err := imports.ImportSafari(paths)
+	if err != nil {
+		return err
+	}
+
+	fmt.Print(report.Render())
+	return nil
+}
+
+func runHistory(args []string) error {
+	if len(args) == 0 || args[0] != "list" {
+		return errors.New("history supports only subcommand: list")
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	rows, err := browserdata.LoadHistory(paths)
+	if err != nil {
+		return err
+	}
+	for _, row := range rows {
+		fmt.Printf("last_visit_time=%s visit_count=%d title=%q url=%s\n", row.LastVisitTime, row.VisitCount, row.Title, row.URL)
+	}
+	return nil
+}
+
+func runDownloads(args []string) error {
+	if len(args) == 0 || args[0] != "list" {
+		return errors.New("downloads supports only subcommand: list")
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	rows, err := browserdata.LoadDownloads(paths)
+	if err != nil {
+		return err
+	}
+	for _, row := range rows {
+		fmt.Printf("end_time=%s total_bytes=%d state=%d target_path=%s tab_url=%s\n", row.EndTime, row.TotalBytes, row.State, row.TargetPath, row.TabURL)
+	}
+	return nil
+}
+
+func runBookmarks(args []string) error {
+	if len(args) == 0 || args[0] != "list" {
+		return errors.New("bookmarks supports only subcommand: list")
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	rows, err := browserdata.LoadBookmarks(paths)
+	if err != nil {
+		return err
+	}
+	for _, row := range rows {
+		fmt.Printf("root=%s name=%q url=%s\n", row.Root, row.Name, row.URL)
+	}
 	return nil
 }
