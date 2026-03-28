@@ -61,6 +61,36 @@ func TestOpenTarget(t *testing.T) {
 	}
 }
 
+func TestActivateTarget(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/json/activate/123" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	if err := client.Activate("123"); err != nil {
+		t.Fatalf("activate failed: %v", err)
+	}
+}
+
+func TestCloseTarget(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/json/close/321" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	if err := client.Close("321"); err != nil {
+		t.Fatalf("close failed: %v", err)
+	}
+}
+
 func TestPageTargetsFiltersNonPages(t *testing.T) {
 	targets := []Target{
 		{ID: "1", Type: "page"},

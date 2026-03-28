@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -97,7 +98,7 @@ func (c Client) Open(targetURL string) (Target, error) {
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return Target{}, fmt.Errorf("unexpected status %d", response.StatusCode)
+		return Target{}, unexpectedStatus(response)
 	}
 
 	var target Target
@@ -105,6 +106,42 @@ func (c Client) Open(targetURL string) (Target, error) {
 		return Target{}, err
 	}
 	return target, nil
+}
+
+func (c Client) Activate(targetID string) error {
+	request, err := http.NewRequest(http.MethodGet, c.baseURL+"/json/activate/"+targetID, nil)
+	if err != nil {
+		return err
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return unexpectedStatus(response)
+	}
+	return nil
+}
+
+func (c Client) Close(targetID string) error {
+	request, err := http.NewRequest(http.MethodGet, c.baseURL+"/json/close/"+targetID, nil)
+	if err != nil {
+		return err
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return unexpectedStatus(response)
+	}
+	return nil
 }
 
 func baseURLFromVersionEndpoint(endpoint string) (string, error) {
@@ -115,4 +152,12 @@ func baseURLFromVersionEndpoint(endpoint string) (string, error) {
 		return "", fmt.Errorf("unsupported cdp version endpoint %q", endpoint)
 	}
 	return strings.TrimSuffix(endpoint, "/json/version"), nil
+}
+
+func unexpectedStatus(response *http.Response) error {
+	body, _ := io.ReadAll(response.Body)
+	if len(body) == 0 {
+		return fmt.Errorf("unexpected status %d", response.StatusCode)
+	}
+	return fmt.Errorf("unexpected status %d: %s", response.StatusCode, strings.TrimSpace(string(body)))
 }

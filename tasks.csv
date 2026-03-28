@@ -12,3 +12,5 @@ T010,扩展历史与下载解析,在镜像骨架基础上补 SQLite 只读解析
 T011,实现 atlasd 常驻状态面,让 atlasd 在常驻模式下输出 launcher CDP mirror 的统一状态视图,"atlasd 常驻时 /v1/status 返回 launcher CDP mirror 状态；healthz 稳定",确认常驻状态不引入伪成功,已完成,未开始
 T012,实现浏览器数据查询命令,基于已落盘的 mirror 与 import 数据实现 history downloads bookmarks 查询命令，形成可用的数据面读取入口,"go test ./... 通过；存在 atlasctl history list、downloads list、bookmarks list；命令可读取真实本机数据",确认只读访问；确认无镜像或无导入时错误显式,已完成,高优先级
 T013,接入 Safari 导入基线,为 Safari 建立至少一条可观测的只读导入链路，优先书签或历史摘要,"存在 import-safari 命令；至少一条真实源链路可运行或明确缺失原因",确认不伪造 Safari 数据；确认源路径和格式校验清晰,已完成,高优先级
+T014,增强标签页控制,在最小标签页管理基础上补 tabs activate 与 tabs close，形成可操作的标签页控制闭环,"go test ./... 通过；tabs activate <id> 可成功激活标签；tabs close <id> 可关闭标签；list 可验证结果",确认错误目标 id 时失败显式；确认仍只依赖受管隔离 profile,已完成,高优先级
+T015,接入浏览器数据 HTTP API,让 atlasd 暴露 history downloads bookmarks 的只读 HTTP API，复用已落盘的 mirror/import 数据,"go test ./... 通过；atlasd 运行时 /v1/history /v1/downloads /v1/bookmarks 可返回 JSON；/v1/status 保持稳定",确认 API 只读；确认无数据时返回明确错误而非伪成功,已完成,高优先级

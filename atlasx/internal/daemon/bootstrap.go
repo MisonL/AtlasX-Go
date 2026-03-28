@@ -2,12 +2,15 @@ package daemon
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 
+	"atlasx/internal/browserdata"
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
 	"atlasx/internal/mirror"
+	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
 )
 
@@ -70,13 +73,32 @@ func Bootstrap() (Status, error) {
 	return status, nil
 }
 
-func NewMux(status Status) *http.ServeMux {
+func NewMux(_ Status) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		status, err := Bootstrap()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
 		writeJSON(w, http.StatusOK, status)
 	})
 	mux.HandleFunc("/v1/status", func(w http.ResponseWriter, _ *http.Request) {
+		status, err := Bootstrap()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
 		writeJSON(w, http.StatusOK, status)
+	})
+	mux.HandleFunc("/v1/history", func(w http.ResponseWriter, _ *http.Request) {
+		serveBrowserData(w, browserdata.LoadHistory)
+	})
+	mux.HandleFunc("/v1/downloads", func(w http.ResponseWriter, _ *http.Request) {
+		serveBrowserData(w, browserdata.LoadDownloads)
+	})
+	mux.HandleFunc("/v1/bookmarks", func(w http.ResponseWriter, _ *http.Request) {
+		serveBrowserData(w, browserdata.LoadBookmarks)
 	})
 	return mux
 }
@@ -89,5 +111,37 @@ func (s Status) Render() string {
 func writeJSON(w http.ResponseWriter, code int, payload Status) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func writeError(w http.ResponseWriter, code int, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"error": err.Error(),
+	})
+}
+
+type dataLoader[T any] func(macos.Paths) ([]T, error)
+
+func serveBrowserData[T any](w http.ResponseWriter, loader dataLoader[T]) {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	payload, err := loader(paths)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			writeError(w, http.StatusNotFound, err)
+			return
+		}
+		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(payload)
 }
