@@ -3,6 +3,7 @@ package daemon
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -12,6 +13,7 @@ import (
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
+	"atlasx/internal/tabs"
 )
 
 const DefaultListenAddr = settings.DefaultListenAddr
@@ -100,6 +102,33 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/bookmarks", func(w http.ResponseWriter, _ *http.Request) {
 		serveBrowserData(w, browserdata.LoadBookmarks)
 	})
+	mux.HandleFunc("/v1/tabs", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+			return
+		}
+		serveTabsList(w)
+	})
+	mux.HandleFunc("/v1/tabs/open", func(w http.ResponseWriter, r *http.Request) {
+		serveTabAction(w, r, func(client tabs.Client, request tabActionRequest) (any, error) {
+			return client.Open(request.URL)
+		})
+	})
+	mux.HandleFunc("/v1/tabs/activate", func(w http.ResponseWriter, r *http.Request) {
+		serveTabAction(w, r, func(client tabs.Client, request tabActionRequest) (any, error) {
+			return map[string]string{"activated": request.ID}, client.Activate(request.ID)
+		})
+	})
+	mux.HandleFunc("/v1/tabs/close", func(w http.ResponseWriter, r *http.Request) {
+		serveTabAction(w, r, func(client tabs.Client, request tabActionRequest) (any, error) {
+			return map[string]string{"closed": request.ID}, client.Close(request.ID)
+		})
+	})
+	mux.HandleFunc("/v1/tabs/navigate", func(w http.ResponseWriter, r *http.Request) {
+		serveTabAction(w, r, func(client tabs.Client, request tabActionRequest) (any, error) {
+			return map[string]string{"navigated": request.ID, "url": request.URL}, client.Navigate(request.ID, request.URL)
+		})
+	})
 	return mux
 }
 
@@ -123,6 +152,12 @@ func writeError(w http.ResponseWriter, code int, err error) {
 }
 
 type dataLoader[T any] func(macos.Paths) ([]T, error)
+type tabActionRequest struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
+}
+
+type tabAction func(client tabs.Client, request tabActionRequest) (any, error)
 
 func serveBrowserData[T any](w http.ResponseWriter, loader dataLoader[T]) {
 	paths, err := macos.DiscoverPaths()
@@ -138,6 +173,65 @@ func serveBrowserData[T any](w http.ResponseWriter, loader dataLoader[T]) {
 			return
 		}
 		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func serveTabsList(w http.ResponseWriter) {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	client, err := tabs.New(paths)
+	if err != nil {
+		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	targets, err := client.List()
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(tabs.PageTargets(targets))
+}
+
+func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	var request tabActionRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	client, err := tabs.New(paths)
+	if err != nil {
+		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	payload, err := action(client, request)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
 		return
 	}
 

@@ -152,7 +152,7 @@ func runMirrorScan(args []string) error {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, open, activate, close")
+		return errors.New("missing tabs subcommand: list, open, activate, close, navigate")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -202,6 +202,15 @@ func runTabs(args []string) error {
 			return err
 		}
 		fmt.Printf("closed=%s\n", args[1])
+		return nil
+	case "navigate":
+		if len(args) < 3 {
+			return errors.New("missing target id or url for tabs navigate")
+		}
+		if err := client.Navigate(args[1], args[2]); err != nil {
+			return err
+		}
+		fmt.Printf("navigated=%s url=%s\n", args[1], args[2])
 		return nil
 	default:
 		return fmt.Errorf("unknown tabs subcommand %q", args[0])

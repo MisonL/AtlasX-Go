@@ -2,4 +2,7 @@ module atlasx
 
 go 1.26.0
 
-require howett.net/plist v1.0.1 // indirect
+require (
+	github.com/gorilla/websocket v1.5.3 // indirect
+	howett.net/plist v1.0.1 // indirect
+)

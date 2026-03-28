@@ -106,3 +106,26 @@ func TestPageTargetsFiltersNonPages(t *testing.T) {
 		t.Fatalf("unexpected page id: %s", pages[0].ID)
 	}
 }
+
+func TestFindPageTarget(t *testing.T) {
+	target, err := findPageTarget([]Target{
+		{ID: "1", Type: "worker"},
+		{ID: "2", Type: "page"},
+	}, "2")
+	if err != nil {
+		t.Fatalf("find page target failed: %v", err)
+	}
+	if target.ID != "2" {
+		t.Fatalf("unexpected target id: %s", target.ID)
+	}
+}
+
+func TestFindPageTargetRejectsNonPage(t *testing.T) {
+	_, err := findPageTarget([]Target{{ID: "1", Type: "worker"}}, "1")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "is not a page") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

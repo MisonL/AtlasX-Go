@@ -12,6 +12,7 @@ import (
 
 	"atlasx/internal/launcher"
 	"atlasx/internal/platform/macos"
+	"github.com/gorilla/websocket"
 )
 
 const requestTimeout = 2 * time.Second
@@ -27,6 +28,23 @@ type Target struct {
 type Client struct {
 	baseURL    string
 	httpClient http.Client
+}
+
+type cdpCommandRequest struct {
+	ID     int               `json:"id"`
+	Method string            `json:"method"`
+	Params map[string]string `json:"params,omitempty"`
+}
+
+type cdpCommandResponse struct {
+	ID     int             `json:"id"`
+	Result json.RawMessage `json:"result"`
+	Error  *cdpError       `json:"error,omitempty"`
+}
+
+type cdpError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 func New(paths macos.Paths) (Client, error) {
@@ -144,6 +162,53 @@ func (c Client) Close(targetID string) error {
 	return nil
 }
 
+func (c Client) Navigate(targetID string, targetURL string) error {
+	targets, err := c.List()
+	if err != nil {
+		return err
+	}
+
+	target, err := findPageTarget(targets, targetID)
+	if err != nil {
+		return err
+	}
+	if target.WebSocketDebuggerURL == "" {
+		return errors.New("target does not expose a websocket debugger url")
+	}
+
+	connection, _, err := websocket.DefaultDialer.Dial(target.WebSocketDebuggerURL, nil)
+	if err != nil {
+		return err
+	}
+	defer connection.Close()
+
+	request := cdpCommandRequest{
+		ID:     1,
+		Method: "Page.navigate",
+		Params: map[string]string{
+			"url": targetURL,
+		},
+	}
+
+	if err := connection.WriteJSON(request); err != nil {
+		return err
+	}
+
+	for {
+		var response cdpCommandResponse
+		if err := connection.ReadJSON(&response); err != nil {
+			return err
+		}
+		if response.ID != request.ID {
+			continue
+		}
+		if response.Error != nil {
+			return fmt.Errorf("cdp error %d: %s", response.Error.Code, response.Error.Message)
+		}
+		return nil
+	}
+}
+
 func baseURLFromVersionEndpoint(endpoint string) (string, error) {
 	if endpoint == "" {
 		return "", errors.New("empty cdp version endpoint")
@@ -160,4 +225,17 @@ func unexpectedStatus(response *http.Response) error {
 		return fmt.Errorf("unexpected status %d", response.StatusCode)
 	}
 	return fmt.Errorf("unexpected status %d: %s", response.StatusCode, strings.TrimSpace(string(body)))
+}
+
+func findPageTarget(targets []Target, targetID string) (Target, error) {
+	for _, target := range targets {
+		if target.ID != targetID {
+			continue
+		}
+		if target.Type != "page" {
+			return Target{}, fmt.Errorf("target %s is not a page", targetID)
+		}
+		return target, nil
+	}
+	return Target{}, fmt.Errorf("target %s not found", targetID)
 }
