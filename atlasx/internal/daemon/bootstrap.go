@@ -129,6 +129,15 @@ func NewMux(_ Status) *http.ServeMux {
 			return map[string]string{"navigated": request.ID, "url": request.URL}, client.Navigate(request.ID, request.URL)
 		})
 	})
+	mux.HandleFunc("/v1/mirror/scan", func(w http.ResponseWriter, r *http.Request) {
+		serveMirrorScan(w, r)
+	})
+	mux.HandleFunc("/v1/import/chrome", func(w http.ResponseWriter, r *http.Request) {
+		serveChromeImport(w, r)
+	})
+	mux.HandleFunc("/v1/import/safari", func(w http.ResponseWriter, r *http.Request) {
+		serveSafariImport(w, r)
+	})
 	return mux
 }
 
@@ -155,6 +164,12 @@ type dataLoader[T any] func(macos.Paths) ([]T, error)
 type tabActionRequest struct {
 	ID  string `json:"id"`
 	URL string `json:"url"`
+}
+type mirrorScanRequest struct {
+	ProfileDir string `json:"profile_dir"`
+}
+type chromeImportRequest struct {
+	SourceProfileDir string `json:"source_profile_dir"`
 }
 
 type tabAction func(client tabs.Client, request tabActionRequest) (any, error)
@@ -238,4 +253,107 @@ func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func serveMirrorScan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	var request mirrorScanRequest
+	if err := decodeOptionalJSON(r, &request); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	profileDir := request.ProfileDir
+	if profileDir == "" {
+		profileDir = mirror.DefaultProfilePath(paths)
+	}
+
+	snapshot, err := mirror.Collect(profileDir)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+	if err := mirror.Save(paths, snapshot); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(snapshot)
+}
+
+func serveChromeImport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	var request chromeImportRequest
+	if err := decodeOptionalJSON(r, &request); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	sourceProfileDir := request.SourceProfileDir
+	if sourceProfileDir == "" {
+		sourceProfileDir = imports.DefaultChromeProfileDir(paths)
+	}
+
+	report, err := imports.ImportChrome(paths, sourceProfileDir)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(report)
+}
+
+func serveSafariImport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	report, err := imports.ImportSafari(paths)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(report)
+}
+
+func decodeOptionalJSON(r *http.Request, target any) error {
+	if r.Body == nil || r.ContentLength == 0 {
+		return nil
+	}
+	defer r.Body.Close()
+	return json.NewDecoder(r.Body).Decode(target)
 }

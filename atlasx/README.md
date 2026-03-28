@@ -24,8 +24,10 @@ go run ./cmd/atlasctl tabs close <target-id>
 go run ./cmd/atlasctl import-chrome
 go run ./cmd/atlasctl import-safari
 go run ./cmd/atlasctl history list
+go run ./cmd/atlasctl history open <index>
 go run ./cmd/atlasctl downloads list
 go run ./cmd/atlasctl bookmarks list
+go run ./cmd/atlasctl bookmarks open <index>
 go run ./cmd/atlasctl launch-webapp --dry-run
 go run ./cmd/atlasctl stop-webapp
 go run ./cmd/atlasd --once
@@ -43,6 +45,6 @@ go run ./cmd/atlasd --once
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。
-- 当前已提供浏览器数据查询：`history list`、`downloads list`、`bookmarks list` 可读取已落盘的 mirror/import 数据。
-- 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 的统一状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/tabs` 及标签页动作 API。
+- 当前已提供浏览器数据查询与动作：`history list/open`、`downloads list`、`bookmarks list/open` 可读取已落盘的 mirror/import 数据，并将选中 URL 打开到受管标签。
+- 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 的统一状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/tabs` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等动作 API。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。
