@@ -8,18 +8,19 @@ import (
 const appName = "AtlasX"
 
 type Paths struct {
-	Home                string
-	SupportRoot         string
-	ConfigFile          string
-	ProfilesRoot        string
-	LogsRoot            string
-	StateRoot           string
-	SessionFile         string
-	MirrorsRoot         string
-	MirrorFile          string
-	ImportsRoot         string
-	RuntimeRoot         string
-	RuntimeManifestFile string
+	Home                   string
+	SupportRoot            string
+	ConfigFile             string
+	ProfilesRoot           string
+	LogsRoot               string
+	StateRoot              string
+	SessionFile            string
+	MirrorsRoot            string
+	MirrorFile             string
+	ImportsRoot            string
+	RuntimeRoot            string
+	RuntimeManifestFile    string
+	RuntimeInstallPlanFile string
 }
 
 func DiscoverPaths() (Paths, error) {
@@ -34,18 +35,19 @@ func DiscoverPaths() (Paths, error) {
 	importsRoot := filepath.Join(supportRoot, "imports")
 	runtimeRoot := filepath.Join(supportRoot, "runtime")
 	return Paths{
-		Home:                home,
-		SupportRoot:         supportRoot,
-		ConfigFile:          filepath.Join(supportRoot, "config.json"),
-		ProfilesRoot:        filepath.Join(supportRoot, "profiles"),
-		LogsRoot:            filepath.Join(supportRoot, "logs"),
-		StateRoot:           stateRoot,
-		SessionFile:         filepath.Join(stateRoot, "webapp-session.json"),
-		MirrorsRoot:         mirrorsRoot,
-		MirrorFile:          filepath.Join(mirrorsRoot, "browser-data.json"),
-		ImportsRoot:         importsRoot,
-		RuntimeRoot:         runtimeRoot,
-		RuntimeManifestFile: filepath.Join(runtimeRoot, "manifest.json"),
+		Home:                   home,
+		SupportRoot:            supportRoot,
+		ConfigFile:             filepath.Join(supportRoot, "config.json"),
+		ProfilesRoot:           filepath.Join(supportRoot, "profiles"),
+		LogsRoot:               filepath.Join(supportRoot, "logs"),
+		StateRoot:              stateRoot,
+		SessionFile:            filepath.Join(stateRoot, "webapp-session.json"),
+		MirrorsRoot:            mirrorsRoot,
+		MirrorFile:             filepath.Join(mirrorsRoot, "browser-data.json"),
+		ImportsRoot:            importsRoot,
+		RuntimeRoot:            runtimeRoot,
+		RuntimeManifestFile:    filepath.Join(runtimeRoot, "manifest.json"),
+		RuntimeInstallPlanFile: filepath.Join(runtimeRoot, "install-plan.json"),
 	}, nil
 }
 

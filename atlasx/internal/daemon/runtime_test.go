@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"atlasx/internal/managedruntime"
+	"atlasx/internal/platform/macos"
 )
 
 func TestRuntimeStatusEndpoint(t *testing.T) {
@@ -21,6 +24,42 @@ func TestRuntimeStatusEndpoint(t *testing.T) {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"manifest_present":false`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"install_plan_present":false`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestRuntimeStatusEndpointIncludesInstallPlan(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	plan := mustDaemonInstallPlan(t)
+	plan.CurrentPhase = managedruntime.InstallPhaseVerifying
+	if err := managedruntime.SaveInstallPlan(paths, plan); err != nil {
+		t.Fatalf("save install plan failed: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/runtime/status", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"install_plan_present":true`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"install_plan_phase":"verifying"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"install_plan_source_url":"https://example.com/chromium.zip"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
 }
@@ -102,4 +141,21 @@ func createDaemonFakeChromiumBundle(t *testing.T) string {
 		t.Fatalf("write plist failed: %v", err)
 	}
 	return bundlePath
+}
+
+func mustDaemonInstallPlan(t *testing.T) managedruntime.InstallPlan {
+	t.Helper()
+
+	plan, err := managedruntime.NewInstallPlan(managedruntime.InstallPlanOptions{
+		Version:          "123.0.0",
+		Channel:          "stable",
+		SourceURL:        "https://example.com/chromium.zip",
+		ExpectedSHA256:   "deadbeef",
+		ArchivePath:      "/tmp/chromium.zip",
+		StagedBundlePath: "/tmp/Chromium.app",
+	})
+	if err != nil {
+		t.Fatalf("new install plan failed: %v", err)
+	}
+	return plan
 }
