@@ -49,6 +49,9 @@ go run ./cmd/atlasd --once
 - 当前 `launch-webapp`、`status` 与受管 session state 已输出 `runtime_source`，可直接判断当前命中的是 `system_auto`、`managed_auto` 还是 `config`。
 - 当前已提供 `runtime stage`，可把本地 `Chromium.app` 显式复制到 support root/runtime 并写入 manifest，形成不依赖下载器的 managed runtime 装入链路。
 - 当前已提供 `runtime status` 和 `runtime clear`，可查看 staged runtime/manifest/binary 状态，并显式清理 support root/runtime 下的本地 managed runtime。
+- 当前 `atlasd` 已提供 `GET /v1/runtime/status` 与 `POST /v1/runtime/stage`，可服务化查询 managed runtime 状态并触发本地 bundle stage。
+- 当前 `atlasd` 已提供 `POST /v1/runtime/clear`，可服务化回退 staged runtime；clear 后 `GET /v1/runtime/status` 会回到 manifest/bundle/binary 全部缺失状态。
+- 当前 `/v1/status` 已额外导出 `runtime_bundle_present`、`runtime_binary_present`、`runtime_binary_executable`，避免把 manifest present 误判成 runtime ready。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。

@@ -8,6 +8,7 @@ import (
 	"atlasx/internal/browserdata"
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
+	"atlasx/internal/managedruntime"
 	"atlasx/internal/mirror"
 	"atlasx/internal/settings"
 	"atlasx/internal/sidebar"
@@ -38,6 +39,9 @@ type Status struct {
 	RuntimeManifestVersion    string `json:"runtime_manifest_version"`
 	RuntimeManifestChannel    string `json:"runtime_manifest_channel"`
 	RuntimeManifestBundlePath string `json:"runtime_manifest_bundle_path"`
+	RuntimeBundlePresent      bool   `json:"runtime_bundle_present"`
+	RuntimeBinaryPresent      bool   `json:"runtime_binary_present"`
+	RuntimeBinaryExecutable   bool   `json:"runtime_binary_executable"`
 	SidebarQAConfigured       bool   `json:"sidebar_qa_configured"`
 	SidebarQAReady            bool   `json:"sidebar_qa_ready"`
 	SidebarQAProvider         string `json:"sidebar_qa_provider"`
@@ -84,6 +88,13 @@ func Bootstrap() (Status, error) {
 	status.RuntimeManifestVersion = report.RuntimeManifest.Version
 	status.RuntimeManifestChannel = report.RuntimeManifest.Channel
 	status.RuntimeManifestBundlePath = report.RuntimeManifest.BundlePath
+	runtimeStatus, err := managedruntime.Status(report.Paths)
+	if err != nil {
+		return Status{}, err
+	}
+	status.RuntimeBundlePresent = runtimeStatus.BundlePresent
+	status.RuntimeBinaryPresent = runtimeStatus.BinaryPresent
+	status.RuntimeBinaryExecutable = runtimeStatus.BinaryExecutable
 
 	config, err := settings.NewStore(report.Paths.ConfigFile).Load()
 	if err != nil {
@@ -119,6 +130,15 @@ func NewMux(_ Status) *http.ServeMux {
 	})
 	mux.HandleFunc("/v1/bookmarks/open", func(w http.ResponseWriter, r *http.Request) {
 		serveBrowserOpenAction(w, r, browserdata.ResolveBookmarkURL, "opened_bookmark_index")
+	})
+	mux.HandleFunc("/v1/runtime/status", func(w http.ResponseWriter, r *http.Request) {
+		serveRuntimeStatus(w, r)
+	})
+	mux.HandleFunc("/v1/runtime/stage", func(w http.ResponseWriter, r *http.Request) {
+		serveRuntimeStage(w, r)
+	})
+	mux.HandleFunc("/v1/runtime/clear", func(w http.ResponseWriter, r *http.Request) {
+		serveRuntimeClear(w, r)
 	})
 	mux.HandleFunc("/v1/sidebar/status", func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarStatus(w, r)
