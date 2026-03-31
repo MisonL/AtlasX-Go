@@ -147,6 +147,12 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/runtime/verify", func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeVerify(w, r)
 	})
+	mux.HandleFunc("/v1/runtime/plan", func(w http.ResponseWriter, r *http.Request) {
+		serveRuntimePlan(w, r)
+	})
+	mux.HandleFunc("/v1/runtime/plan/clear", func(w http.ResponseWriter, r *http.Request) {
+		serveRuntimePlanClear(w, r)
+	})
 	mux.HandleFunc("/v1/sidebar/status", func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarStatus(w, r)
 	})
