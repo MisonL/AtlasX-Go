@@ -25,14 +25,15 @@ type Options struct {
 }
 
 type Result struct {
-	BinaryPath  string
-	Args        []string
-	DryRun      bool
-	Managed     bool
-	Mode        string
-	StateFile   string
-	UserDataDir string
-	URL         string
+	BinaryPath    string
+	RuntimeSource string
+	Args          []string
+	DryRun        bool
+	Managed       bool
+	Mode          string
+	StateFile     string
+	UserDataDir   string
+	URL           string
 }
 
 func Run(opts Options) (Result, error) {
@@ -64,14 +65,15 @@ func Run(opts Options) (Result, error) {
 	url := firstNonEmpty(opts.URLOverride, cfg.WebAppURL)
 	args := BuildArgs(detection.BinaryPath, selected, url)
 	result := Result{
-		BinaryPath:  detection.BinaryPath,
-		Args:        args,
-		DryRun:      opts.DryRun,
-		Managed:     selected.UserDataDir != "",
-		Mode:        selected.Mode,
-		StateFile:   paths.SessionFile,
-		UserDataDir: selected.UserDataDir,
-		URL:         url,
+		BinaryPath:    detection.BinaryPath,
+		RuntimeSource: detection.Source,
+		Args:          args,
+		DryRun:        opts.DryRun,
+		Managed:       selected.UserDataDir != "",
+		Mode:          selected.Mode,
+		StateFile:     paths.SessionFile,
+		UserDataDir:   selected.UserDataDir,
+		URL:           url,
 	}
 	if opts.DryRun {
 		return result, nil
@@ -90,13 +92,14 @@ func Run(opts Options) (Result, error) {
 
 	if result.Managed {
 		err = SaveState(paths, State{
-			Mode:        selected.Mode,
-			Managed:     true,
-			BinaryPath:  detection.BinaryPath,
-			Args:        args,
-			URL:         url,
-			UserDataDir: selected.UserDataDir,
-			StartedAt:   time.Now().UTC().Format(time.RFC3339),
+			Mode:          selected.Mode,
+			Managed:       true,
+			RuntimeSource: detection.Source,
+			BinaryPath:    detection.BinaryPath,
+			Args:          args,
+			URL:           url,
+			UserDataDir:   selected.UserDataDir,
+			StartedAt:     time.Now().UTC().Format(time.RFC3339),
 		})
 		if err != nil {
 			return Result{}, err
@@ -139,9 +142,10 @@ func (r Result) Render() string {
 		mode = "dry-run"
 	}
 	return fmt.Sprintf(
-		"mode=%s\nbinary=%s\nprofile_mode=%s\nmanaged=%t\nstate_file=%s\nargs=%s\n",
+		"mode=%s\nbinary=%s\nruntime_source=%s\nprofile_mode=%s\nmanaged=%t\nstate_file=%s\nargs=%s\n",
 		mode,
 		r.BinaryPath,
+		r.RuntimeSource,
 		r.Mode,
 		r.Managed,
 		r.StateFile,

@@ -19,13 +19,14 @@ const (
 )
 
 type State struct {
-	Mode        string   `json:"mode"`
-	Managed     bool     `json:"managed"`
-	BinaryPath  string   `json:"binary_path"`
-	Args        []string `json:"args"`
-	URL         string   `json:"url"`
-	UserDataDir string   `json:"user_data_dir"`
-	StartedAt   string   `json:"started_at"`
+	Mode          string   `json:"mode"`
+	Managed       bool     `json:"managed"`
+	RuntimeSource string   `json:"runtime_source"`
+	BinaryPath    string   `json:"binary_path"`
+	Args          []string `json:"args"`
+	URL           string   `json:"url"`
+	UserDataDir   string   `json:"user_data_dir"`
+	StartedAt     string   `json:"started_at"`
 }
 
 type StatusReport struct {
@@ -181,11 +182,12 @@ func (s StatusReport) Render() string {
 	}
 
 	return fmt.Sprintf(
-		"session=present\nstate_file=%s\nmanaged=%t\nalive=%t\nmode=%s\nuser_data_dir=%s\nurl=%s\npids=%v\ncdp_status=%s\ncdp_version_endpoint=%s\ncdp_browser_ws=%s\ncdp_active_port_file=%s\n",
+		"session=present\nstate_file=%s\nmanaged=%t\nalive=%t\nmode=%s\nruntime_source=%s\nuser_data_dir=%s\nurl=%s\npids=%v\ncdp_status=%s\ncdp_version_endpoint=%s\ncdp_browser_ws=%s\ncdp_active_port_file=%s\n",
 		s.StateFile,
 		s.State.Managed,
 		s.Alive,
 		s.State.Mode,
+		s.State.RuntimeSource,
 		s.State.UserDataDir,
 		s.State.URL,
 		s.ProcessIDs,

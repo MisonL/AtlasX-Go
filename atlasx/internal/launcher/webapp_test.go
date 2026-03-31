@@ -75,11 +75,12 @@ func TestSaveAndLoadState(t *testing.T) {
 	}
 
 	state := State{
-		Mode:        profile.ModeIsolated,
-		Managed:     true,
-		BinaryPath:  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-		URL:         "https://chatgpt.com/atlas?get-started",
-		UserDataDir: filepath.Join(t.TempDir(), "profile"),
+		Mode:          profile.ModeIsolated,
+		Managed:       true,
+		RuntimeSource: "managed_auto",
+		BinaryPath:    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+		URL:           "https://chatgpt.com/atlas?get-started",
+		UserDataDir:   filepath.Join(t.TempDir(), "profile"),
 	}
 	if err := SaveState(paths, state); err != nil {
 		t.Fatalf("save state failed: %v", err)
@@ -91,6 +92,9 @@ func TestSaveAndLoadState(t *testing.T) {
 	}
 	if loaded.UserDataDir != state.UserDataDir {
 		t.Fatalf("unexpected user data dir: %s", loaded.UserDataDir)
+	}
+	if loaded.RuntimeSource != state.RuntimeSource {
+		t.Fatalf("unexpected runtime source: %s", loaded.RuntimeSource)
 	}
 
 	if _, err := os.Stat(paths.SessionFile); err != nil {
@@ -132,5 +136,21 @@ func TestProbeCDPHandlesMissingPortFile(t *testing.T) {
 	report := ProbeCDP(t.TempDir())
 	if report.Status != cdpStatusPortFileAbsent {
 		t.Fatalf("unexpected cdp status: %s", report.Status)
+	}
+}
+
+func TestResultRenderIncludesRuntimeSource(t *testing.T) {
+	rendered := Result{
+		DryRun:        true,
+		BinaryPath:    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+		RuntimeSource: "managed_auto",
+		Mode:          profile.ModeIsolated,
+		Managed:       true,
+		StateFile:     "/tmp/state.json",
+		Args:          []string{"--app=https://example.com"},
+	}.Render()
+
+	if !strings.Contains(rendered, "runtime_source=managed_auto") {
+		t.Fatalf("missing runtime source: %s", rendered)
 	}
 }

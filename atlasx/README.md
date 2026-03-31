@@ -43,6 +43,7 @@ go run ./cmd/atlasd --once
 - 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
 - 当前 Chrome runtime 探测已区分 `system_auto` 与 `managed_auto` 来源；若 `Application Support/AtlasX/runtime/Chromium.app` 下存在可执行 bundle，诊断口径会优先识别为 managed runtime。
 - 当前已提供 managed runtime manifest 骨架；`doctor` 与 `atlasd --once` 会输出 manifest 的 path/present/version/channel/bundle 状态，但这不等于 runtime 已可启动。
+- 当前 `launch-webapp`、`status` 与受管 session state 已输出 `runtime_source`，可直接判断当前命中的是 `system_auto`、`managed_auto` 还是 `config`。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。

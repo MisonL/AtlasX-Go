@@ -20,6 +20,7 @@
 - `atlasd /v1/sidebar/status` 与 `/v1/sidebar/ask` 控制面骨架
 - support root 下 managed Chromium runtime 的发现骨架与 `chrome_source` 诊断口径
 - managed runtime manifest 的本地读写与状态导出骨架
+- launcher dry-run 与 session status 的 `runtime_source` 可观测性
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`
