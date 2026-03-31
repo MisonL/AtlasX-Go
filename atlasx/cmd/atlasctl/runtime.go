@@ -12,7 +12,7 @@ import (
 
 func runRuntime(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing runtime subcommand: stage, status, clear")
+		return errors.New("missing runtime subcommand: stage, status, verify, clear")
 	}
 
 	switch args[0] {
@@ -20,6 +20,8 @@ func runRuntime(args []string) error {
 		return runRuntimeStage(args[1:])
 	case "status":
 		return runRuntimeStatus()
+	case "verify":
+		return runRuntimeVerify()
 	case "clear":
 		return runRuntimeClear()
 	default:
@@ -83,5 +85,20 @@ func runRuntimeClear() error {
 	}
 
 	fmt.Printf("cleared_runtime_root=%s\n", paths.RuntimeRoot)
+	return nil
+}
+
+func runRuntimeVerify() error {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	report, err := managedruntime.Verify(paths)
+	fmt.Print(report.Render())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
