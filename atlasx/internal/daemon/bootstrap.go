@@ -10,6 +10,7 @@ import (
 	"atlasx/internal/imports"
 	"atlasx/internal/mirror"
 	"atlasx/internal/settings"
+	"atlasx/internal/sidebar"
 )
 
 const DefaultListenAddr = settings.DefaultListenAddr
@@ -31,6 +32,10 @@ type Status struct {
 	ChromeImportRoot      string `json:"chrome_import_root"`
 	ChromeImportBookmarks bool   `json:"chrome_import_bookmarks"`
 	ChromeImportHistory   bool   `json:"chrome_import_history"`
+	SidebarQAConfigured   bool   `json:"sidebar_qa_configured"`
+	SidebarQAReady        bool   `json:"sidebar_qa_ready"`
+	SidebarQAProvider     string `json:"sidebar_qa_provider"`
+	SidebarQAModel        string `json:"sidebar_qa_model"`
 }
 
 func Bootstrap() (Status, error) {
@@ -68,6 +73,16 @@ func Bootstrap() (Status, error) {
 		return Status{}, err
 	}
 
+	config, err := settings.NewStore(report.Paths.ConfigFile).Load()
+	if err != nil {
+		return Status{}, err
+	}
+	sidebarStatus := sidebar.FromSettings(config).Status()
+	status.SidebarQAConfigured = sidebarStatus.Configured
+	status.SidebarQAReady = sidebarStatus.Ready
+	status.SidebarQAProvider = sidebarStatus.Provider
+	status.SidebarQAModel = sidebarStatus.Model
+
 	return status, nil
 }
 
@@ -92,6 +107,12 @@ func NewMux(_ Status) *http.ServeMux {
 	})
 	mux.HandleFunc("/v1/bookmarks/open", func(w http.ResponseWriter, r *http.Request) {
 		serveBrowserOpenAction(w, r, browserdata.ResolveBookmarkURL, "opened_bookmark_index")
+	})
+	mux.HandleFunc("/v1/sidebar/status", func(w http.ResponseWriter, r *http.Request) {
+		serveSidebarStatus(w, r)
+	})
+	mux.HandleFunc("/v1/sidebar/ask", func(w http.ResponseWriter, r *http.Request) {
+		serveSidebarAsk(w, r)
 	})
 	mux.HandleFunc("/v1/tabs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {

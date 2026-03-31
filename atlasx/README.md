@@ -49,5 +49,6 @@ go run ./cmd/atlasd --once
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。
 - 当前已提供浏览器数据查询与动作：`history list/open`、`downloads list/open`、`bookmarks list/open` 可读取已落盘的 mirror/import 数据，并将选中 URL 打开到受管标签。
-- 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 的统一状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/history/open`、`/v1/downloads/open`、`/v1/bookmarks/open`、`/v1/tabs`、`/v1/tabs/context` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等 API。
+- 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 与 sidebar QA 骨架状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/history/open`、`/v1/downloads/open`、`/v1/bookmarks/open`、`/v1/tabs`、`/v1/tabs/context`、`/v1/sidebar/status`、`/v1/sidebar/ask` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等 API。
+- 当前侧边栏问答只提供控制面骨架：未配置时 `/v1/sidebar/ask` 显式返回 `503`，即使已配置 provider/model/base URL 但后端未实现，也会显式返回 `501`。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。

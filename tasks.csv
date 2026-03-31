@@ -20,4 +20,4 @@ T018,接入导入与采集 HTTP API,让 atlasd 暴露 mirror-scan import-chrome 
 T019,实现历史与书签打开动作,让 atlasctl 能把 history/bookmarks 查询结果直接在受管标签中打开，形成数据读取到浏览器动作的闭环,"go test ./... 通过；history open <index> 与 bookmarks open <index> 可成功打开目标 URL；tabs list 可观察结果",确认索引越界时错误显式；确认只依赖已落盘的 mirror/import 数据,已完成,高优先级
 T020,接入浏览器数据打开 HTTP API 并补 downloads open,让 atlasctl 与 atlasd 都支持按索引打开 history downloads bookmarks 的目标 URL，形成数据面到浏览器动作的统一服务化入口,"go test ./... 通过；downloads open <index> 可成功打开下载来源 URL；atlasd 运行时 /v1/history/open /v1/downloads/open /v1/bookmarks/open 可通过 POST 打开目标 URL；错误索引返回明确 JSON",确认只依赖已落盘的 mirror/import 数据；确认 downloads 无来源 URL 时失败显式；确认动作 API 使用 POST,已完成,高优先级
 T021,实现当前标签页页面上下文抓取基线,为受管 page target 增加 title url 和最小页面文本抓取能力，供后续侧边栏问答与记忆使用,"go test ./... 通过；atlasctl 可抓取指定标签页上下文；atlasd 暴露对应只读 API；至少 1 条真实页面抓取链路成功",确认只在 page target 上执行；确认抓取失败不静默降级,已完成,高优先级
-T022,初始化侧边栏问答服务骨架,在不引入伪成功的前提下建立侧边栏问答最小服务契约与占位实现，为后续上下文问答和记忆接入预留控制面,"go test ./... 通过；存在明确 API/配置/状态骨架；未接入真实模型时错误或未配置状态显式",确认不伪造 AI 回答；确认控制面和数据面边界清晰,未开始,高优先级
+T022,初始化侧边栏问答服务骨架,在不引入伪成功的前提下建立侧边栏问答最小服务契约与占位实现，为后续上下文问答和记忆接入预留控制面,"go test ./... 通过；存在明确 API/配置/状态骨架；未接入真实模型时错误或未配置状态显式",确认不伪造 AI 回答；确认控制面和数据面边界清晰,已完成,高优先级

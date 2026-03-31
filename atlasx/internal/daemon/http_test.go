@@ -12,6 +12,7 @@ import (
 	"atlasx/internal/imports"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
 )
 
@@ -171,6 +172,70 @@ func TestTabContextEndpoint(t *testing.T) {
 	}
 }
 
+func TestSidebarStatusEndpoint(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	bootstrapConfig(t)
+
+	restoreDaemonHooks(t, &stubTabsClient{})
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/sidebar/status", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"configured":false`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestSidebarAskEndpointRejectsUnconfiguredBackend(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	bootstrapConfig(t)
+
+	restoreDaemonHooks(t, &stubTabsClient{})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestSidebarAskEndpointRejectsUnimplementedBackend(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarProvider: "openai",
+		SidebarModel:    "gpt-5.4",
+		SidebarBaseURL:  "https://api.openai.com/v1",
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusNotImplemented {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
 func restoreDaemonHooks(t *testing.T, client tabClient) {
 	t.Helper()
 
@@ -186,4 +251,16 @@ func restoreDaemonHooks(t *testing.T, client tabClient) {
 		discoverPaths = previousDiscoverPaths
 		newTabsClient = previousNewTabsClient
 	})
+}
+
+func bootstrapConfig(t *testing.T) {
+	t.Helper()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if _, err := settings.NewStore(paths.ConfigFile).Bootstrap(); err != nil {
+		t.Fatalf("bootstrap config failed: %v", err)
+	}
 }

@@ -14,10 +14,13 @@ const (
 )
 
 type Config struct {
-	ChromeBinary   string `json:"chrome_binary"`
-	DefaultProfile string `json:"default_profile"`
-	ListenAddr     string `json:"listen_addr"`
-	WebAppURL      string `json:"web_app_url"`
+	ChromeBinary    string `json:"chrome_binary"`
+	DefaultProfile  string `json:"default_profile"`
+	ListenAddr      string `json:"listen_addr"`
+	WebAppURL       string `json:"web_app_url"`
+	SidebarProvider string `json:"sidebar_provider"`
+	SidebarModel    string `json:"sidebar_model"`
+	SidebarBaseURL  string `json:"sidebar_base_url"`
 }
 
 type Store struct {

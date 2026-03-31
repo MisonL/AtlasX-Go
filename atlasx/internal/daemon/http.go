@@ -9,6 +9,8 @@ import (
 	"atlasx/internal/imports"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/settings"
+	"atlasx/internal/sidebar"
 	"atlasx/internal/tabs"
 )
 
@@ -45,6 +47,56 @@ type mirrorScanRequest struct {
 
 type chromeImportRequest struct {
 	SourceProfileDir string `json:"source_profile_dir"`
+}
+
+func serveSidebarStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	config, err := loadSidebarConfig()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, config.Status())
+}
+
+func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	var request sidebar.AskRequest
+	if err := decodeRequiredJSON(r, &request); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	config, err := loadSidebarConfig()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := config.Ask(request); err != nil {
+		switch {
+		case errors.Is(err, sidebar.ErrNotConfigured):
+			writeError(w, http.StatusServiceUnavailable, err)
+		case errors.Is(err, sidebar.ErrBackendNotImplemented):
+			writeError(w, http.StatusNotImplemented, err)
+		default:
+			writeError(w, http.StatusBadRequest, err)
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "ready",
+	})
 }
 
 func serveBrowserData[T any](w http.ResponseWriter, loader dataLoader[T]) {
@@ -272,6 +324,18 @@ func serveChromeImport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, report)
+}
+
+func loadSidebarConfig() (sidebar.Config, error) {
+	paths, err := discoverPaths()
+	if err != nil {
+		return sidebar.Config{}, err
+	}
+	config, err := settings.NewStore(paths.ConfigFile).Load()
+	if err != nil {
+		return sidebar.Config{}, err
+	}
+	return sidebar.FromSettings(config), nil
 }
 
 func serveSafariImport(w http.ResponseWriter, r *http.Request) {
