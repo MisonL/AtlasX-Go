@@ -13,6 +13,8 @@
 - `atlasctl doctor`
 - `atlasctl status`
 - `atlasctl mirror-scan`
+- `atlasctl history|downloads|bookmarks list/open`
+- `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`

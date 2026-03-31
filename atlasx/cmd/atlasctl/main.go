@@ -5,11 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"atlasx/internal/blueprint"
-	"atlasx/internal/browserdata"
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
 	"atlasx/internal/launcher"
@@ -260,124 +258,4 @@ func runImportSafari() error {
 
 	fmt.Print(report.Render())
 	return nil
-}
-
-func runHistory(args []string) error {
-	paths, err := macos.DiscoverPaths()
-	if err != nil {
-		return err
-	}
-
-	rows, err := browserdata.LoadHistory(paths)
-	if err != nil {
-		return err
-	}
-	if len(args) == 0 {
-		return errors.New("history supports subcommands: list, open")
-	}
-
-	switch args[0] {
-	case "list":
-		for index, row := range rows {
-			fmt.Printf("index=%d last_visit_time=%s visit_count=%d title=%q url=%s\n", index, row.LastVisitTime, row.VisitCount, row.Title, row.URL)
-		}
-		return nil
-	case "open":
-		index, err := parseIndexArg(args, "history open")
-		if err != nil {
-			return err
-		}
-		if index >= len(rows) {
-			return fmt.Errorf("history index %d out of range", index)
-		}
-		client, err := tabs.New(paths)
-		if err != nil {
-			return err
-		}
-		target, err := client.Open(rows[index].URL)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("opened_history_index=%d id=%s url=%s\n", index, target.ID, target.URL)
-		return nil
-	default:
-		return fmt.Errorf("unknown history subcommand %q", args[0])
-	}
-}
-
-func runDownloads(args []string) error {
-	if len(args) == 0 || args[0] != "list" {
-		return errors.New("downloads supports only subcommand: list")
-	}
-
-	paths, err := macos.DiscoverPaths()
-	if err != nil {
-		return err
-	}
-
-	rows, err := browserdata.LoadDownloads(paths)
-	if err != nil {
-		return err
-	}
-	for index, row := range rows {
-		fmt.Printf("index=%d end_time=%s total_bytes=%d state=%d target_path=%s tab_url=%s\n", index, row.EndTime, row.TotalBytes, row.State, row.TargetPath, row.TabURL)
-	}
-	return nil
-}
-
-func runBookmarks(args []string) error {
-	paths, err := macos.DiscoverPaths()
-	if err != nil {
-		return err
-	}
-
-	rows, err := browserdata.LoadBookmarks(paths)
-	if err != nil {
-		return err
-	}
-	if len(args) == 0 {
-		return errors.New("bookmarks supports subcommands: list, open")
-	}
-
-	switch args[0] {
-	case "list":
-		for index, row := range rows {
-			fmt.Printf("index=%d root=%s name=%q url=%s\n", index, row.Root, row.Name, row.URL)
-		}
-		return nil
-	case "open":
-		index, err := parseIndexArg(args, "bookmarks open")
-		if err != nil {
-			return err
-		}
-		if index >= len(rows) {
-			return fmt.Errorf("bookmark index %d out of range", index)
-		}
-		client, err := tabs.New(paths)
-		if err != nil {
-			return err
-		}
-		target, err := client.Open(rows[index].URL)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("opened_bookmark_index=%d id=%s url=%s\n", index, target.ID, target.URL)
-		return nil
-	default:
-		return fmt.Errorf("unknown bookmarks subcommand %q", args[0])
-	}
-}
-
-func parseIndexArg(args []string, commandName string) (int, error) {
-	if len(args) < 2 {
-		return 0, fmt.Errorf("missing index for %s", commandName)
-	}
-	index, err := strconv.Atoi(args[1])
-	if err != nil {
-		return 0, fmt.Errorf("invalid index %q", args[1])
-	}
-	if index < 0 {
-		return 0, fmt.Errorf("index must be >= 0")
-	}
-	return index, nil
 }
