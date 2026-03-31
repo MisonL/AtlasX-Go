@@ -248,6 +248,64 @@ func TestStatusEndpointLeavesRuntimeManifestDetailsEmptyWhenAbsent(t *testing.T)
 	}
 }
 
+func TestRuntimeVerifyEndpoint(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if _, err := managedruntime.StageLocal(paths, managedruntime.StageOptions{
+		BundlePath: createDaemonFakeChromiumBundle(t),
+		Version:    "123.0.0",
+		Channel:    "local",
+	}); err != nil {
+		t.Fatalf("stage local failed: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/runtime/verify", bytes.NewBuffer(nil))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"verified":true`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestRuntimeVerifyEndpointRejectsMissingManifest(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/runtime/verify", bytes.NewBuffer(nil))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`managed runtime manifest is not present`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestRuntimeVerifyEndpointRejectsGet(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/runtime/verify", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestSidebarStatusEndpoint(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	bootstrapConfig(t)
