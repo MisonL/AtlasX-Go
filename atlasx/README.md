@@ -17,6 +17,8 @@ go run ./cmd/atlasctl doctor
 go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl status
 go run ./cmd/atlasctl runtime stage --bundle-path /path/to/Chromium.app --version 123.0.0
+go run ./cmd/atlasctl runtime status
+go run ./cmd/atlasctl runtime clear
 go run ./cmd/atlasctl mirror-scan
 go run ./cmd/atlasctl tabs list
 go run ./cmd/atlasctl tabs open https://openai.com
@@ -46,6 +48,7 @@ go run ./cmd/atlasd --once
 - 当前已提供 managed runtime manifest 骨架；`doctor` 与 `atlasd --once` 会输出 manifest 的 path/present/version/channel/bundle 状态，但这不等于 runtime 已可启动。
 - 当前 `launch-webapp`、`status` 与受管 session state 已输出 `runtime_source`，可直接判断当前命中的是 `system_auto`、`managed_auto` 还是 `config`。
 - 当前已提供 `runtime stage`，可把本地 `Chromium.app` 显式复制到 support root/runtime 并写入 manifest，形成不依赖下载器的 managed runtime 装入链路。
+- 当前已提供 `runtime status` 和 `runtime clear`，可查看 staged runtime/manifest/binary 状态，并显式清理 support root/runtime 下的本地 managed runtime。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。

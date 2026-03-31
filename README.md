@@ -22,6 +22,7 @@
 - managed runtime manifest 的本地读写与状态导出骨架
 - launcher dry-run 与 session status 的 `runtime_source` 可观测性
 - `atlasctl runtime stage` 的本地 managed Chromium 装入链路
+- `atlasctl runtime status|clear` 的 staged runtime 查看与回退链路
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`
