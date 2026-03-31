@@ -2,6 +2,7 @@ package managedruntime
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"atlasx/internal/platform/macos"
@@ -19,6 +20,8 @@ type InstallPlanStatus struct {
 	CurrentPhase     InstallPhase `json:"current_phase"`
 	LastError        string       `json:"last_error"`
 }
+
+var ErrInstallPlanNotFound = os.ErrNotExist
 
 func LoadInstallPlan(paths macos.Paths) (InstallPlan, error) {
 	data, err := os.ReadFile(paths.RuntimeInstallPlanFile)
@@ -66,4 +69,30 @@ func InstallPlanInfo(paths macos.Paths) (InstallPlanStatus, error) {
 	status.CurrentPhase = plan.CurrentPhase
 	status.LastError = plan.LastError
 	return status, nil
+}
+
+func ClearInstallPlan(paths macos.Paths) error {
+	if _, err := os.Stat(paths.RuntimeInstallPlanFile); err != nil {
+		if os.IsNotExist(err) {
+			return ErrInstallPlanNotFound
+		}
+		return err
+	}
+	return os.Remove(paths.RuntimeInstallPlanFile)
+}
+
+func (s InstallPlanStatus) Render() string {
+	return fmt.Sprintf(
+		"install_plan=%s\ninstall_plan_present=%t\ninstall_plan_version=%s\ninstall_plan_channel=%s\ninstall_plan_source_url=%s\ninstall_plan_expected_sha256=%s\ninstall_plan_archive_path=%s\ninstall_plan_staged_bundle_path=%s\ninstall_plan_phase=%s\ninstall_plan_last_error=%s\n",
+		s.Path,
+		s.Present,
+		s.Version,
+		s.Channel,
+		s.SourceURL,
+		s.ExpectedSHA256,
+		s.ArchivePath,
+		s.StagedBundlePath,
+		s.CurrentPhase,
+		s.LastError,
+	)
 }

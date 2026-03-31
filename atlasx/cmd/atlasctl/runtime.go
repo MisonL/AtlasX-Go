@@ -12,7 +12,7 @@ import (
 
 func runRuntime(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing runtime subcommand: stage, status, verify, clear")
+		return errors.New("missing runtime subcommand: stage, status, verify, clear, plan")
 	}
 
 	switch args[0] {
@@ -24,6 +24,8 @@ func runRuntime(args []string) error {
 		return runRuntimeVerify()
 	case "clear":
 		return runRuntimeClear()
+	case "plan":
+		return runRuntimePlan(args[1:])
 	default:
 		return fmt.Errorf("unknown runtime subcommand %q", args[0])
 	}
@@ -100,5 +102,93 @@ func runRuntimeVerify() error {
 		return err
 	}
 
+	return nil
+}
+
+func runRuntimePlan(args []string) error {
+	if len(args) == 0 {
+		return errors.New("missing runtime plan subcommand: create, status, clear")
+	}
+
+	switch args[0] {
+	case "create":
+		return runRuntimePlanCreate(args[1:])
+	case "status":
+		return runRuntimePlanStatus()
+	case "clear":
+		return runRuntimePlanClear()
+	default:
+		return fmt.Errorf("unknown runtime plan subcommand %q", args[0])
+	}
+}
+
+func runRuntimePlanCreate(args []string) error {
+	fs := flag.NewFlagSet("runtime plan create", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	version := fs.String("version", "", "managed runtime version")
+	channel := fs.String("channel", "", "managed runtime channel")
+	sourceURL := fs.String("url", "", "managed runtime archive url")
+	expectedSHA256 := fs.String("sha256", "", "expected archive sha256")
+	archivePath := fs.String("archive-path", "", "local archive path to reserve for download")
+	stagedBundlePath := fs.String("bundle-path", "", "target staged bundle path after install")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	plan, err := managedruntime.NewInstallPlan(managedruntime.InstallPlanOptions{
+		Version:          *version,
+		Channel:          *channel,
+		SourceURL:        *sourceURL,
+		ExpectedSHA256:   *expectedSHA256,
+		ArchivePath:      *archivePath,
+		StagedBundlePath: *stagedBundlePath,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := managedruntime.SaveInstallPlan(paths, plan); err != nil {
+		return err
+	}
+
+	status, err := managedruntime.InstallPlanInfo(paths)
+	if err != nil {
+		return err
+	}
+	fmt.Print(status.Render())
+	return nil
+}
+
+func runRuntimePlanStatus() error {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	status, err := managedruntime.InstallPlanInfo(paths)
+	if err != nil {
+		return err
+	}
+	fmt.Print(status.Render())
+	return nil
+}
+
+func runRuntimePlanClear() error {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	if err := managedruntime.ClearInstallPlan(paths); err != nil {
+		return err
+	}
+	fmt.Printf("cleared_install_plan=%s\n", paths.RuntimeInstallPlanFile)
 	return nil
 }
