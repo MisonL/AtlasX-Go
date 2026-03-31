@@ -17,6 +17,7 @@ type StatusReport struct {
 	ManifestPresent  bool   `json:"manifest_present"`
 	ManifestVersion  string `json:"manifest_version"`
 	ManifestChannel  string `json:"manifest_channel"`
+	ManifestSHA256   string `json:"manifest_sha256"`
 	StagedBundlePath string `json:"staged_bundle_path"`
 	BundlePresent    bool   `json:"bundle_present"`
 	BinaryPath       string `json:"binary_path"`
@@ -40,6 +41,7 @@ func Status(paths macos.Paths) (StatusReport, error) {
 		report.ManifestPresent = true
 		report.ManifestVersion = manifest.Version
 		report.ManifestChannel = manifest.Channel
+		report.ManifestSHA256 = manifest.SHA256
 		if manifest.BundlePath != "" {
 			report.StagedBundlePath = manifest.BundlePath
 		}
@@ -87,12 +89,13 @@ func Clear(paths macos.Paths) error {
 
 func (r StatusReport) Render() string {
 	return fmt.Sprintf(
-		"runtime_root=%s\nmanifest=%s\nmanifest_present=%t\nmanifest_version=%s\nmanifest_channel=%s\nstaged_bundle=%s\nbundle_present=%t\nbinary=%s\nbinary_present=%t\nbinary_executable=%t\n",
+		"runtime_root=%s\nmanifest=%s\nmanifest_present=%t\nmanifest_version=%s\nmanifest_channel=%s\nmanifest_sha256=%s\nstaged_bundle=%s\nbundle_present=%t\nbinary=%s\nbinary_present=%t\nbinary_executable=%t\n",
 		r.RuntimeRoot,
 		r.ManifestPath,
 		r.ManifestPresent,
 		r.ManifestVersion,
 		r.ManifestChannel,
+		r.ManifestSHA256,
 		r.StagedBundlePath,
 		r.BundlePresent,
 		r.BinaryPath,

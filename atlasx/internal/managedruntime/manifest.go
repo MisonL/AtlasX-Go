@@ -21,6 +21,7 @@ type ManifestStatus struct {
 	Present    bool   `json:"present"`
 	Version    string `json:"version"`
 	Channel    string `json:"channel"`
+	SHA256     string `json:"sha256"`
 	BundlePath string `json:"bundle_path"`
 	BinaryPath string `json:"binary_path"`
 }
@@ -63,6 +64,7 @@ func ManifestInfo(paths macos.Paths) (ManifestStatus, error) {
 	status.Present = true
 	status.Version = manifest.Version
 	status.Channel = manifest.Channel
+	status.SHA256 = manifest.SHA256
 	status.BundlePath = manifest.BundlePath
 	status.BinaryPath = manifest.BinaryPath
 	return status, nil

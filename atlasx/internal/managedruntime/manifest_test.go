@@ -46,6 +46,9 @@ func TestManifestSaveLoadAndStatus(t *testing.T) {
 	if status.BinaryPath != manifest.BinaryPath {
 		t.Fatalf("unexpected binary path: %s", status.BinaryPath)
 	}
+	if status.SHA256 != manifest.SHA256 {
+		t.Fatalf("unexpected sha256: %s", status.SHA256)
+	}
 }
 
 func TestManifestInfoWithoutFile(t *testing.T) {

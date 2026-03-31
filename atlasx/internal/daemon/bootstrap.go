@@ -38,7 +38,9 @@ type Status struct {
 	RuntimeManifestPresent    bool   `json:"runtime_manifest_present"`
 	RuntimeManifestVersion    string `json:"runtime_manifest_version"`
 	RuntimeManifestChannel    string `json:"runtime_manifest_channel"`
+	RuntimeManifestSHA256     string `json:"runtime_manifest_sha256"`
 	RuntimeManifestBundlePath string `json:"runtime_manifest_bundle_path"`
+	RuntimeManifestBinaryPath string `json:"runtime_manifest_binary_path"`
 	RuntimeBundlePresent      bool   `json:"runtime_bundle_present"`
 	RuntimeBinaryPresent      bool   `json:"runtime_binary_present"`
 	RuntimeBinaryExecutable   bool   `json:"runtime_binary_executable"`
@@ -87,7 +89,9 @@ func Bootstrap() (Status, error) {
 	status.RuntimeManifestPresent = report.RuntimeManifest.Present
 	status.RuntimeManifestVersion = report.RuntimeManifest.Version
 	status.RuntimeManifestChannel = report.RuntimeManifest.Channel
+	status.RuntimeManifestSHA256 = report.RuntimeManifest.SHA256
 	status.RuntimeManifestBundlePath = report.RuntimeManifest.BundlePath
+	status.RuntimeManifestBinaryPath = report.RuntimeManifest.BinaryPath
 	runtimeStatus, err := managedruntime.Status(report.Paths)
 	if err != nil {
 		return Status{}, err

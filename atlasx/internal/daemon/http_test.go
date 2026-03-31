@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"atlasx/internal/imports"
+	"atlasx/internal/managedruntime"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
@@ -169,6 +170,81 @@ func TestTabContextEndpoint(t *testing.T) {
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"text":"Atlas context"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestStatusEndpointIncludesRuntimeManifestDetails(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	sourceBundle := createDaemonFakeChromiumBundle(t)
+	stageReport, err := managedruntime.StageLocal(paths, managedruntime.StageOptions{
+		BundlePath: sourceBundle,
+		Version:    "123.0.0",
+		Channel:    "local",
+	})
+	if err != nil {
+		t.Fatalf("stage local failed: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+	if payload["runtime_manifest_version"] != "123.0.0" {
+		t.Fatalf("unexpected manifest version: %+v", payload)
+	}
+	if payload["runtime_manifest_channel"] != "local" {
+		t.Fatalf("unexpected manifest channel: %+v", payload)
+	}
+	if payload["runtime_manifest_sha256"] != stageReport.SHA256 {
+		t.Fatalf("unexpected manifest sha256: %+v", payload)
+	}
+	if payload["runtime_manifest_binary_path"] != stageReport.BinaryPath {
+		t.Fatalf("unexpected manifest binary path: %+v", payload)
+	}
+}
+
+func TestStatusEndpointLeavesRuntimeManifestDetailsEmptyWhenAbsent(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/status", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+	if payload["runtime_manifest_version"] != "" {
+		t.Fatalf("expected empty manifest version: %+v", payload)
+	}
+	if payload["runtime_manifest_channel"] != "" {
+		t.Fatalf("expected empty manifest channel: %+v", payload)
+	}
+	if payload["runtime_manifest_sha256"] != "" {
+		t.Fatalf("expected empty manifest sha256: %+v", payload)
+	}
+	if payload["runtime_manifest_binary_path"] != "" {
+		t.Fatalf("expected empty manifest binary path: %+v", payload)
 	}
 }
 

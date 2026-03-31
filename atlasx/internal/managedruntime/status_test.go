@@ -32,6 +32,9 @@ func TestStatusAndClear(t *testing.T) {
 	if !status.BundlePresent || !status.BinaryExecutable {
 		t.Fatalf("unexpected status: %+v", status)
 	}
+	if status.ManifestSHA256 == "" {
+		t.Fatalf("expected manifest sha256 in status: %+v", status)
+	}
 
 	if err := Clear(paths); err != nil {
 		t.Fatalf("clear failed: %v", err)
