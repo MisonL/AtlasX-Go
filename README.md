@@ -14,7 +14,9 @@
 - `atlasctl status`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`
+- `atlasctl tabs capture <target-id>`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
+- `atlasd /v1/tabs/context?id=<target-id>`
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`

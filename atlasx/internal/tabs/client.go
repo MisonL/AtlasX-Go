@@ -12,7 +12,6 @@ import (
 
 	"atlasx/internal/launcher"
 	"atlasx/internal/platform/macos"
-	"github.com/gorilla/websocket"
 )
 
 const requestTimeout = 2 * time.Second
@@ -31,9 +30,9 @@ type Client struct {
 }
 
 type cdpCommandRequest struct {
-	ID     int               `json:"id"`
-	Method string            `json:"method"`
-	Params map[string]string `json:"params,omitempty"`
+	ID     int            `json:"id"`
+	Method string         `json:"method"`
+	Params map[string]any `json:"params,omitempty"`
 }
 
 type cdpCommandResponse struct {
@@ -176,37 +175,16 @@ func (c Client) Navigate(targetID string, targetURL string) error {
 		return errors.New("target does not expose a websocket debugger url")
 	}
 
-	connection, _, err := websocket.DefaultDialer.Dial(target.WebSocketDebuggerURL, nil)
-	if err != nil {
-		return err
-	}
-	defer connection.Close()
-
 	request := cdpCommandRequest{
 		ID:     1,
 		Method: "Page.navigate",
-		Params: map[string]string{
+		Params: map[string]any{
 			"url": targetURL,
 		},
 	}
 
-	if err := connection.WriteJSON(request); err != nil {
-		return err
-	}
-
-	for {
-		var response cdpCommandResponse
-		if err := connection.ReadJSON(&response); err != nil {
-			return err
-		}
-		if response.ID != request.ID {
-			continue
-		}
-		if response.Error != nil {
-			return fmt.Errorf("cdp error %d: %s", response.Error.Code, response.Error.Message)
-		}
-		return nil
-	}
+	_, err = runPageCommand(target.WebSocketDebuggerURL, request)
+	return err
 }
 
 func baseURLFromVersionEndpoint(endpoint string) (string, error) {

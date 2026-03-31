@@ -23,6 +23,7 @@ type tabClient interface {
 	Activate(string) error
 	Close(string) error
 	Navigate(string, string) error
+	Capture(string) (tabs.PageContext, error)
 }
 
 type dataLoader[T any] func(macos.Paths) ([]T, error)
@@ -137,6 +138,39 @@ func serveTabsList(w http.ResponseWriter) {
 	}
 
 	writeJSON(w, http.StatusOK, tabs.PageTargets(targets))
+}
+
+func serveTabContext(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	targetID := r.URL.Query().Get("id")
+	if targetID == "" {
+		writeError(w, http.StatusBadRequest, fmt.Errorf("missing query parameter id"))
+		return
+	}
+
+	paths, err := discoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	client, err := newTabsClient(paths)
+	if err != nil {
+		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	context, err := client.Capture(targetID)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, context)
 }
 
 func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {

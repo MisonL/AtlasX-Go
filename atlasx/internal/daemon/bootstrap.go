@@ -100,6 +100,9 @@ func NewMux(_ Status) *http.ServeMux {
 		}
 		serveTabsList(w)
 	})
+	mux.HandleFunc("/v1/tabs/context", func(w http.ResponseWriter, r *http.Request) {
+		serveTabContext(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/open", func(w http.ResponseWriter, r *http.Request) {
 		serveTabAction(w, r, func(client tabClient, request tabActionRequest) (any, error) {
 			return client.Open(request.URL)

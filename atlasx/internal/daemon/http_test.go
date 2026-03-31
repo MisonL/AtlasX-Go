@@ -17,6 +17,7 @@ import (
 
 type stubTabsClient struct {
 	openedURL string
+	context   tabs.PageContext
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -38,6 +39,10 @@ func (s *stubTabsClient) Close(string) error {
 
 func (s *stubTabsClient) Navigate(string, string) error {
 	return nil
+}
+
+func (s *stubTabsClient) Capture(string) (tabs.PageContext, error) {
+	return s.context, nil
 }
 
 func TestHistoryOpenEndpoint(t *testing.T) {
@@ -138,6 +143,31 @@ func TestBookmarksOpenEndpointRejectsGet(t *testing.T) {
 
 	if recorder.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestTabContextEndpoint(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:    "tab-1",
+			Title: "Atlas",
+			URL:   "https://chatgpt.com/atlas",
+			Text:  "Atlas context",
+		},
+	})
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/tabs/context?id=tab-1", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"text":"Atlas context"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
 }
 

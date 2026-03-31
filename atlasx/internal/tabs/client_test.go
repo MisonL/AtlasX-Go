@@ -1,10 +1,13 @@
 package tabs
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gorilla/websocket"
 )
 
 func TestBaseURLFromVersionEndpoint(t *testing.T) {
@@ -128,4 +131,74 @@ func TestFindPageTargetRejectsNonPage(t *testing.T) {
 	if !strings.Contains(err.Error(), "is not a page") {
 		t.Fatalf("unexpected error: %v", err)
 	}
+}
+
+func TestCapturePageContext(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/devtools/page/1"
+
+	mux.HandleFunc("/json/list", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`[{"id":"1","type":"page","title":"Atlas","url":"https://chatgpt.com/atlas","webSocketDebuggerUrl":"` + wsURL + `"}]`))
+	})
+	mux.HandleFunc("/devtools/page/1", func(w http.ResponseWriter, r *http.Request) {
+		connection, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("upgrade failed: %v", err)
+		}
+		defer connection.Close()
+
+		var request cdpCommandRequest
+		if err := connection.ReadJSON(&request); err != nil {
+			t.Fatalf("read request failed: %v", err)
+		}
+		if request.Method != "Runtime.evaluate" {
+			t.Fatalf("unexpected method: %s", request.Method)
+		}
+
+		response := cdpCommandResponse{
+			ID: request.ID,
+			Result: mustMarshalJSON(t, map[string]any{
+				"result": map[string]any{
+					"type":  "string",
+					"value": "Atlas page text",
+				},
+			}),
+		}
+		if err := connection.WriteJSON(response); err != nil {
+			t.Fatalf("write response failed: %v", err)
+		}
+	})
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	context, err := client.Capture("1")
+	if err != nil {
+		t.Fatalf("capture failed: %v", err)
+	}
+	if context.Title != "Atlas" {
+		t.Fatalf("unexpected title: %s", context.Title)
+	}
+	if context.Text != "Atlas page text" {
+		t.Fatalf("unexpected text: %s", context.Text)
+	}
+}
+
+func TestCaptureTextExpressionUsesLimit(t *testing.T) {
+	expression := captureTextExpression()
+	if !strings.Contains(expression, "4096") {
+		t.Fatalf("missing limit in expression: %s", expression)
+	}
+}
+
+func mustMarshalJSON(t *testing.T, payload any) json.RawMessage {
+	t.Helper()
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	return data
 }
