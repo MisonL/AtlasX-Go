@@ -41,6 +41,7 @@ go run ./cmd/atlasd --once
 - 当前控制面只覆盖离线诊断、配置、profile 和本地健康检查。
 - 受管 launcher management 当前只覆盖隔离 profile 模式；共享 profile 模式明确视为非受管。
 - 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
+- 当前 Chrome runtime 探测已区分 `system_auto` 与 `managed_auto` 来源；若 `Application Support/AtlasX/runtime/Chromium.app` 下存在可执行 bundle，诊断口径会优先识别为 managed runtime。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。

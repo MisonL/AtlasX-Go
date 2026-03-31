@@ -18,6 +18,7 @@
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/tabs/context?id=<target-id>`
 - `atlasd /v1/sidebar/status` 与 `/v1/sidebar/ask` 控制面骨架
+- support root 下 managed Chromium runtime 的发现骨架与 `chrome_source` 诊断口径
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`

@@ -69,6 +69,7 @@ func (r Report) Render() string {
 		fmt.Sprintf("isolated_profile=%s", r.IsolatedPath),
 		fmt.Sprintf("shared_profile=%s", r.SharedModeName),
 		fmt.Sprintf("chrome_status=%s", r.ChromeStatus),
+		fmt.Sprintf("chrome_source=%s", r.Chrome.Source),
 		fmt.Sprintf("chrome_binary=%s", r.Chrome.BinaryPath),
 		fmt.Sprintf("managed_session_present=%t", r.Session.Present),
 		fmt.Sprintf("managed_session_alive=%t", r.Session.Alive),

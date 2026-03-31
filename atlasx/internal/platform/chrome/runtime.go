@@ -18,39 +18,57 @@ type Detection struct {
 }
 
 func Detect(preferred string) (Detection, error) {
-	candidates, err := candidatePaths()
+	paths, err := macos.DiscoverPaths()
 	if err != nil {
 		return Detection{}, err
 	}
+	return DetectWithPaths(preferred, paths)
+}
 
+func DetectWithPaths(preferred string, paths macos.Paths) (Detection, error) {
+	candidates := candidatePaths(paths)
+	candidateList := flattenCandidatePaths(candidates)
 	if preferred != "" {
 		if isExecutable(preferred) {
-			return Detection{BinaryPath: preferred, Source: "config", Candidates: candidates}, nil
+			return Detection{BinaryPath: preferred, Source: "config", Candidates: candidateList}, nil
 		}
-		return Detection{Candidates: candidates}, errors.New("configured chrome_binary is not executable")
+		return Detection{Candidates: candidateList}, errors.New("configured chrome_binary is not executable")
 	}
 
 	for _, candidate := range candidates {
-		if isExecutable(candidate) {
-			return Detection{BinaryPath: candidate, Source: "auto", Candidates: candidates}, nil
+		if isExecutable(candidate.Path) {
+			return Detection{BinaryPath: candidate.Path, Source: candidate.Source, Candidates: candidateList}, nil
 		}
 	}
-	return Detection{Candidates: candidates}, ErrBinaryNotFound
+	return Detection{Candidates: candidateList}, ErrBinaryNotFound
 }
 
-func candidatePaths() ([]string, error) {
-	paths, err := macos.DiscoverPaths()
-	if err != nil {
-		return nil, err
-	}
+type candidatePath struct {
+	Path   string
+	Source string
+}
 
-	return []string{
-		"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-		filepath.Join(paths.Home, "Applications", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"),
-		"/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
-		"/Applications/Chromium.app/Contents/MacOS/Chromium",
-		filepath.Join(paths.Home, "Applications", "Chromium.app", "Contents", "MacOS", "Chromium"),
-	}, nil
+func candidatePaths(paths macos.Paths) []candidatePath {
+	return []candidatePath{
+		{Path: ManagedBinaryPath(paths), Source: "managed_auto"},
+		{Path: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", Source: "system_auto"},
+		{Path: filepath.Join(paths.Home, "Applications", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"), Source: "system_auto"},
+		{Path: "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta", Source: "system_auto"},
+		{Path: "/Applications/Chromium.app/Contents/MacOS/Chromium", Source: "system_auto"},
+		{Path: filepath.Join(paths.Home, "Applications", "Chromium.app", "Contents", "MacOS", "Chromium"), Source: "system_auto"},
+	}
+}
+
+func flattenCandidatePaths(candidates []candidatePath) []string {
+	paths := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		paths = append(paths, candidate.Path)
+	}
+	return paths
+}
+
+func ManagedBinaryPath(paths macos.Paths) string {
+	return filepath.Join(paths.RuntimeRoot, "Chromium.app", "Contents", "MacOS", "Chromium")
 }
 
 func isExecutable(path string) bool {

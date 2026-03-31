@@ -18,6 +18,7 @@ const DefaultListenAddr = settings.DefaultListenAddr
 type Status struct {
 	Ready                 bool   `json:"ready"`
 	ChromeStatus          string `json:"chrome_status"`
+	ChromeSource          string `json:"chrome_source"`
 	SupportRoot           string `json:"support_root"`
 	ConfigFile            string `json:"config_file"`
 	ManagedSessionLive    bool   `json:"managed_session_live"`
@@ -47,6 +48,7 @@ func Bootstrap() (Status, error) {
 	status := Status{
 		Ready:                report.ChromeStatus == "ok",
 		ChromeStatus:         report.ChromeStatus,
+		ChromeSource:         report.Chrome.Source,
 		SupportRoot:          report.Paths.SupportRoot,
 		ConfigFile:           report.Paths.ConfigFile,
 		ManagedSessionLive:   report.Session.Alive,

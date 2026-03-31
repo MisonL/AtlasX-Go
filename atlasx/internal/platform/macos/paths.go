@@ -18,6 +18,7 @@ type Paths struct {
 	MirrorsRoot  string
 	MirrorFile   string
 	ImportsRoot  string
+	RuntimeRoot  string
 }
 
 func DiscoverPaths() (Paths, error) {
@@ -30,6 +31,7 @@ func DiscoverPaths() (Paths, error) {
 	stateRoot := filepath.Join(supportRoot, "state")
 	mirrorsRoot := filepath.Join(supportRoot, "mirrors")
 	importsRoot := filepath.Join(supportRoot, "imports")
+	runtimeRoot := filepath.Join(supportRoot, "runtime")
 	return Paths{
 		Home:         home,
 		SupportRoot:  supportRoot,
@@ -41,6 +43,7 @@ func DiscoverPaths() (Paths, error) {
 		MirrorsRoot:  mirrorsRoot,
 		MirrorFile:   filepath.Join(mirrorsRoot, "browser-data.json"),
 		ImportsRoot:  importsRoot,
+		RuntimeRoot:  runtimeRoot,
 	}, nil
 }
 
