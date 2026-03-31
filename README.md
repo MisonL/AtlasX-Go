@@ -22,6 +22,7 @@
 - managed runtime manifest 的本地读写与状态导出骨架
 - launcher dry-run 与 session status 的 `runtime_source` 可观测性
 - `atlasctl runtime stage` 的本地 managed Chromium 装入链路
+- `runtime stage` 现已支持 Google Chrome.app 这类兼容 bundle，并由 manifest 驱动 binary 解析
 - `atlasctl runtime status|clear` 的 staged runtime 查看与回退链路
 - `atlasd /v1/runtime/status` 与 `/v1/runtime/stage` 的 runtime 服务化入口
 - `atlasd /v1/runtime/clear` 的 runtime 服务化回退入口

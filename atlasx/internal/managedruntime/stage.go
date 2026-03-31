@@ -49,16 +49,9 @@ func StageLocal(paths macos.Paths, opts StageOptions) (StageReport, error) {
 	if err != nil {
 		return StageReport{}, err
 	}
-	sourceBinaryPath := bundleBinaryPath(sourceBundlePath)
-	info, err := os.Stat(sourceBinaryPath)
+	sourceBinaryPath, err := ResolveBundleBinaryPath(sourceBundlePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return StageReport{}, fmt.Errorf("source bundle missing %s", sourceBinaryPath)
-		}
 		return StageReport{}, err
-	}
-	if info.IsDir() || info.Mode()&0o111 == 0 {
-		return StageReport{}, fmt.Errorf("source binary is not executable: %s", sourceBinaryPath)
 	}
 
 	if err := macos.EnsureDir(paths.RuntimeRoot); err != nil {
@@ -73,7 +66,7 @@ func StageLocal(paths macos.Paths, opts StageOptions) (StageReport, error) {
 		return StageReport{}, err
 	}
 
-	stagedBinaryPath := bundleBinaryPath(stagedBundlePath)
+	stagedBinaryPath := filepath.Join(stagedBundlePath, "Contents", "MacOS", filepath.Base(sourceBinaryPath))
 	sha256sum, err := fileSHA256(stagedBinaryPath)
 	if err != nil {
 		return StageReport{}, err
@@ -84,6 +77,7 @@ func StageLocal(paths macos.Paths, opts StageOptions) (StageReport, error) {
 		Channel:     opts.Channel,
 		SHA256:      sha256sum,
 		BundlePath:  stagedBundlePath,
+		BinaryPath:  stagedBinaryPath,
 		InstalledAt: time.Now().UTC().Format(time.RFC3339),
 	}); err != nil {
 		return StageReport{}, err

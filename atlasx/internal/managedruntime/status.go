@@ -43,6 +43,9 @@ func Status(paths macos.Paths) (StatusReport, error) {
 		if manifest.BundlePath != "" {
 			report.StagedBundlePath = manifest.BundlePath
 		}
+		if manifest.BinaryPath != "" {
+			report.BinaryPath = manifest.BinaryPath
+		}
 	}
 
 	if info, err := os.Stat(report.StagedBundlePath); err == nil && info.IsDir() {
@@ -51,7 +54,9 @@ func Status(paths macos.Paths) (StatusReport, error) {
 		return StatusReport{}, err
 	}
 
-	report.BinaryPath = bundleBinaryPath(report.StagedBundlePath)
+	if report.BinaryPath == "" {
+		report.BinaryPath = filepath.Join(report.StagedBundlePath, "Contents", "MacOS", chromiumBinaryName)
+	}
 	if info, err := os.Stat(report.BinaryPath); err == nil && !info.IsDir() {
 		report.BinaryPresent = true
 		report.BinaryExecutable = info.Mode()&0o111 != 0

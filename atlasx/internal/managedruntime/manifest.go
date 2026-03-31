@@ -12,6 +12,7 @@ type Manifest struct {
 	Channel     string `json:"channel"`
 	SHA256      string `json:"sha256"`
 	BundlePath  string `json:"bundle_path"`
+	BinaryPath  string `json:"binary_path"`
 	InstalledAt string `json:"installed_at"`
 }
 
@@ -21,6 +22,7 @@ type ManifestStatus struct {
 	Version    string `json:"version"`
 	Channel    string `json:"channel"`
 	BundlePath string `json:"bundle_path"`
+	BinaryPath string `json:"binary_path"`
 }
 
 func LoadManifest(paths macos.Paths) (Manifest, error) {
@@ -62,5 +64,6 @@ func ManifestInfo(paths macos.Paths) (ManifestStatus, error) {
 	status.Version = manifest.Version
 	status.Channel = manifest.Channel
 	status.BundlePath = manifest.BundlePath
+	status.BinaryPath = manifest.BinaryPath
 	return status, nil
 }

@@ -17,6 +17,7 @@ go run ./cmd/atlasctl doctor
 go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl status
 go run ./cmd/atlasctl runtime stage --bundle-path /path/to/Chromium.app --version 123.0.0
+go run ./cmd/atlasctl runtime stage --bundle-path /Applications/Google\\ Chrome.app --version 136.0.7103.114
 go run ./cmd/atlasctl runtime status
 go run ./cmd/atlasctl runtime clear
 go run ./cmd/atlasctl mirror-scan
@@ -47,7 +48,8 @@ go run ./cmd/atlasd --once
 - 当前 Chrome runtime 探测已区分 `system_auto` 与 `managed_auto` 来源；若 `Application Support/AtlasX/runtime/Chromium.app` 下存在可执行 bundle，诊断口径会优先识别为 managed runtime。
 - 当前已提供 managed runtime manifest 骨架；`doctor` 与 `atlasd --once` 会输出 manifest 的 path/present/version/channel/bundle 状态，但这不等于 runtime 已可启动。
 - 当前 `launch-webapp`、`status` 与受管 session state 已输出 `runtime_source`，可直接判断当前命中的是 `system_auto`、`managed_auto` 还是 `config`。
-- 当前已提供 `runtime stage`，可把本地 `Chromium.app` 显式复制到 support root/runtime 并写入 manifest，形成不依赖下载器的 managed runtime 装入链路。
+- 当前已提供 `runtime stage`，可把本地 `Chromium.app` 或兼容的 `Google Chrome.app` 显式复制到 support root/runtime 并写入 manifest，形成不依赖下载器的 managed runtime 装入链路。
+- 当前 managed runtime 检测已优先读取 manifest 中记录的 `binary_path`，不再硬编码为 `Chromium.app/Contents/MacOS/Chromium`。
 - 当前已提供 `runtime status` 和 `runtime clear`，可查看 staged runtime/manifest/binary 状态，并显式清理 support root/runtime 下的本地 managed runtime。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/status` 与 `POST /v1/runtime/stage`，可服务化查询 managed runtime 状态并触发本地 bundle stage。
 - 当前 `atlasd` 已提供 `POST /v1/runtime/clear`，可服务化回退 staged runtime；clear 后 `GET /v1/runtime/status` 会回到 manifest/bundle/binary 全部缺失状态。

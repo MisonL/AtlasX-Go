@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"atlasx/internal/platform/chrome"
 	"atlasx/internal/platform/macos"
 )
 
@@ -38,13 +37,8 @@ func TestStageLocalCopiesBundleAndWritesManifest(t *testing.T) {
 	if manifest.Version != "123.0.0" {
 		t.Fatalf("unexpected manifest version: %s", manifest.Version)
 	}
-
-	detection, err := chrome.DetectWithPaths("", paths)
-	if err != nil {
-		t.Fatalf("detect managed runtime failed: %v", err)
-	}
-	if detection.Source != "managed_auto" {
-		t.Fatalf("unexpected detection source: %s", detection.Source)
+	if manifest.BinaryPath == "" {
+		t.Fatal("expected manifest binary path")
 	}
 }
 
@@ -69,11 +63,39 @@ func TestStageLocalRejectsInvalidBundle(t *testing.T) {
 	}
 }
 
+func TestStageLocalSupportsGoogleChromeBundle(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	sourceBundle := createFakeBundle(t, "Google Chrome.app", "Google Chrome")
+	report, err := StageLocal(paths, StageOptions{
+		BundlePath: sourceBundle,
+		Version:    "123.0.0",
+		Channel:    "local",
+	})
+	if err != nil {
+		t.Fatalf("stage local failed: %v", err)
+	}
+	if filepath.Base(report.BinaryPath) != "Google Chrome" {
+		t.Fatalf("unexpected staged binary: %s", report.BinaryPath)
+	}
+}
+
 func createFakeChromiumBundle(t *testing.T) string {
 	t.Helper()
 
-	bundlePath := filepath.Join(t.TempDir(), "Chromium.app")
-	binaryPath := filepath.Join(bundlePath, "Contents", "MacOS", "Chromium")
+	return createFakeBundle(t, "Chromium.app", "Chromium")
+}
+
+func createFakeBundle(t *testing.T, bundleName string, binaryName string) string {
+	t.Helper()
+
+	bundlePath := filepath.Join(t.TempDir(), bundleName)
+	binaryPath := filepath.Join(bundlePath, "Contents", "MacOS", binaryName)
 	resourcePath := filepath.Join(bundlePath, "Contents", "Info.plist")
 
 	if err := os.MkdirAll(filepath.Dir(binaryPath), 0o755); err != nil {

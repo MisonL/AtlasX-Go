@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/macos"
 )
 
@@ -49,8 +50,9 @@ type candidatePath struct {
 }
 
 func candidatePaths(paths macos.Paths) []candidatePath {
+	managedBinaryPath, _ := managedruntime.DetectManagedBinaryPath(paths)
 	return []candidatePath{
-		{Path: ManagedBinaryPath(paths), Source: "managed_auto"},
+		{Path: managedBinaryPath, Source: "managed_auto"},
 		{Path: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", Source: "system_auto"},
 		{Path: filepath.Join(paths.Home, "Applications", "Google Chrome.app", "Contents", "MacOS", "Google Chrome"), Source: "system_auto"},
 		{Path: "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta", Source: "system_auto"},
@@ -68,6 +70,13 @@ func flattenCandidatePaths(candidates []candidatePath) []string {
 }
 
 func ManagedBinaryPath(paths macos.Paths) string {
+	binaryPath, err := managedruntime.DetectManagedBinaryPath(paths)
+	if err != nil {
+		return ""
+	}
+	if binaryPath != "" {
+		return binaryPath
+	}
 	return filepath.Join(paths.RuntimeRoot, "Chromium.app", "Contents", "MacOS", "Chromium")
 }
 

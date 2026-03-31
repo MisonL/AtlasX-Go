@@ -19,6 +19,7 @@ func TestManifestSaveLoadAndStatus(t *testing.T) {
 		Channel:    "stable",
 		SHA256:     "deadbeef",
 		BundlePath: "/Applications/Chromium.app",
+		BinaryPath: "/Applications/Chromium.app/Contents/MacOS/Chromium",
 	}
 	if err := SaveManifest(paths, manifest); err != nil {
 		t.Fatalf("save manifest failed: %v", err)
@@ -41,6 +42,9 @@ func TestManifestSaveLoadAndStatus(t *testing.T) {
 	}
 	if status.BundlePath != manifest.BundlePath {
 		t.Fatalf("unexpected bundle path: %s", status.BundlePath)
+	}
+	if status.BinaryPath != manifest.BinaryPath {
+		t.Fatalf("unexpected binary path: %s", status.BinaryPath)
 	}
 }
 
