@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"atlasx/internal/launcher"
+	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/chrome"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/profile"
@@ -14,13 +15,14 @@ import (
 )
 
 type Report struct {
-	Paths          macos.Paths
-	Config         settings.Config
-	Chrome         chrome.Detection
-	ChromeStatus   string
-	IsolatedPath   string
-	SharedModeName string
-	Session        launcher.StatusReport
+	Paths           macos.Paths
+	Config          settings.Config
+	Chrome          chrome.Detection
+	ChromeStatus    string
+	RuntimeManifest managedruntime.ManifestStatus
+	IsolatedPath    string
+	SharedModeName  string
+	Session         launcher.StatusReport
 }
 
 func Generate() (Report, error) {
@@ -48,14 +50,20 @@ func Generate() (Report, error) {
 		}
 	}
 
+	manifestStatus, err := managedruntime.ManifestInfo(paths)
+	if err != nil {
+		return Report{}, err
+	}
+
 	return Report{
-		Paths:          paths,
-		Config:         cfg,
-		Chrome:         detection,
-		ChromeStatus:   status,
-		IsolatedPath:   selection.UserDataDir,
-		SharedModeName: profile.ModeShared,
-		Session:        sessionReport(paths),
+		Paths:           paths,
+		Config:          cfg,
+		Chrome:          detection,
+		ChromeStatus:    status,
+		RuntimeManifest: manifestStatus,
+		IsolatedPath:    selection.UserDataDir,
+		SharedModeName:  profile.ModeShared,
+		Session:         sessionReport(paths),
 	}, nil
 }
 
@@ -71,6 +79,11 @@ func (r Report) Render() string {
 		fmt.Sprintf("chrome_status=%s", r.ChromeStatus),
 		fmt.Sprintf("chrome_source=%s", r.Chrome.Source),
 		fmt.Sprintf("chrome_binary=%s", r.Chrome.BinaryPath),
+		fmt.Sprintf("managed_runtime_manifest_path=%s", r.RuntimeManifest.Path),
+		fmt.Sprintf("managed_runtime_manifest_present=%t", r.RuntimeManifest.Present),
+		fmt.Sprintf("managed_runtime_manifest_version=%s", r.RuntimeManifest.Version),
+		fmt.Sprintf("managed_runtime_manifest_channel=%s", r.RuntimeManifest.Channel),
+		fmt.Sprintf("managed_runtime_manifest_bundle=%s", r.RuntimeManifest.BundlePath),
 		fmt.Sprintf("managed_session_present=%t", r.Session.Present),
 		fmt.Sprintf("managed_session_alive=%t", r.Session.Alive),
 		fmt.Sprintf("managed_session_state_file=%s", r.Session.StateFile),

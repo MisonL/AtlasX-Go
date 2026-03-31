@@ -16,27 +16,32 @@ import (
 const DefaultListenAddr = settings.DefaultListenAddr
 
 type Status struct {
-	Ready                 bool   `json:"ready"`
-	ChromeStatus          string `json:"chrome_status"`
-	ChromeSource          string `json:"chrome_source"`
-	SupportRoot           string `json:"support_root"`
-	ConfigFile            string `json:"config_file"`
-	ManagedSessionLive    bool   `json:"managed_session_live"`
-	ManagedSessionCDP     string `json:"managed_session_cdp"`
-	ManagedSessionCDPURL  string `json:"managed_session_cdp_url"`
-	MirrorFile            string `json:"mirror_file"`
-	MirrorPresent         bool   `json:"mirror_present"`
-	MirrorProfileDir      string `json:"mirror_profile_dir"`
-	MirrorHistoryRows     int    `json:"mirror_history_rows"`
-	MirrorDownloadRows    int    `json:"mirror_download_rows"`
-	ChromeImportPresent   bool   `json:"chrome_import_present"`
-	ChromeImportRoot      string `json:"chrome_import_root"`
-	ChromeImportBookmarks bool   `json:"chrome_import_bookmarks"`
-	ChromeImportHistory   bool   `json:"chrome_import_history"`
-	SidebarQAConfigured   bool   `json:"sidebar_qa_configured"`
-	SidebarQAReady        bool   `json:"sidebar_qa_ready"`
-	SidebarQAProvider     string `json:"sidebar_qa_provider"`
-	SidebarQAModel        string `json:"sidebar_qa_model"`
+	Ready                     bool   `json:"ready"`
+	ChromeStatus              string `json:"chrome_status"`
+	ChromeSource              string `json:"chrome_source"`
+	SupportRoot               string `json:"support_root"`
+	ConfigFile                string `json:"config_file"`
+	ManagedSessionLive        bool   `json:"managed_session_live"`
+	ManagedSessionCDP         string `json:"managed_session_cdp"`
+	ManagedSessionCDPURL      string `json:"managed_session_cdp_url"`
+	MirrorFile                string `json:"mirror_file"`
+	MirrorPresent             bool   `json:"mirror_present"`
+	MirrorProfileDir          string `json:"mirror_profile_dir"`
+	MirrorHistoryRows         int    `json:"mirror_history_rows"`
+	MirrorDownloadRows        int    `json:"mirror_download_rows"`
+	ChromeImportPresent       bool   `json:"chrome_import_present"`
+	ChromeImportRoot          string `json:"chrome_import_root"`
+	ChromeImportBookmarks     bool   `json:"chrome_import_bookmarks"`
+	ChromeImportHistory       bool   `json:"chrome_import_history"`
+	RuntimeManifestPath       string `json:"runtime_manifest_path"`
+	RuntimeManifestPresent    bool   `json:"runtime_manifest_present"`
+	RuntimeManifestVersion    string `json:"runtime_manifest_version"`
+	RuntimeManifestChannel    string `json:"runtime_manifest_channel"`
+	RuntimeManifestBundlePath string `json:"runtime_manifest_bundle_path"`
+	SidebarQAConfigured       bool   `json:"sidebar_qa_configured"`
+	SidebarQAReady            bool   `json:"sidebar_qa_ready"`
+	SidebarQAProvider         string `json:"sidebar_qa_provider"`
+	SidebarQAModel            string `json:"sidebar_qa_model"`
 }
 
 func Bootstrap() (Status, error) {
@@ -55,6 +60,7 @@ func Bootstrap() (Status, error) {
 		ManagedSessionCDP:    report.Session.CDP.Status,
 		ManagedSessionCDPURL: report.Session.CDP.VersionEndpoint,
 		MirrorFile:           report.Paths.MirrorFile,
+		RuntimeManifestPath:  report.RuntimeManifest.Path,
 	}
 
 	if snapshot, err := mirror.Load(report.Paths); err == nil {
@@ -74,6 +80,10 @@ func Bootstrap() (Status, error) {
 	} else if !os.IsNotExist(err) {
 		return Status{}, err
 	}
+	status.RuntimeManifestPresent = report.RuntimeManifest.Present
+	status.RuntimeManifestVersion = report.RuntimeManifest.Version
+	status.RuntimeManifestChannel = report.RuntimeManifest.Channel
+	status.RuntimeManifestBundlePath = report.RuntimeManifest.BundlePath
 
 	config, err := settings.NewStore(report.Paths.ConfigFile).Load()
 	if err != nil {
