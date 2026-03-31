@@ -21,6 +21,7 @@
 - support root 下 managed Chromium runtime 的发现骨架与 `chrome_source` 诊断口径
 - managed runtime manifest 的本地读写与状态导出骨架
 - launcher dry-run 与 session status 的 `runtime_source` 可观测性
+- `atlasctl runtime stage` 的本地 managed Chromium 装入链路
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`
