@@ -12,23 +12,21 @@
 - `atlasctl blueprint`
 - `atlasctl doctor`
 - `atlasctl status`
+- `atlasctl runtime stage|status|verify|clear`
+- `atlasctl runtime plan create|status|clear`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`
+- `atlasctl tabs list|open|activate|close|navigate|capture`
 - `atlasctl tabs capture <target-id>`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
-- `atlasd /v1/tabs/context?id=<target-id>`
+- `atlasd /v1/tabs|open|activate|close|navigate|context`
+- `atlasd /v1/runtime/status|stage|verify|clear`
+- `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
 - `atlasd /v1/sidebar/status` 与 `/v1/sidebar/ask` 控制面骨架
-- support root 下 managed Chromium runtime 的发现骨架与 `chrome_source` 诊断口径
-- managed runtime manifest 的本地读写与状态导出骨架
+- support root 下 managed Chromium runtime 的发现、manifest、verify、install plan 状态导出
 - launcher dry-run 与 session status 的 `runtime_source` 可观测性
-- `atlasctl runtime stage` 的本地 managed Chromium 装入链路
-- `runtime stage` 现已支持 Google Chrome.app 这类兼容 bundle，并由 manifest 驱动 binary 解析
-- `atlasctl runtime status|clear` 的 staged runtime 查看与回退链路
-- `atlasd /v1/runtime/status` 与 `/v1/runtime/stage` 的 runtime 服务化入口
-- `atlasd /v1/runtime/clear` 的 runtime 服务化回退入口
-- `/v1/status` 的 runtime bundle/binary 可执行状态口径
 - `atlasctl launch-webapp --dry-run`
 - `atlasctl stop-webapp`
 - `atlasd --once`
 
-项目当前结论与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 为入口。
+当前阶段对齐与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 和 [`docs/reviews/CR-STAGE-ALIGNMENT-2026-04-06.md`](docs/reviews/CR-STAGE-ALIGNMENT-2026-04-06.md) 为入口。
