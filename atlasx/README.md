@@ -97,6 +97,7 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - 当前 `atlasd` 已提供 `POST /v1/runtime/verify`、`POST /v1/runtime/clear` 与 `POST /v1/runtime/install`，可服务化执行 runtime 校验、回退与 install plan 驱动安装。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/plan`、`POST /v1/runtime/plan` 与 `POST /v1/runtime/plan/clear`，可服务化维护 install plan 状态面。
 - 当前 `/v1/status` 已额外导出 `runtime_bundle_present`、`runtime_binary_present`、`runtime_binary_executable`，避免把 manifest present 误判成 runtime ready。
+- 当前受管 session 状态面已增加 stale 检测与 CDP 自愈：无进程的陈旧 session file 会被自动清理；进程仍在但 CDP 长时间未恢复时会显式标记 stale，`/v1/status` 不再把这类会话误报为 live。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。

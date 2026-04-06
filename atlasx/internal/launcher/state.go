@@ -13,9 +13,17 @@ import (
 
 var ErrStateNotFound = errors.New("managed session state not found")
 
+var (
+	findProcessesByUserDataDir = macos.FindProcessesByUserDataDir
+	probeManagedCDP            = ProbeCDP
+	nowTime                    = time.Now
+)
+
 const (
 	sessionPollInterval = 100 * time.Millisecond
 	forceStopWait       = 2 * time.Second
+	cdpHealRetries      = 3
+	sessionStaleAfter   = 5 * time.Second
 )
 
 type State struct {
@@ -30,12 +38,15 @@ type State struct {
 }
 
 type StatusReport struct {
-	Present    bool
-	StateFile  string
-	State      State
-	Alive      bool
-	ProcessIDs []int
-	CDP        CDPReport
+	Present      bool
+	StateFile    string
+	State        State
+	Alive        bool
+	Ready        bool
+	Stale        bool
+	StateCleaned bool
+	ProcessIDs   []int
+	CDP          CDPReport
 }
 
 func SaveState(paths macos.Paths, state State) error {
@@ -95,7 +106,7 @@ func Status(paths macos.Paths) (StatusReport, error) {
 		return report, nil
 	}
 
-	processes, err := macos.FindProcessesByUserDataDir(state.UserDataDir)
+	processes, err := findProcessesByUserDataDir(state.UserDataDir)
 	if err != nil {
 		return StatusReport{}, err
 	}
@@ -106,13 +117,21 @@ func Status(paths macos.Paths) (StatusReport, error) {
 	}
 	report.Alive = len(report.ProcessIDs) > 0
 	if report.Alive {
-		report.CDP = ProbeCDP(state.UserDataDir)
+		report.CDP = healManagedCDP(state.UserDataDir)
+		report.Ready = report.CDP.Status == cdpStatusOK
+		report.Stale = !report.Ready && shouldMarkSessionStale(state)
 	} else {
 		report.CDP = CDPReport{
 			Status:         cdpStatusSessionDead,
 			ActivePortFile: filepath.Join(state.UserDataDir, devToolsActivePortFile),
 			Host:           defaultDevToolsHost,
 		}
+		report.Stale = true
+		if err := ClearState(paths); err != nil {
+			return StatusReport{}, err
+		}
+		report.StateCleaned = true
+		report.Present = false
 	}
 	return report, nil
 }
@@ -175,17 +194,22 @@ func Stop(paths macos.Paths, wait time.Duration) (StatusReport, error) {
 func (s StatusReport) Render() string {
 	if !s.Present {
 		return fmt.Sprintf(
-			"session=absent\nstate_file=%s\ncdp_status=%s\n",
+			"session=absent\nstate_file=%s\nstale=%t\nstate_cleaned=%t\ncdp_status=%s\n",
 			s.StateFile,
+			s.Stale,
+			s.StateCleaned,
 			s.CDP.Status,
 		)
 	}
 
 	return fmt.Sprintf(
-		"session=present\nstate_file=%s\nmanaged=%t\nalive=%t\nmode=%s\nruntime_source=%s\nuser_data_dir=%s\nurl=%s\npids=%v\ncdp_status=%s\ncdp_version_endpoint=%s\ncdp_browser_ws=%s\ncdp_active_port_file=%s\n",
+		"session=present\nstate_file=%s\nmanaged=%t\nalive=%t\nready=%t\nstale=%t\nstate_cleaned=%t\nmode=%s\nruntime_source=%s\nuser_data_dir=%s\nurl=%s\npids=%v\ncdp_status=%s\ncdp_version_endpoint=%s\ncdp_browser_ws=%s\ncdp_active_port_file=%s\n",
 		s.StateFile,
 		s.State.Managed,
 		s.Alive,
+		s.Ready,
+		s.Stale,
+		s.StateCleaned,
 		s.State.Mode,
 		s.State.RuntimeSource,
 		s.State.UserDataDir,
@@ -211,4 +235,24 @@ func waitForSessionExit(paths macos.Paths, timeout time.Duration) (StatusReport,
 		time.Sleep(sessionPollInterval)
 	}
 	return Status(paths)
+}
+
+func healManagedCDP(userDataDir string) CDPReport {
+	report := probeManagedCDP(userDataDir)
+	for attempt := 1; attempt < cdpHealRetries && report.Status != cdpStatusOK; attempt++ {
+		time.Sleep(cdpReadyPollInterval)
+		report = probeManagedCDP(userDataDir)
+	}
+	return report
+}
+
+func shouldMarkSessionStale(state State) bool {
+	if state.StartedAt == "" {
+		return true
+	}
+	startedAt, err := time.Parse(time.RFC3339, state.StartedAt)
+	if err != nil {
+		return true
+	}
+	return nowTime().Sub(startedAt) >= sessionStaleAfter
 }

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/profile"
@@ -63,6 +64,132 @@ func TestStatusAbsentWithoutStateFile(t *testing.T) {
 	}
 	if report.Present {
 		t.Fatal("expected absent session")
+	}
+}
+
+func TestStatusClearsStaleStateWhenProcessIsGone(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := SaveState(paths, State{
+		Mode:        profile.ModeIsolated,
+		Managed:     true,
+		UserDataDir: filepath.Join(t.TempDir(), "profile"),
+		StartedAt:   time.Now().Add(-10 * time.Second).UTC().Format(time.RFC3339),
+	}); err != nil {
+		t.Fatalf("save state failed: %v", err)
+	}
+
+	previousFind := findProcessesByUserDataDir
+	findProcessesByUserDataDir = func(string) ([]macos.ProcessInfo, error) {
+		return nil, nil
+	}
+	t.Cleanup(func() {
+		findProcessesByUserDataDir = previousFind
+	})
+
+	report, err := Status(paths)
+	if err != nil {
+		t.Fatalf("status failed: %v", err)
+	}
+	if report.Present {
+		t.Fatalf("expected stale state to be cleaned: %+v", report)
+	}
+	if !report.Stale || !report.StateCleaned {
+		t.Fatalf("expected stale cleaned report: %+v", report)
+	}
+	if _, err := os.Stat(paths.SessionFile); !os.IsNotExist(err) {
+		t.Fatalf("expected session file removed, got: %v", err)
+	}
+}
+
+func TestStatusMarksOldManagedSessionStaleWhenCDPIsDown(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := SaveState(paths, State{
+		Mode:        profile.ModeIsolated,
+		Managed:     true,
+		UserDataDir: filepath.Join(t.TempDir(), "profile"),
+		StartedAt:   time.Now().Add(-10 * time.Second).UTC().Format(time.RFC3339),
+	}); err != nil {
+		t.Fatalf("save state failed: %v", err)
+	}
+
+	previousFind := findProcessesByUserDataDir
+	previousProbe := probeManagedCDP
+	findProcessesByUserDataDir = func(string) ([]macos.ProcessInfo, error) {
+		return []macos.ProcessInfo{{PID: 123}}, nil
+	}
+	probeManagedCDP = func(string) CDPReport {
+		return CDPReport{Status: cdpStatusVersionDown, LastError: "timeout"}
+	}
+	t.Cleanup(func() {
+		findProcessesByUserDataDir = previousFind
+		probeManagedCDP = previousProbe
+	})
+
+	report, err := Status(paths)
+	if err != nil {
+		t.Fatalf("status failed: %v", err)
+	}
+	if !report.Alive || report.Ready || !report.Stale {
+		t.Fatalf("unexpected stale session report: %+v", report)
+	}
+}
+
+func TestStatusHealsCDPWhenRetrySucceeds(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := SaveState(paths, State{
+		Mode:        profile.ModeIsolated,
+		Managed:     true,
+		UserDataDir: filepath.Join(t.TempDir(), "profile"),
+		StartedAt:   time.Now().UTC().Format(time.RFC3339),
+	}); err != nil {
+		t.Fatalf("save state failed: %v", err)
+	}
+
+	previousFind := findProcessesByUserDataDir
+	previousProbe := probeManagedCDP
+	attempts := 0
+	findProcessesByUserDataDir = func(string) ([]macos.ProcessInfo, error) {
+		return []macos.ProcessInfo{{PID: 123}}, nil
+	}
+	probeManagedCDP = func(string) CDPReport {
+		attempts++
+		if attempts == 1 {
+			return CDPReport{Status: cdpStatusVersionDown, LastError: "warming"}
+		}
+		return CDPReport{Status: cdpStatusOK, VersionEndpoint: "http://127.0.0.1/json/version"}
+	}
+	t.Cleanup(func() {
+		findProcessesByUserDataDir = previousFind
+		probeManagedCDP = previousProbe
+	})
+
+	report, err := Status(paths)
+	if err != nil {
+		t.Fatalf("status failed: %v", err)
+	}
+	if !report.Ready || report.Stale || report.CDP.Status != cdpStatusOK {
+		t.Fatalf("expected healed cdp report: %+v", report)
+	}
+	if attempts < 2 {
+		t.Fatalf("expected cdp heal retry, attempts=%d", attempts)
 	}
 }
 

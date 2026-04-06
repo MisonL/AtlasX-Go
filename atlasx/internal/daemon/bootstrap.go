@@ -17,37 +17,39 @@ import (
 const DefaultListenAddr = settings.DefaultListenAddr
 
 type Status struct {
-	Ready                     bool   `json:"ready"`
-	ChromeStatus              string `json:"chrome_status"`
-	ChromeSource              string `json:"chrome_source"`
-	SupportRoot               string `json:"support_root"`
-	ConfigFile                string `json:"config_file"`
-	ManagedSessionLive        bool   `json:"managed_session_live"`
-	ManagedSessionCDP         string `json:"managed_session_cdp"`
-	ManagedSessionCDPURL      string `json:"managed_session_cdp_url"`
-	MirrorFile                string `json:"mirror_file"`
-	MirrorPresent             bool   `json:"mirror_present"`
-	MirrorProfileDir          string `json:"mirror_profile_dir"`
-	MirrorHistoryRows         int    `json:"mirror_history_rows"`
-	MirrorDownloadRows        int    `json:"mirror_download_rows"`
-	ChromeImportPresent       bool   `json:"chrome_import_present"`
-	ChromeImportRoot          string `json:"chrome_import_root"`
-	ChromeImportBookmarks     bool   `json:"chrome_import_bookmarks"`
-	ChromeImportHistory       bool   `json:"chrome_import_history"`
-	RuntimeManifestPath       string `json:"runtime_manifest_path"`
-	RuntimeManifestPresent    bool   `json:"runtime_manifest_present"`
-	RuntimeManifestVersion    string `json:"runtime_manifest_version"`
-	RuntimeManifestChannel    string `json:"runtime_manifest_channel"`
-	RuntimeManifestSHA256     string `json:"runtime_manifest_sha256"`
-	RuntimeManifestBundlePath string `json:"runtime_manifest_bundle_path"`
-	RuntimeManifestBinaryPath string `json:"runtime_manifest_binary_path"`
-	RuntimeBundlePresent      bool   `json:"runtime_bundle_present"`
-	RuntimeBinaryPresent      bool   `json:"runtime_binary_present"`
-	RuntimeBinaryExecutable   bool   `json:"runtime_binary_executable"`
-	SidebarQAConfigured       bool   `json:"sidebar_qa_configured"`
-	SidebarQAReady            bool   `json:"sidebar_qa_ready"`
-	SidebarQAProvider         string `json:"sidebar_qa_provider"`
-	SidebarQAModel            string `json:"sidebar_qa_model"`
+	Ready                      bool   `json:"ready"`
+	ChromeStatus               string `json:"chrome_status"`
+	ChromeSource               string `json:"chrome_source"`
+	SupportRoot                string `json:"support_root"`
+	ConfigFile                 string `json:"config_file"`
+	ManagedSessionLive         bool   `json:"managed_session_live"`
+	ManagedSessionStale        bool   `json:"managed_session_stale"`
+	ManagedSessionStateCleaned bool   `json:"managed_session_state_cleaned"`
+	ManagedSessionCDP          string `json:"managed_session_cdp"`
+	ManagedSessionCDPURL       string `json:"managed_session_cdp_url"`
+	MirrorFile                 string `json:"mirror_file"`
+	MirrorPresent              bool   `json:"mirror_present"`
+	MirrorProfileDir           string `json:"mirror_profile_dir"`
+	MirrorHistoryRows          int    `json:"mirror_history_rows"`
+	MirrorDownloadRows         int    `json:"mirror_download_rows"`
+	ChromeImportPresent        bool   `json:"chrome_import_present"`
+	ChromeImportRoot           string `json:"chrome_import_root"`
+	ChromeImportBookmarks      bool   `json:"chrome_import_bookmarks"`
+	ChromeImportHistory        bool   `json:"chrome_import_history"`
+	RuntimeManifestPath        string `json:"runtime_manifest_path"`
+	RuntimeManifestPresent     bool   `json:"runtime_manifest_present"`
+	RuntimeManifestVersion     string `json:"runtime_manifest_version"`
+	RuntimeManifestChannel     string `json:"runtime_manifest_channel"`
+	RuntimeManifestSHA256      string `json:"runtime_manifest_sha256"`
+	RuntimeManifestBundlePath  string `json:"runtime_manifest_bundle_path"`
+	RuntimeManifestBinaryPath  string `json:"runtime_manifest_binary_path"`
+	RuntimeBundlePresent       bool   `json:"runtime_bundle_present"`
+	RuntimeBinaryPresent       bool   `json:"runtime_binary_present"`
+	RuntimeBinaryExecutable    bool   `json:"runtime_binary_executable"`
+	SidebarQAConfigured        bool   `json:"sidebar_qa_configured"`
+	SidebarQAReady             bool   `json:"sidebar_qa_ready"`
+	SidebarQAProvider          string `json:"sidebar_qa_provider"`
+	SidebarQAModel             string `json:"sidebar_qa_model"`
 }
 
 func Bootstrap() (Status, error) {
@@ -57,16 +59,18 @@ func Bootstrap() (Status, error) {
 	}
 
 	status := Status{
-		Ready:                report.ChromeStatus == "ok",
-		ChromeStatus:         report.ChromeStatus,
-		ChromeSource:         report.Chrome.Source,
-		SupportRoot:          report.Paths.SupportRoot,
-		ConfigFile:           report.Paths.ConfigFile,
-		ManagedSessionLive:   report.Session.Alive,
-		ManagedSessionCDP:    report.Session.CDP.Status,
-		ManagedSessionCDPURL: report.Session.CDP.VersionEndpoint,
-		MirrorFile:           report.Paths.MirrorFile,
-		RuntimeManifestPath:  report.RuntimeManifest.Path,
+		Ready:                      report.ChromeStatus == "ok",
+		ChromeStatus:               report.ChromeStatus,
+		ChromeSource:               report.Chrome.Source,
+		SupportRoot:                report.Paths.SupportRoot,
+		ConfigFile:                 report.Paths.ConfigFile,
+		ManagedSessionLive:         report.Session.Ready,
+		ManagedSessionStale:        report.Session.Stale,
+		ManagedSessionStateCleaned: report.Session.StateCleaned,
+		ManagedSessionCDP:          report.Session.CDP.Status,
+		ManagedSessionCDPURL:       report.Session.CDP.VersionEndpoint,
+		MirrorFile:                 report.Paths.MirrorFile,
+		RuntimeManifestPath:        report.RuntimeManifest.Path,
 	}
 
 	if snapshot, err := mirror.Load(report.Paths); err == nil {
