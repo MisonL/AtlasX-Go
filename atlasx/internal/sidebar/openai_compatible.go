@@ -2,10 +2,14 @@ package sidebar
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -13,7 +17,9 @@ import (
 	"atlasx/internal/tabs"
 )
 
-const providerRequestTimeout = 10 * time.Second
+const providerRequestTimeout = 2 * time.Second
+const providerRetryAttempts = 1
+const providerTokenBudget = 1200
 
 type chatCompletionRequest struct {
 	Model    string                  `json:"model"`
@@ -53,6 +59,11 @@ func askOpenRouter(provider settings.SidebarProviderConfig, apiKey string, quest
 }
 
 func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, extraHeaders map[string]string) (string, string, error) {
+	prompt := buildPrompt(question, context)
+	if estimatePromptTokens(prompt) > providerTokenBudget {
+		return "", "", ErrTokenBudgetExceeded
+	}
+
 	payload := chatCompletionRequest{
 		Model: provider.Model,
 		Messages: []chatCompletionMessage{
@@ -62,7 +73,7 @@ func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, 
 			},
 			{
 				Role:    "user",
-				Content: buildPrompt(question, context),
+				Content: prompt,
 			},
 		},
 	}
@@ -72,47 +83,42 @@ func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, 
 		return "", "", err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, strings.TrimRight(provider.BaseURL, "/")+"/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return "", "", err
-	}
-	request.Header.Set("Authorization", "Bearer "+apiKey)
-	request.Header.Set("Content-Type", "application/json")
-	for key, value := range extraHeaders {
-		request.Header.Set(key, value)
-	}
-
+	endpoint := strings.TrimRight(provider.BaseURL, "/") + "/chat/completions"
 	client := http.Client{Timeout: providerRequestTimeout}
-	response, err := client.Do(request)
-	if err != nil {
-		return "", "", err
-	}
-	defer response.Body.Close()
-
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		return "", "", err
-	}
-
-	var decoded chatCompletionResponse
-	if err := json.Unmarshal(responseBody, &decoded); err != nil {
-		return "", "", fmt.Errorf("decode provider response: %w", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		if decoded.Error != nil && decoded.Error.Message != "" {
-			return "", "", fmt.Errorf("provider status %d: %s", response.StatusCode, decoded.Error.Message)
+	var lastErr error
+	for attempt := 0; attempt <= providerRetryAttempts; attempt++ {
+		request, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
+		if err != nil {
+			return "", "", err
 		}
-		return "", "", fmt.Errorf("provider status %d", response.StatusCode)
-	}
-	if len(decoded.Choices) == 0 || strings.TrimSpace(decoded.Choices[0].Message.Content) == "" {
-		return "", "", fmt.Errorf("provider returned no answer")
-	}
+		request.Header.Set("Authorization", "Bearer "+apiKey)
+		request.Header.Set("Content-Type", "application/json")
+		for key, value := range extraHeaders {
+			request.Header.Set(key, value)
+		}
 
-	model := decoded.Model
-	if model == "" {
-		model = provider.Model
+		response, err := client.Do(request)
+		if err != nil {
+			lastErr = err
+			if !retryableProviderError(err) || attempt == providerRetryAttempts {
+				break
+			}
+			continue
+		}
+
+		answer, model, retryable, err := decodeProviderResponse(response, provider.Model)
+		if err == nil {
+			return answer, model, nil
+		}
+		lastErr = err
+		if !retryable || attempt == providerRetryAttempts {
+			break
+		}
 	}
-	return decoded.Choices[0].Message.Content, model, nil
+	if lastErr == nil {
+		lastErr = errors.New("provider returned no answer")
+	}
+	return "", "", lastErr
 }
 
 func buildPrompt(question string, context tabs.PageContext) string {
@@ -134,4 +140,63 @@ func buildContextSummary(context tabs.PageContext) string {
 		context.TextLimit,
 		context.TextTruncated,
 	)
+}
+
+func decodeProviderResponse(response *http.Response, fallbackModel string) (string, string, bool, error) {
+	defer response.Body.Close()
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", "", false, err
+	}
+
+	var decoded chatCompletionResponse
+	if err := json.Unmarshal(responseBody, &decoded); err != nil {
+		return "", "", false, fmt.Errorf("decode provider response: %w", err)
+	}
+	if response.StatusCode != http.StatusOK {
+		if decoded.Error != nil && decoded.Error.Message != "" {
+			return "", "", response.StatusCode >= http.StatusInternalServerError, fmt.Errorf("provider status %d: %s", response.StatusCode, decoded.Error.Message)
+		}
+		return "", "", response.StatusCode >= http.StatusInternalServerError, fmt.Errorf("provider status %d", response.StatusCode)
+	}
+	if len(decoded.Choices) == 0 || strings.TrimSpace(decoded.Choices[0].Message.Content) == "" {
+		return "", "", false, fmt.Errorf("provider returned no answer")
+	}
+
+	model := decoded.Model
+	if model == "" {
+		model = fallbackModel
+	}
+	return decoded.Choices[0].Message.Content, model, false, nil
+}
+
+func estimatePromptTokens(prompt string) int {
+	if prompt == "" {
+		return 0
+	}
+	return (len([]rune(prompt)) + 3) / 4
+}
+
+func retryableProviderError(err error) bool {
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return netErr.Timeout()
+	}
+	if errors.Is(err, context.DeadlineExceeded) || os.IsTimeout(err) {
+		return true
+	}
+	return false
+}
+
+func defaultProviderTimeoutMS() int {
+	return int(providerRequestTimeout / time.Millisecond)
+}
+
+func defaultProviderRetryAttempts() int {
+	return providerRetryAttempts
+}
+
+func defaultProviderTokenBudget() int {
+	return providerTokenBudget
 }

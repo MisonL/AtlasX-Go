@@ -64,6 +64,12 @@ type Status struct {
 	SidebarQAProvider          string                   `json:"sidebar_qa_provider"`
 	SidebarQAModel             string                   `json:"sidebar_qa_model"`
 	SidebarQAProviders         []sidebar.ProviderStatus `json:"sidebar_qa_providers"`
+	SidebarQATimeoutMS         int                      `json:"sidebar_qa_timeout_ms"`
+	SidebarQARetryAttempts     int                      `json:"sidebar_qa_retry_attempts"`
+	SidebarQATokenBudget       int                      `json:"sidebar_qa_token_budget"`
+	SidebarQALastTraceID       string                   `json:"sidebar_qa_last_trace_id"`
+	SidebarQALastError         string                   `json:"sidebar_qa_last_error"`
+	SidebarQALastErrorAt       string                   `json:"sidebar_qa_last_error_at"`
 }
 
 func Bootstrap() (Status, error) {
@@ -146,13 +152,22 @@ func Bootstrap() (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
-	sidebarStatus := sidebar.FromSettings(config).Status()
+	sidebarStatus, err := sidebar.FromSettings(config).StatusWithRuntime(report.Paths)
+	if err != nil {
+		return Status{}, err
+	}
 	status.SidebarQAConfigured = sidebarStatus.Configured
 	status.SidebarQAReady = sidebarStatus.Ready
 	status.SidebarQADefaultProvider = sidebarStatus.DefaultProvider
 	status.SidebarQAProvider = sidebarStatus.Provider
 	status.SidebarQAModel = sidebarStatus.Model
 	status.SidebarQAProviders = sidebarStatus.Providers
+	status.SidebarQATimeoutMS = sidebarStatus.TimeoutMS
+	status.SidebarQARetryAttempts = sidebarStatus.RetryAttempts
+	status.SidebarQATokenBudget = sidebarStatus.TokenBudget
+	status.SidebarQALastTraceID = sidebarStatus.LastTraceID
+	status.SidebarQALastError = sidebarStatus.LastError
+	status.SidebarQALastErrorAt = sidebarStatus.LastErrorAt
 
 	return status, nil
 }

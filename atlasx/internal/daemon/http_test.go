@@ -511,6 +511,9 @@ func TestSidebarAskEndpointReturnsStructuredAnswer(t *testing.T) {
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"context_summary":"title=\"Atlas\"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"trace_id":"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
 }
 
 func TestSidebarAskEndpointAllowsProviderOverride(t *testing.T) {
@@ -709,6 +712,74 @@ func TestSidebarAskEndpointSurfacesProviderFailure(t *testing.T) {
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`upstream failed`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"trace_id":"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestSidebarStatusEndpointIncludesRecentErrorState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte(`{"error":{"message":"upstream failed"}}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:    "tab-1",
+			Title: "Atlas",
+			URL:   "https://chatgpt.com/atlas",
+			Text:  "Atlas context",
+		},
+	})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+	NewMux(Status{}).ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadGateway {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	statusRequest := httptest.NewRequest(http.MethodGet, "/v1/sidebar/status", nil)
+	statusRecorder := httptest.NewRecorder()
+	NewMux(Status{}).ServeHTTP(statusRecorder, statusRequest)
+	if statusRecorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", statusRecorder.Code, statusRecorder.Body.String())
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(statusRecorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+	if payload["timeout_ms"].(float64) <= 0 || payload["token_budget"].(float64) <= 0 {
+		t.Fatalf("unexpected payload: %+v", payload)
+	}
+	if payload["last_error"] == "" || payload["last_trace_id"] == "" {
+		t.Fatalf("unexpected payload: %+v", payload)
 	}
 }
 

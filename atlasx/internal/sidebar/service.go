@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
 )
@@ -13,6 +14,7 @@ var ErrNotConfigured = errors.New("sidebar qa provider is not configured")
 var ErrBackendNotImplemented = errors.New("sidebar qa backend is not implemented")
 var ErrProviderFailed = errors.New("sidebar qa provider request failed")
 var ErrProviderNotFound = errors.New("sidebar qa provider id is not configured")
+var ErrTokenBudgetExceeded = errors.New("sidebar qa token budget exceeded")
 
 type Config struct {
 	DefaultProvider string
@@ -36,6 +38,12 @@ type Status struct {
 	BaseURL         string           `json:"base_url"`
 	APIKeyEnv       string           `json:"api_key_env"`
 	Providers       []ProviderStatus `json:"providers"`
+	TimeoutMS       int              `json:"timeout_ms"`
+	RetryAttempts   int              `json:"retry_attempts"`
+	TokenBudget     int              `json:"token_budget"`
+	LastTraceID     string           `json:"last_trace_id"`
+	LastError       string           `json:"last_error"`
+	LastErrorAt     string           `json:"last_error_at"`
 	Reason          string           `json:"reason"`
 }
 
@@ -50,6 +58,7 @@ type AskResponse struct {
 	Provider       string `json:"provider"`
 	Model          string `json:"model"`
 	ContextSummary string `json:"context_summary"`
+	TraceID        string `json:"trace_id"`
 }
 
 func FromSettings(cfg settings.Config) Config {
@@ -74,6 +83,9 @@ func (c Config) Status() Status {
 	status := Status{
 		DefaultProvider: c.resolvedDefaultProviderID(),
 		Providers:       providerStatuses(c.Providers),
+		TimeoutMS:       defaultProviderTimeoutMS(),
+		RetryAttempts:   defaultProviderRetryAttempts(),
+		TokenBudget:     defaultProviderTokenBudget(),
 	}
 	if len(c.Providers) == 0 {
 		status.Reason = ErrNotConfigured.Error()
@@ -132,6 +144,9 @@ func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, 
 	apiKey := os.Getenv(selected.APIKeyEnv)
 	answer, model, err := c.askProvider(selected, apiKey, request.Question, context)
 	if err != nil {
+		if errors.Is(err, ErrTokenBudgetExceeded) {
+			return AskResponse{}, err
+		}
 		return AskResponse{}, fmt.Errorf("%w: %s", ErrProviderFailed, err)
 	}
 	return AskResponse{
@@ -238,4 +253,19 @@ func (c Config) askProvider(provider settings.SidebarProviderConfig, apiKey stri
 	default:
 		return "", "", ErrBackendNotImplemented
 	}
+}
+
+func (c Config) StatusWithRuntime(paths macos.Paths) (Status, error) {
+	status := c.Status()
+	runtimeState, err := LoadRuntimeState(paths)
+	if err != nil {
+		return Status{}, err
+	}
+	status.TimeoutMS = runtimeState.TimeoutMS
+	status.RetryAttempts = runtimeState.RetryAttempts
+	status.TokenBudget = runtimeState.TokenBudget
+	status.LastTraceID = runtimeState.LastTraceID
+	status.LastError = runtimeState.LastError
+	status.LastErrorAt = runtimeState.LastErrorAt
+	return status, nil
 }

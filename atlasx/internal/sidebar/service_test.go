@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
@@ -301,5 +302,72 @@ func TestAskReturnsProviderFailure(t *testing.T) {
 	})
 	if !errors.Is(err, ErrProviderFailed) {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAskRejectsTokenBudgetOverflow(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	config := FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   "https://api.openai.com/v1",
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	})
+	_, err := config.Ask(AskRequest{
+		TabID:    "tab-1",
+		Question: "summarize this page",
+	}, tabs.PageContext{
+		ID:   "tab-1",
+		Text: strings.Repeat("A", providerTokenBudget*10),
+	})
+	if !errors.Is(err, ErrTokenBudgetExceeded) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAskRetriesTimeoutOnceAndReturnsProviderFailure(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		time.Sleep(providerRequestTimeout + 200*time.Millisecond)
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"late answer"}}]}`))
+	}))
+	defer server.Close()
+
+	config := FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	})
+	_, err := config.Ask(AskRequest{
+		TabID:    "tab-1",
+		Question: "summarize this page",
+	}, tabs.PageContext{
+		ID:    "tab-1",
+		Title: "Atlas",
+		URL:   "https://chatgpt.com/atlas",
+		Text:  "Atlas context",
+	})
+	if !errors.Is(err, ErrProviderFailed) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if attempts != providerRetryAttempts+1 {
+		t.Fatalf("unexpected attempt count: %d", attempts)
 	}
 }

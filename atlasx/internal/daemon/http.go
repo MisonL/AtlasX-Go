@@ -55,13 +55,24 @@ func serveSidebarStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config, err := loadSidebarConfig()
+	paths, err := discoverPaths()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, config.Status())
+	config, err := loadSidebarConfig(paths)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	status, err := config.StatusWithRuntime(paths)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, status)
 }
 
 func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
@@ -76,61 +87,73 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config, err := loadSidebarConfig()
+	traceID := sidebar.NewTraceID()
+
+	paths, err := discoverPaths()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeSidebarAskError(w, http.StatusInternalServerError, traceID, err)
+		return
+	}
+
+	config, err := loadSidebarConfig(paths)
+	if err != nil {
+		writeSidebarAskError(w, http.StatusInternalServerError, traceID, err)
 		return
 	}
 
 	if err := config.Validate(request.ProviderID); err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
 		switch {
 		case errors.Is(err, sidebar.ErrNotConfigured):
-			writeError(w, http.StatusServiceUnavailable, err)
+			writeSidebarAskError(w, http.StatusServiceUnavailable, traceID, err)
 		case errors.Is(err, sidebar.ErrBackendNotImplemented):
-			writeError(w, http.StatusNotImplemented, err)
+			writeSidebarAskError(w, http.StatusNotImplemented, traceID, err)
 		case errors.Is(err, sidebar.ErrProviderNotFound):
-			writeError(w, http.StatusBadRequest, err)
+			writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
+		case errors.Is(err, sidebar.ErrTokenBudgetExceeded):
+			writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
 		default:
-			writeError(w, http.StatusBadRequest, err)
+			writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
 		}
-		return
-	}
-
-	paths, err := discoverPaths()
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		writeSidebarAskError(w, http.StatusConflict, traceID, err)
 		return
 	}
 
 	context, err := client.Capture(request.TabID)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, err)
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		writeSidebarAskError(w, http.StatusBadGateway, traceID, err)
 		return
 	}
 
 	response, err := config.Ask(request, context)
 	if err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
 		switch {
 		case errors.Is(err, sidebar.ErrNotConfigured):
-			writeError(w, http.StatusServiceUnavailable, err)
+			writeSidebarAskError(w, http.StatusServiceUnavailable, traceID, err)
 		case errors.Is(err, sidebar.ErrBackendNotImplemented):
-			writeError(w, http.StatusNotImplemented, err)
+			writeSidebarAskError(w, http.StatusNotImplemented, traceID, err)
 		case errors.Is(err, sidebar.ErrProviderNotFound):
-			writeError(w, http.StatusBadRequest, err)
+			writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
+		case errors.Is(err, sidebar.ErrTokenBudgetExceeded):
+			writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
 		case errors.Is(err, sidebar.ErrProviderFailed):
-			writeError(w, http.StatusBadGateway, err)
+			writeSidebarAskError(w, http.StatusBadGateway, traceID, err)
 		default:
-			writeError(w, http.StatusBadRequest, err)
+			writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
 		}
 		return
 	}
 
+	response.TraceID = traceID
+	_ = sidebar.SaveRuntimeResult(paths, traceID, nil)
 	writeJSON(w, http.StatusOK, response)
 }
 
@@ -373,16 +396,19 @@ func serveChromeImport(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, report)
 }
 
-func loadSidebarConfig() (sidebar.Config, error) {
-	paths, err := discoverPaths()
-	if err != nil {
-		return sidebar.Config{}, err
-	}
+func loadSidebarConfig(paths macos.Paths) (sidebar.Config, error) {
 	config, err := settings.NewStore(paths.ConfigFile).Load()
 	if err != nil {
 		return sidebar.Config{}, err
 	}
 	return sidebar.FromSettings(config), nil
+}
+
+func writeSidebarAskError(w http.ResponseWriter, code int, traceID string, err error) {
+	writeJSON(w, code, map[string]string{
+		"error":    err.Error(),
+		"trace_id": traceID,
+	})
 }
 
 func serveSafariImport(w http.ResponseWriter, r *http.Request) {

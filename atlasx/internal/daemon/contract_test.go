@@ -43,6 +43,9 @@ func TestStatusEndpointContract(t *testing.T) {
 		"sidebar_qa_configured",
 		"sidebar_qa_default_provider",
 		"sidebar_qa_providers",
+		"sidebar_qa_timeout_ms",
+		"sidebar_qa_last_error",
+		"sidebar_qa_last_trace_id",
 	)
 }
 
@@ -110,6 +113,12 @@ func TestSidebarStatusEndpointContract(t *testing.T) {
 		"model",
 		"api_key_env",
 		"providers",
+		"timeout_ms",
+		"retry_attempts",
+		"token_budget",
+		"last_trace_id",
+		"last_error",
+		"last_error_at",
 		"reason",
 	)
 }
@@ -161,7 +170,7 @@ func TestSidebarAskEndpointContract(t *testing.T) {
 	}
 
 	payload := decodeObjectResponse(t, recorder)
-	assertMapKeys(t, payload, "answer", "provider", "model", "context_summary")
+	assertMapKeys(t, payload, "answer", "provider", "model", "context_summary", "trace_id")
 }
 
 func TestTabContextEndpointContract(t *testing.T) {
