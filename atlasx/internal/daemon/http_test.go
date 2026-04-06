@@ -375,6 +375,59 @@ func TestSidebarStatusEndpoint(t *testing.T) {
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"configured":false`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"providers":[]`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestSidebarStatusEndpointIncludesProviderRegistry(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   "https://api.openai.com/v1",
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+			{
+				ID:        "backup",
+				Provider:  "openrouter",
+				Model:     "openai/gpt-5",
+				BaseURL:   "https://openrouter.ai/api/v1",
+				APIKeyEnv: "OPENROUTER_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{})
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/sidebar/status", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"default_provider":"primary"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"providers":[`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"api_key_env":"OPENAI_API_KEY"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
 }
 
 func TestSidebarAskEndpointRejectsUnconfiguredBackend(t *testing.T) {

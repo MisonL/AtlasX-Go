@@ -40,6 +40,8 @@ func TestStatusEndpointContract(t *testing.T) {
 		"runtime_manifest_present",
 		"runtime_bundle_present",
 		"sidebar_qa_configured",
+		"sidebar_qa_default_provider",
+		"sidebar_qa_providers",
 	)
 }
 
@@ -102,8 +104,11 @@ func TestSidebarStatusEndpointContract(t *testing.T) {
 	assertMapKeys(t, payload,
 		"configured",
 		"ready",
+		"default_provider",
 		"provider",
 		"model",
+		"api_key_env",
+		"providers",
 		"reason",
 	)
 }

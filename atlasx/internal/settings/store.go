@@ -14,13 +14,23 @@ const (
 )
 
 type Config struct {
-	ChromeBinary    string `json:"chrome_binary"`
-	DefaultProfile  string `json:"default_profile"`
-	ListenAddr      string `json:"listen_addr"`
-	WebAppURL       string `json:"web_app_url"`
-	SidebarProvider string `json:"sidebar_provider"`
-	SidebarModel    string `json:"sidebar_model"`
-	SidebarBaseURL  string `json:"sidebar_base_url"`
+	ChromeBinary           string                  `json:"chrome_binary"`
+	DefaultProfile         string                  `json:"default_profile"`
+	ListenAddr             string                  `json:"listen_addr"`
+	WebAppURL              string                  `json:"web_app_url"`
+	SidebarProvider        string                  `json:"sidebar_provider"`
+	SidebarModel           string                  `json:"sidebar_model"`
+	SidebarBaseURL         string                  `json:"sidebar_base_url"`
+	SidebarDefaultProvider string                  `json:"sidebar_default_provider"`
+	SidebarProviders       []SidebarProviderConfig `json:"sidebar_providers"`
+}
+
+type SidebarProviderConfig struct {
+	ID        string `json:"id"`
+	Provider  string `json:"provider"`
+	Model     string `json:"model"`
+	BaseURL   string `json:"base_url"`
+	APIKeyEnv string `json:"api_key_env"`
 }
 
 type Store struct {
@@ -89,6 +99,9 @@ func (c Config) withDefaults() Config {
 	}
 	if c.WebAppURL == "" {
 		c.WebAppURL = DefaultWebAppURL
+	}
+	if len(c.SidebarProviders) > 0 && c.SidebarDefaultProvider == "" {
+		c.SidebarDefaultProvider = c.SidebarProviders[0].ID
 	}
 	return c
 }

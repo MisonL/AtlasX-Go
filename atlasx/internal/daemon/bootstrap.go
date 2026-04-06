@@ -17,51 +17,53 @@ import (
 const DefaultListenAddr = settings.DefaultListenAddr
 
 type Status struct {
-	Ready                      bool   `json:"ready"`
-	ChromeStatus               string `json:"chrome_status"`
-	ChromeSource               string `json:"chrome_source"`
-	SupportRoot                string `json:"support_root"`
-	ConfigFile                 string `json:"config_file"`
-	ManagedSessionLive         bool   `json:"managed_session_live"`
-	ManagedSessionStale        bool   `json:"managed_session_stale"`
-	ManagedSessionStateCleaned bool   `json:"managed_session_state_cleaned"`
-	ManagedSessionCDP          string `json:"managed_session_cdp"`
-	ManagedSessionCDPURL       string `json:"managed_session_cdp_url"`
-	MirrorFile                 string `json:"mirror_file"`
-	MirrorPresent              bool   `json:"mirror_present"`
-	MirrorProfileDir           string `json:"mirror_profile_dir"`
-	MirrorHistoryRows          int    `json:"mirror_history_rows"`
-	MirrorDownloadRows         int    `json:"mirror_download_rows"`
-	MirrorLastScanAt           string `json:"mirror_last_scan_at"`
-	MirrorLastScanSource       string `json:"mirror_last_scan_source"`
-	MirrorLastScanResult       string `json:"mirror_last_scan_result"`
-	MirrorLastScanError        string `json:"mirror_last_scan_error"`
-	ChromeImportPresent        bool   `json:"chrome_import_present"`
-	ChromeImportRoot           string `json:"chrome_import_root"`
-	ChromeImportBookmarks      bool   `json:"chrome_import_bookmarks"`
-	ChromeImportHistory        bool   `json:"chrome_import_history"`
-	ChromeImportLastAt         string `json:"chrome_import_last_at"`
-	ChromeImportLastSource     string `json:"chrome_import_last_source"`
-	ChromeImportLastResult     string `json:"chrome_import_last_result"`
-	ChromeImportLastError      string `json:"chrome_import_last_error"`
-	SafariImportLastAt         string `json:"safari_import_last_at"`
-	SafariImportLastSource     string `json:"safari_import_last_source"`
-	SafariImportLastResult     string `json:"safari_import_last_result"`
-	SafariImportLastError      string `json:"safari_import_last_error"`
-	RuntimeManifestPath        string `json:"runtime_manifest_path"`
-	RuntimeManifestPresent     bool   `json:"runtime_manifest_present"`
-	RuntimeManifestVersion     string `json:"runtime_manifest_version"`
-	RuntimeManifestChannel     string `json:"runtime_manifest_channel"`
-	RuntimeManifestSHA256      string `json:"runtime_manifest_sha256"`
-	RuntimeManifestBundlePath  string `json:"runtime_manifest_bundle_path"`
-	RuntimeManifestBinaryPath  string `json:"runtime_manifest_binary_path"`
-	RuntimeBundlePresent       bool   `json:"runtime_bundle_present"`
-	RuntimeBinaryPresent       bool   `json:"runtime_binary_present"`
-	RuntimeBinaryExecutable    bool   `json:"runtime_binary_executable"`
-	SidebarQAConfigured        bool   `json:"sidebar_qa_configured"`
-	SidebarQAReady             bool   `json:"sidebar_qa_ready"`
-	SidebarQAProvider          string `json:"sidebar_qa_provider"`
-	SidebarQAModel             string `json:"sidebar_qa_model"`
+	Ready                      bool                     `json:"ready"`
+	ChromeStatus               string                   `json:"chrome_status"`
+	ChromeSource               string                   `json:"chrome_source"`
+	SupportRoot                string                   `json:"support_root"`
+	ConfigFile                 string                   `json:"config_file"`
+	ManagedSessionLive         bool                     `json:"managed_session_live"`
+	ManagedSessionStale        bool                     `json:"managed_session_stale"`
+	ManagedSessionStateCleaned bool                     `json:"managed_session_state_cleaned"`
+	ManagedSessionCDP          string                   `json:"managed_session_cdp"`
+	ManagedSessionCDPURL       string                   `json:"managed_session_cdp_url"`
+	MirrorFile                 string                   `json:"mirror_file"`
+	MirrorPresent              bool                     `json:"mirror_present"`
+	MirrorProfileDir           string                   `json:"mirror_profile_dir"`
+	MirrorHistoryRows          int                      `json:"mirror_history_rows"`
+	MirrorDownloadRows         int                      `json:"mirror_download_rows"`
+	MirrorLastScanAt           string                   `json:"mirror_last_scan_at"`
+	MirrorLastScanSource       string                   `json:"mirror_last_scan_source"`
+	MirrorLastScanResult       string                   `json:"mirror_last_scan_result"`
+	MirrorLastScanError        string                   `json:"mirror_last_scan_error"`
+	ChromeImportPresent        bool                     `json:"chrome_import_present"`
+	ChromeImportRoot           string                   `json:"chrome_import_root"`
+	ChromeImportBookmarks      bool                     `json:"chrome_import_bookmarks"`
+	ChromeImportHistory        bool                     `json:"chrome_import_history"`
+	ChromeImportLastAt         string                   `json:"chrome_import_last_at"`
+	ChromeImportLastSource     string                   `json:"chrome_import_last_source"`
+	ChromeImportLastResult     string                   `json:"chrome_import_last_result"`
+	ChromeImportLastError      string                   `json:"chrome_import_last_error"`
+	SafariImportLastAt         string                   `json:"safari_import_last_at"`
+	SafariImportLastSource     string                   `json:"safari_import_last_source"`
+	SafariImportLastResult     string                   `json:"safari_import_last_result"`
+	SafariImportLastError      string                   `json:"safari_import_last_error"`
+	RuntimeManifestPath        string                   `json:"runtime_manifest_path"`
+	RuntimeManifestPresent     bool                     `json:"runtime_manifest_present"`
+	RuntimeManifestVersion     string                   `json:"runtime_manifest_version"`
+	RuntimeManifestChannel     string                   `json:"runtime_manifest_channel"`
+	RuntimeManifestSHA256      string                   `json:"runtime_manifest_sha256"`
+	RuntimeManifestBundlePath  string                   `json:"runtime_manifest_bundle_path"`
+	RuntimeManifestBinaryPath  string                   `json:"runtime_manifest_binary_path"`
+	RuntimeBundlePresent       bool                     `json:"runtime_bundle_present"`
+	RuntimeBinaryPresent       bool                     `json:"runtime_binary_present"`
+	RuntimeBinaryExecutable    bool                     `json:"runtime_binary_executable"`
+	SidebarQAConfigured        bool                     `json:"sidebar_qa_configured"`
+	SidebarQAReady             bool                     `json:"sidebar_qa_ready"`
+	SidebarQADefaultProvider   string                   `json:"sidebar_qa_default_provider"`
+	SidebarQAProvider          string                   `json:"sidebar_qa_provider"`
+	SidebarQAModel             string                   `json:"sidebar_qa_model"`
+	SidebarQAProviders         []sidebar.ProviderStatus `json:"sidebar_qa_providers"`
 }
 
 func Bootstrap() (Status, error) {
@@ -147,8 +149,10 @@ func Bootstrap() (Status, error) {
 	sidebarStatus := sidebar.FromSettings(config).Status()
 	status.SidebarQAConfigured = sidebarStatus.Configured
 	status.SidebarQAReady = sidebarStatus.Ready
+	status.SidebarQADefaultProvider = sidebarStatus.DefaultProvider
 	status.SidebarQAProvider = sidebarStatus.Provider
 	status.SidebarQAModel = sidebarStatus.Model
+	status.SidebarQAProviders = sidebarStatus.Providers
 
 	return status, nil
 }
