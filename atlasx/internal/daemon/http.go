@@ -281,13 +281,9 @@ func serveMirrorScan(w http.ResponseWriter, r *http.Request) {
 		profileDir = mirror.DefaultProfilePath(paths)
 	}
 
-	snapshot, err := mirror.Collect(profileDir)
+	snapshot, err := mirror.Scan(paths, profileDir)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, err)
-		return
-	}
-	if err := mirror.Save(paths, snapshot); err != nil {
-		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 

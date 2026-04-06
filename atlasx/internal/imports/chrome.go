@@ -43,17 +43,27 @@ func DefaultChromeImportRoot(paths macos.Paths) string {
 }
 
 func ImportChrome(paths macos.Paths, sourceProfileDir string) (ChromeReport, error) {
-	snapshot, err := mirror.Collect(sourceProfileDir)
-	if err != nil {
+	fail := func(err error) (ChromeReport, error) {
+		_ = SaveChromeImportStatus(paths, OperationStatus{
+			GeneratedAt: time.Now().UTC().Format(time.RFC3339),
+			Source:      sourceProfileDir,
+			Result:      importResultFailed,
+			Error:       err.Error(),
+		})
 		return ChromeReport{}, err
 	}
+
+	snapshot, err := mirror.Collect(sourceProfileDir)
+	if err != nil {
+		return fail(err)
+	}
 	if !snapshot.Bookmarks.Exists {
-		return ChromeReport{}, errors.New("chrome bookmarks source is missing")
+		return fail(errors.New("chrome bookmarks source is missing"))
 	}
 
 	importRoot := DefaultChromeImportRoot(paths)
 	if err := macos.EnsureDir(importRoot); err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
 
 	bookmarksDest := filepath.Join(importRoot, "Bookmarks.json")
@@ -62,35 +72,35 @@ func ImportChrome(paths macos.Paths, sourceProfileDir string) (ChromeReport, err
 
 	bookmarksSource, err := fileArtifact(snapshot.Bookmarks.SourcePath)
 	if err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
 	if err := copyFile(snapshot.Bookmarks.SourcePath, bookmarksDest); err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
 	bookmarksImported, err := fileArtifact(bookmarksDest)
 	if err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
 
 	preferencesSourcePath := filepath.Join(sourceProfileDir, "Preferences")
 	preferencesSource, err := fileArtifact(preferencesSourcePath)
 	if err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
 	preferencesImported := FileArtifact{Path: preferencesDest}
 	if preferencesSource.Exists {
 		if err := copyFile(preferencesSourcePath, preferencesDest); err != nil {
-			return ChromeReport{}, err
+			return fail(err)
 		}
 		preferencesImported, err = fileArtifact(preferencesDest)
 		if err != nil {
-			return ChromeReport{}, err
+			return fail(err)
 		}
 	}
 
 	historySource, err := fileArtifact(snapshot.History.SourcePath)
 	if err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
 
 	report := ChromeReport{
@@ -106,8 +116,13 @@ func ImportChrome(paths macos.Paths, sourceProfileDir string) (ChromeReport, err
 	}
 
 	if err := saveReport(reportPath, report); err != nil {
-		return ChromeReport{}, err
+		return fail(err)
 	}
+	_ = SaveChromeImportStatus(paths, OperationStatus{
+		GeneratedAt: report.GeneratedAt,
+		Source:      sourceProfileDir,
+		Result:      importResultSucceeded,
+	})
 	return report, nil
 }
 

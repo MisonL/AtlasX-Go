@@ -32,10 +32,22 @@ type Status struct {
 	MirrorProfileDir           string `json:"mirror_profile_dir"`
 	MirrorHistoryRows          int    `json:"mirror_history_rows"`
 	MirrorDownloadRows         int    `json:"mirror_download_rows"`
+	MirrorLastScanAt           string `json:"mirror_last_scan_at"`
+	MirrorLastScanSource       string `json:"mirror_last_scan_source"`
+	MirrorLastScanResult       string `json:"mirror_last_scan_result"`
+	MirrorLastScanError        string `json:"mirror_last_scan_error"`
 	ChromeImportPresent        bool   `json:"chrome_import_present"`
 	ChromeImportRoot           string `json:"chrome_import_root"`
 	ChromeImportBookmarks      bool   `json:"chrome_import_bookmarks"`
 	ChromeImportHistory        bool   `json:"chrome_import_history"`
+	ChromeImportLastAt         string `json:"chrome_import_last_at"`
+	ChromeImportLastSource     string `json:"chrome_import_last_source"`
+	ChromeImportLastResult     string `json:"chrome_import_last_result"`
+	ChromeImportLastError      string `json:"chrome_import_last_error"`
+	SafariImportLastAt         string `json:"safari_import_last_at"`
+	SafariImportLastSource     string `json:"safari_import_last_source"`
+	SafariImportLastResult     string `json:"safari_import_last_result"`
+	SafariImportLastError      string `json:"safari_import_last_error"`
 	RuntimeManifestPath        string `json:"runtime_manifest_path"`
 	RuntimeManifestPresent     bool   `json:"runtime_manifest_present"`
 	RuntimeManifestVersion     string `json:"runtime_manifest_version"`
@@ -81,12 +93,36 @@ func Bootstrap() (Status, error) {
 	} else if !os.IsNotExist(err) {
 		return Status{}, err
 	}
+	if scanStatus, err := mirror.LoadScanStatus(report.Paths); err == nil {
+		status.MirrorLastScanAt = scanStatus.GeneratedAt
+		status.MirrorLastScanSource = scanStatus.ProfileDir
+		status.MirrorLastScanResult = scanStatus.Result
+		status.MirrorLastScanError = scanStatus.Error
+	} else if !os.IsNotExist(err) {
+		return Status{}, err
+	}
 
 	if chromeImport, err := imports.LoadChromeReport(report.Paths); err == nil {
 		status.ChromeImportPresent = true
 		status.ChromeImportRoot = chromeImport.ImportRoot
 		status.ChromeImportBookmarks = chromeImport.BookmarksImported.Exists
 		status.ChromeImportHistory = chromeImport.HistorySource.Exists
+	} else if !os.IsNotExist(err) {
+		return Status{}, err
+	}
+	if chromeImportStatus, err := imports.LoadChromeImportStatus(report.Paths); err == nil {
+		status.ChromeImportLastAt = chromeImportStatus.GeneratedAt
+		status.ChromeImportLastSource = chromeImportStatus.Source
+		status.ChromeImportLastResult = chromeImportStatus.Result
+		status.ChromeImportLastError = chromeImportStatus.Error
+	} else if !os.IsNotExist(err) {
+		return Status{}, err
+	}
+	if safariImportStatus, err := imports.LoadSafariImportStatus(report.Paths); err == nil {
+		status.SafariImportLastAt = safariImportStatus.GeneratedAt
+		status.SafariImportLastSource = safariImportStatus.Source
+		status.SafariImportLastResult = safariImportStatus.Result
+		status.SafariImportLastError = safariImportStatus.Error
 	} else if !os.IsNotExist(err) {
 		return Status{}, err
 	}

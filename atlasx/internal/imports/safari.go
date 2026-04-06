@@ -52,18 +52,27 @@ func DefaultSafariImportRoot(paths macos.Paths) string {
 func ImportSafari(paths macos.Paths) (SafariReport, error) {
 	bookmarksSourcePath := DefaultSafariBookmarksPath(paths)
 	historySourcePath := DefaultSafariHistoryPath(paths)
+	fail := func(err error) (SafariReport, error) {
+		_ = SaveSafariImportStatus(paths, OperationStatus{
+			GeneratedAt: time.Now().UTC().Format(time.RFC3339),
+			Source:      bookmarksSourcePath,
+			Result:      importResultFailed,
+			Error:       err.Error(),
+		})
+		return SafariReport{}, err
+	}
 
 	bookmarksSource, err := fileArtifact(bookmarksSourcePath)
 	if err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
 	if !bookmarksSource.Exists {
-		return SafariReport{}, errors.New("safari bookmarks source is missing")
+		return fail(errors.New("safari bookmarks source is missing"))
 	}
 
 	importRoot := DefaultSafariImportRoot(paths)
 	if err := macos.EnsureDir(importRoot); err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
 
 	bookmarksDest := filepath.Join(importRoot, "Bookmarks.json")
@@ -71,19 +80,19 @@ func ImportSafari(paths macos.Paths) (SafariReport, error) {
 
 	entries, rawJSON, err := exportSafariBookmarks(bookmarksSourcePath)
 	if err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
 	if err := os.WriteFile(bookmarksDest, append(rawJSON, '\n'), 0o644); err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
 
 	importedBookmarks, err := fileArtifact(bookmarksDest)
 	if err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
 	historySource, err := fileArtifact(historySourcePath)
 	if err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
 
 	report := SafariReport{
@@ -96,8 +105,13 @@ func ImportSafari(paths macos.Paths) (SafariReport, error) {
 	}
 
 	if err := saveSafariReport(reportPath, report); err != nil {
-		return SafariReport{}, err
+		return fail(err)
 	}
+	_ = SaveSafariImportStatus(paths, OperationStatus{
+		GeneratedAt: report.GeneratedAt,
+		Source:      bookmarksSourcePath,
+		Result:      importResultSucceeded,
+	})
 	return report, nil
 }
 

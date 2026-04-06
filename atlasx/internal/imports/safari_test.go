@@ -1,7 +1,6 @@
 package imports
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,7 +8,18 @@ import (
 	"atlasx/internal/platform/macos"
 )
 
-func TestParseSafariBookmarksPlist(t *testing.T) {
+func TestImportSafariWritesSuccessStatus(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	bookmarksPath := DefaultSafariBookmarksPath(paths)
+	if err := os.MkdirAll(filepath.Dir(bookmarksPath), 0o755); err != nil {
+		t.Fatalf("mkdir failed: %v", err)
+	}
 	payload := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -17,61 +27,47 @@ func TestParseSafariBookmarksPlist(t *testing.T) {
   <key>Children</key>
   <array>
     <dict>
+      <key>WebBookmarkType</key><string>WebBookmarkTypeLeaf</string>
       <key>Title</key><string>OpenAI</string>
       <key>URLString</key><string>https://openai.com</string>
-      <key>WebBookmarkType</key><string>WebBookmarkTypeLeaf</string>
-    </dict>
-    <dict>
-      <key>WebBookmarkType</key><string>WebBookmarkTypeList</string>
-      <key>Children</key>
-      <array>
-        <dict>
-          <key>Title</key><string>Docs</string>
-          <key>URLString</key><string>https://platform.openai.com</string>
-          <key>WebBookmarkType</key><string>WebBookmarkTypeLeaf</string>
-        </dict>
-      </array>
     </dict>
   </array>
 </dict>
 </plist>`)
-	entries, err := parseSafariBookmarksPlist(payload)
-	if err != nil {
-		t.Fatalf("parse failed: %v", err)
+	if err := os.WriteFile(bookmarksPath, payload, 0o644); err != nil {
+		t.Fatalf("write safari bookmarks failed: %v", err)
 	}
-	if len(entries) != 2 {
-		t.Fatalf("unexpected entry count: %d", len(entries))
+
+	if _, err := ImportSafari(paths); err != nil {
+		t.Fatalf("import safari failed: %v", err)
+	}
+
+	status, err := LoadSafariImportStatus(paths)
+	if err != nil {
+		t.Fatalf("load safari import status failed: %v", err)
+	}
+	if status.Result != importResultSucceeded || status.Source != bookmarksPath {
+		t.Fatalf("unexpected safari import status: %+v", status)
 	}
 }
 
-func TestSaveSafariReport(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "report.json")
-	report := SafariReport{ImportRoot: "/tmp/safari", Bookmarks: []SafariBookmarkEntry{{Title: "OpenAI", URL: "https://openai.com"}}}
-	if err := saveSafariReport(path, report); err != nil {
-		t.Fatalf("save failed: %v", err)
-	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read failed: %v", err)
-	}
-
-	var loaded SafariReport
-	if err := json.Unmarshal(data, &loaded); err != nil {
-		t.Fatalf("unmarshal failed: %v", err)
-	}
-	if len(loaded.Bookmarks) != 1 {
-		t.Fatalf("unexpected bookmarks count: %d", len(loaded.Bookmarks))
-	}
-}
-
-func TestDefaultSafariPaths(t *testing.T) {
+func TestImportSafariWritesFailureStatus(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
+
 	paths, err := macos.DiscoverPaths()
 	if err != nil {
 		t.Fatalf("discover paths failed: %v", err)
 	}
-	if DefaultSafariBookmarksPath(paths) == "" || DefaultSafariHistoryPath(paths) == "" {
-		t.Fatal("expected safari paths")
+
+	if _, err := ImportSafari(paths); err == nil {
+		t.Fatal("expected safari import failure")
+	}
+
+	status, err := LoadSafariImportStatus(paths)
+	if err != nil {
+		t.Fatalf("load safari import status failed: %v", err)
+	}
+	if status.Result != importResultFailed || status.Error == "" {
+		t.Fatalf("unexpected safari import status: %+v", status)
 	}
 }

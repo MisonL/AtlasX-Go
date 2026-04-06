@@ -40,6 +40,14 @@ func TestImportChromeCopiesBookmarksAndPreferences(t *testing.T) {
 	if !report.PreferencesImported.Exists {
 		t.Fatal("expected imported preferences")
 	}
+
+	status, err := LoadChromeImportStatus(paths)
+	if err != nil {
+		t.Fatalf("load chrome import status failed: %v", err)
+	}
+	if status.Result != importResultSucceeded || status.Source != sourceProfileDir {
+		t.Fatalf("unexpected chrome import status: %+v", status)
+	}
 }
 
 func TestImportChromeFailsWithoutBookmarks(t *testing.T) {
@@ -61,5 +69,13 @@ func TestImportChromeFailsWithoutBookmarks(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "bookmarks source is missing") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+
+	status, statusErr := LoadChromeImportStatus(paths)
+	if statusErr != nil {
+		t.Fatalf("load chrome import status failed: %v", statusErr)
+	}
+	if status.Result != importResultFailed || status.Error == "" {
+		t.Fatalf("unexpected chrome import status: %+v", status)
 	}
 }

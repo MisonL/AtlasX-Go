@@ -139,11 +139,8 @@ func runMirrorScan(args []string) error {
 		targetProfileDir = mirror.DefaultProfilePath(paths)
 	}
 
-	snapshot, err := mirror.Collect(targetProfileDir)
+	snapshot, err := mirror.Scan(paths, targetProfileDir)
 	if err != nil {
-		return err
-	}
-	if err := mirror.Save(paths, snapshot); err != nil {
 		return err
 	}
 
