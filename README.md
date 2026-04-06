@@ -13,7 +13,7 @@
 - `atlasctl doctor`
 - `atlasctl status`
 - `atlasctl runtime stage|status|verify|clear|install`
-- `atlasctl runtime plan create|status|clear`
+- `atlasctl runtime plan create|resolve|status|clear`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`
 - `atlasctl tabs list|open|activate|close|navigate|capture`

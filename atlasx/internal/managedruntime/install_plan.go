@@ -50,6 +50,7 @@ const (
 type InstallPlan struct {
 	Version          string       `json:"version"`
 	Channel          string       `json:"channel"`
+	BundleName       string       `json:"bundle_name"`
 	SourceURL        string       `json:"source_url"`
 	ExpectedSHA256   string       `json:"expected_sha256"`
 	ArchivePath      string       `json:"archive_path"`
@@ -61,6 +62,7 @@ type InstallPlan struct {
 type InstallPlanOptions struct {
 	Version          string
 	Channel          string
+	BundleName       string
 	SourceURL        string
 	ExpectedSHA256   string
 	ArchivePath      string
@@ -93,6 +95,7 @@ func NewInstallPlan(opts InstallPlanOptions) (InstallPlan, error) {
 	return InstallPlan{
 		Version:          opts.Version,
 		Channel:          opts.Channel,
+		BundleName:       opts.BundleName,
 		SourceURL:        opts.SourceURL,
 		ExpectedSHA256:   opts.ExpectedSHA256,
 		ArchivePath:      opts.ArchivePath,

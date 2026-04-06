@@ -23,6 +23,7 @@ go run ./cmd/atlasctl runtime verify
 go run ./cmd/atlasctl runtime install
 go run ./cmd/atlasctl runtime clear
 go run ./cmd/atlasctl runtime plan create --version 123.0.0 --channel stable --url https://example.com/chromium.zip --sha256 deadbeef --archive-path /tmp/chromium.zip --bundle-path /tmp/Chromium.app
+go run ./cmd/atlasctl runtime plan resolve --catalog /path/to/runtime-catalog.json --version 123.0.0 --channel stable
 go run ./cmd/atlasctl runtime plan status
 go run ./cmd/atlasctl runtime plan clear
 go run ./cmd/atlasctl mirror-scan
@@ -89,7 +90,7 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - 当前 managed runtime 检测已优先读取 manifest 中记录的 `binary_path`，不再硬编码为 `Chromium.app/Contents/MacOS/Chromium`。
 - 当前已提供 `runtime status` 和 `runtime clear`，可查看 staged runtime/manifest/binary 状态，并显式清理 support root/runtime 下的本地 managed runtime。
 - 当前已提供 `runtime verify`，可离线校验 manifest 与 staged bundle/binary/sha256 一致性。
-- 当前已提供 `runtime plan create|status|clear`，可离线维护 install plan 文件。
+- 当前已提供 `runtime plan create|resolve|status|clear`，可离线维护 install plan 文件；`resolve` 可从本地路径或 HTTPS catalog 自动解析 channel/version/platform 对应的 url、sha256 与 bundle 元数据。
 - 当前已提供 `runtime install`，会按 install plan 执行下载、archive sha256 校验、本地 stage 与最终 verify，并把 phase/error 落回 install plan 状态面。
 - 当前 `runtime install` 在失败时会显式清理 `archive_path` 与 `.part` 残留；若安装前已有有效 managed runtime，则会把 install plan phase 推进到 `rolled_back` 并恢复旧 bundle/manifest。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/status` 与 `POST /v1/runtime/stage`，可服务化查询 managed runtime 状态并触发本地 bundle stage。

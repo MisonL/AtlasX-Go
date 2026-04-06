@@ -17,6 +17,7 @@ func TestInstallPlanSaveLoadAndStatus(t *testing.T) {
 	}
 
 	plan := mustInstallPlan(t)
+	plan.BundleName = "Chromium.app"
 	plan.CurrentPhase = InstallPhaseVerifying
 	plan.LastError = "checksum retry pending"
 
@@ -31,6 +32,9 @@ func TestInstallPlanSaveLoadAndStatus(t *testing.T) {
 	if loaded.SourceURL != plan.SourceURL {
 		t.Fatalf("unexpected source url: %+v", loaded)
 	}
+	if loaded.BundleName != "Chromium.app" {
+		t.Fatalf("unexpected bundle name: %+v", loaded)
+	}
 
 	status, err := InstallPlanInfo(paths)
 	if err != nil {
@@ -41,6 +45,9 @@ func TestInstallPlanSaveLoadAndStatus(t *testing.T) {
 	}
 	if status.CurrentPhase != InstallPhaseVerifying {
 		t.Fatalf("unexpected phase: %+v", status)
+	}
+	if status.BundleName != "Chromium.app" {
+		t.Fatalf("unexpected bundle name: %+v", status)
 	}
 	if status.LastError != "checksum retry pending" {
 		t.Fatalf("unexpected last error: %+v", status)

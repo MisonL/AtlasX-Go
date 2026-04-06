@@ -162,6 +162,13 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 		return fail(err)
 	}
 	report.ExtractedBundlePath = extractedBundlePath
+	if plan.BundleName != "" && filepath.Base(extractedBundlePath) != plan.BundleName {
+		return fail(fmt.Errorf(
+			"managed runtime archive bundle does not match install plan: expected=%s actual=%s",
+			plan.BundleName,
+			filepath.Base(extractedBundlePath),
+		))
+	}
 
 	if _, err := ResolveBundleBinaryPath(extractedBundlePath); err != nil {
 		return fail(err)

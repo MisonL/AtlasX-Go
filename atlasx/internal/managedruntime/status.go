@@ -22,6 +22,7 @@ type StatusReport struct {
 	InstallPlanPresent        bool         `json:"install_plan_present"`
 	InstallPlanVersion        string       `json:"install_plan_version"`
 	InstallPlanChannel        string       `json:"install_plan_channel"`
+	InstallPlanBundleName     string       `json:"install_plan_bundle_name"`
 	InstallPlanSourceURL      string       `json:"install_plan_source_url"`
 	InstallPlanExpectedSHA256 string       `json:"install_plan_expected_sha256"`
 	InstallPlanArchivePath    string       `json:"install_plan_archive_path"`
@@ -67,6 +68,7 @@ func Status(paths macos.Paths) (StatusReport, error) {
 	report.InstallPlanPresent = planStatus.Present
 	report.InstallPlanVersion = planStatus.Version
 	report.InstallPlanChannel = planStatus.Channel
+	report.InstallPlanBundleName = planStatus.BundleName
 	report.InstallPlanSourceURL = planStatus.SourceURL
 	report.InstallPlanExpectedSHA256 = planStatus.ExpectedSHA256
 	report.InstallPlanArchivePath = planStatus.ArchivePath
@@ -112,7 +114,7 @@ func Clear(paths macos.Paths) error {
 
 func (r StatusReport) Render() string {
 	return fmt.Sprintf(
-		"runtime_root=%s\nmanifest=%s\nmanifest_present=%t\nmanifest_version=%s\nmanifest_channel=%s\nmanifest_sha256=%s\ninstall_plan=%s\ninstall_plan_present=%t\ninstall_plan_version=%s\ninstall_plan_channel=%s\ninstall_plan_source_url=%s\ninstall_plan_expected_sha256=%s\ninstall_plan_archive_path=%s\ninstall_plan_phase=%s\ninstall_plan_last_error=%s\nstaged_bundle=%s\nbundle_present=%t\nbinary=%s\nbinary_present=%t\nbinary_executable=%t\n",
+		"runtime_root=%s\nmanifest=%s\nmanifest_present=%t\nmanifest_version=%s\nmanifest_channel=%s\nmanifest_sha256=%s\ninstall_plan=%s\ninstall_plan_present=%t\ninstall_plan_version=%s\ninstall_plan_channel=%s\ninstall_plan_bundle_name=%s\ninstall_plan_source_url=%s\ninstall_plan_expected_sha256=%s\ninstall_plan_archive_path=%s\ninstall_plan_phase=%s\ninstall_plan_last_error=%s\nstaged_bundle=%s\nbundle_present=%t\nbinary=%s\nbinary_present=%t\nbinary_executable=%t\n",
 		r.RuntimeRoot,
 		r.ManifestPath,
 		r.ManifestPresent,
@@ -123,6 +125,7 @@ func (r StatusReport) Render() string {
 		r.InstallPlanPresent,
 		r.InstallPlanVersion,
 		r.InstallPlanChannel,
+		r.InstallPlanBundleName,
 		r.InstallPlanSourceURL,
 		r.InstallPlanExpectedSHA256,
 		r.InstallPlanArchivePath,

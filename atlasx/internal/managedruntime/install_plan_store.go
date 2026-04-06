@@ -13,6 +13,7 @@ type InstallPlanStatus struct {
 	Present          bool         `json:"present"`
 	Version          string       `json:"version"`
 	Channel          string       `json:"channel"`
+	BundleName       string       `json:"bundle_name"`
 	SourceURL        string       `json:"source_url"`
 	ExpectedSHA256   string       `json:"expected_sha256"`
 	ArchivePath      string       `json:"archive_path"`
@@ -62,6 +63,7 @@ func InstallPlanInfo(paths macos.Paths) (InstallPlanStatus, error) {
 	status.Present = true
 	status.Version = plan.Version
 	status.Channel = plan.Channel
+	status.BundleName = plan.BundleName
 	status.SourceURL = plan.SourceURL
 	status.ExpectedSHA256 = plan.ExpectedSHA256
 	status.ArchivePath = plan.ArchivePath
@@ -83,11 +85,12 @@ func ClearInstallPlan(paths macos.Paths) error {
 
 func (s InstallPlanStatus) Render() string {
 	return fmt.Sprintf(
-		"install_plan=%s\ninstall_plan_present=%t\ninstall_plan_version=%s\ninstall_plan_channel=%s\ninstall_plan_source_url=%s\ninstall_plan_expected_sha256=%s\ninstall_plan_archive_path=%s\ninstall_plan_staged_bundle_path=%s\ninstall_plan_phase=%s\ninstall_plan_last_error=%s\n",
+		"install_plan=%s\ninstall_plan_present=%t\ninstall_plan_version=%s\ninstall_plan_channel=%s\ninstall_plan_bundle_name=%s\ninstall_plan_source_url=%s\ninstall_plan_expected_sha256=%s\ninstall_plan_archive_path=%s\ninstall_plan_staged_bundle_path=%s\ninstall_plan_phase=%s\ninstall_plan_last_error=%s\n",
 		s.Path,
 		s.Present,
 		s.Version,
 		s.Channel,
+		s.BundleName,
 		s.SourceURL,
 		s.ExpectedSHA256,
 		s.ArchivePath,

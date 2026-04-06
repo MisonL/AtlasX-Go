@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/macos"
@@ -127,12 +128,14 @@ func runRuntimeInstall() error {
 
 func runRuntimePlan(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing runtime plan subcommand: create, status, clear")
+		return errors.New("missing runtime plan subcommand: create, resolve, status, clear")
 	}
 
 	switch args[0] {
 	case "create":
 		return runRuntimePlanCreate(args[1:])
+	case "resolve":
+		return runRuntimePlanResolve(args[1:])
 	case "status":
 		return runRuntimePlanStatus()
 	case "clear":
@@ -169,6 +172,74 @@ func runRuntimePlanCreate(args []string) error {
 		ExpectedSHA256:   *expectedSHA256,
 		ArchivePath:      *archivePath,
 		StagedBundlePath: *stagedBundlePath,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := managedruntime.SaveInstallPlan(paths, plan); err != nil {
+		return err
+	}
+
+	status, err := managedruntime.InstallPlanInfo(paths)
+	if err != nil {
+		return err
+	}
+	fmt.Print(status.Render())
+	return nil
+}
+
+func runRuntimePlanResolve(args []string) error {
+	fs := flag.NewFlagSet("runtime plan resolve", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	catalogSource := fs.String("catalog", "", "local path or https url for runtime catalog")
+	version := fs.String("version", "", "managed runtime version")
+	channel := fs.String("channel", "", "managed runtime channel")
+	platform := fs.String("platform", managedruntime.DefaultCatalogPlatform, "managed runtime platform")
+	archivePath := fs.String("archive-path", "", "override archive path for resolved install plan")
+	stagedBundlePath := fs.String("bundle-path", "", "override staged bundle path for resolved install plan")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	resolvedArchivePath := *archivePath
+	if resolvedArchivePath == "" {
+		resolvedArchivePath = managedruntime.DefaultInstallArchivePath(paths, *version)
+	}
+	resolvedBundlePath := *stagedBundlePath
+	if resolvedBundlePath == "" {
+		resolvedBundlePath = managedruntime.DefaultStagedBundlePath(paths)
+	}
+	if !filepath.IsAbs(resolvedArchivePath) {
+		resolvedArchivePath, err = filepath.Abs(resolvedArchivePath)
+		if err != nil {
+			return err
+		}
+	}
+	if !filepath.IsAbs(resolvedBundlePath) {
+		resolvedBundlePath, err = filepath.Abs(resolvedBundlePath)
+		if err != nil {
+			return err
+		}
+	}
+
+	catalog, err := managedruntime.LoadCatalog(*catalogSource, nil)
+	if err != nil {
+		return err
+	}
+	plan, err := managedruntime.ResolveInstallPlanFromCatalog(catalog, managedruntime.ResolveCatalogOptions{
+		Version:          *version,
+		Channel:          *channel,
+		Platform:         *platform,
+		ArchivePath:      resolvedArchivePath,
+		StagedBundlePath: resolvedBundlePath,
 	})
 	if err != nil {
 		return err
