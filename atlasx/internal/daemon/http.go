@@ -218,6 +218,22 @@ func serveTabContext(w http.ResponseWriter, r *http.Request) {
 
 	context, err := client.Capture(targetID)
 	if err != nil {
+		var captureErr *tabs.CaptureError
+		if errors.As(err, &captureErr) {
+			writeJSON(w, http.StatusBadGateway, map[string]any{
+				"id":             captureErr.Context.ID,
+				"title":          captureErr.Context.Title,
+				"url":            captureErr.Context.URL,
+				"text":           captureErr.Context.Text,
+				"captured_at":    captureErr.Context.CapturedAt,
+				"text_truncated": captureErr.Context.TextTruncated,
+				"text_length":    captureErr.Context.TextLength,
+				"text_limit":     captureErr.Context.TextLimit,
+				"capture_error":  captureErr.Context.CaptureError,
+				"error":          captureErr.Error(),
+			})
+			return
+		}
 		writeError(w, http.StatusBadGateway, err)
 		return
 	}

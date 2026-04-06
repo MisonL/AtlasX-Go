@@ -215,15 +215,29 @@ func runTabs(args []string) error {
 			return errors.New("missing target id for tabs capture")
 		}
 		context, err := client.Capture(args[1])
+		printPageContext(context)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("id=%s title=%q url=%s\n", context.ID, context.Title, context.URL)
-		fmt.Printf("text=%q\n", context.Text)
 		return nil
 	default:
 		return fmt.Errorf("unknown tabs subcommand %q", args[0])
 	}
+}
+
+func printPageContext(context tabs.PageContext) {
+	fmt.Printf(
+		"id=%s title=%q url=%s captured_at=%s text_length=%d text_limit=%d text_truncated=%t capture_error=%q\n",
+		context.ID,
+		context.Title,
+		context.URL,
+		context.CapturedAt,
+		context.TextLength,
+		context.TextLimit,
+		context.TextTruncated,
+		context.CaptureError,
+	)
+	fmt.Printf("text=%q\n", context.Text)
 }
 
 func runImportChrome(args []string) error {

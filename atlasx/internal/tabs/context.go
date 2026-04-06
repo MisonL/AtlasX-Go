@@ -4,17 +4,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-const maxCapturedTextBytes = 4096
+const maxCapturedTextLength = 4096
 
 type PageContext struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	URL   string `json:"url"`
-	Text  string `json:"text"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	URL           string `json:"url"`
+	Text          string `json:"text"`
+	CapturedAt    string `json:"captured_at"`
+	TextTruncated bool   `json:"text_truncated"`
+	TextLength    int    `json:"text_length"`
+	TextLimit     int    `json:"text_limit"`
+	CaptureError  string `json:"capture_error"`
+}
+
+type CaptureError struct {
+	Context PageContext
+	Cause   error
+}
+
+func (e *CaptureError) Error() string {
+	return e.Cause.Error()
+}
+
+func (e *CaptureError) Unwrap() error {
+	return e.Cause
 }
 
 type runtimeEvaluateResult struct {
@@ -22,8 +41,15 @@ type runtimeEvaluateResult struct {
 }
 
 type runtimeRemoteObject struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
+	Type  string            `json:"type"`
+	Value captureTextResult `json:"value"`
+}
+
+type captureTextResult struct {
+	Text          string `json:"text"`
+	TextTruncated bool   `json:"text_truncated"`
+	TextLength    int    `json:"text_length"`
+	TextLimit     int    `json:"text_limit"`
 }
 
 func (c Client) Capture(targetID string) (PageContext, error) {
@@ -36,24 +62,41 @@ func (c Client) Capture(targetID string) (PageContext, error) {
 	if err != nil {
 		return PageContext{}, err
 	}
+
+	context := PageContext{
+		ID:         target.ID,
+		Title:      target.Title,
+		URL:        target.URL,
+		CapturedAt: time.Now().UTC().Format(time.RFC3339Nano),
+		TextLimit:  maxCapturedTextLength,
+	}
 	if target.WebSocketDebuggerURL == "" {
-		return PageContext{}, errors.New("target does not expose a websocket debugger url")
+		return captureFailure(context, errors.New("target does not expose a websocket debugger url"))
 	}
 
-	text, err := capturePageText(target.WebSocketDebuggerURL)
+	textResult, err := capturePageText(target.WebSocketDebuggerURL)
 	if err != nil {
-		return PageContext{}, err
+		return captureFailure(context, err)
 	}
 
-	return PageContext{
-		ID:    target.ID,
-		Title: target.Title,
-		URL:   target.URL,
-		Text:  text,
-	}, nil
+	context.Text = textResult.Text
+	context.TextTruncated = textResult.TextTruncated
+	context.TextLength = textResult.TextLength
+	if textResult.TextLimit > 0 {
+		context.TextLimit = textResult.TextLimit
+	}
+	return context, nil
 }
 
-func capturePageText(websocketURL string) (string, error) {
+func captureFailure(context PageContext, err error) (PageContext, error) {
+	context.CaptureError = err.Error()
+	return context, &CaptureError{
+		Context: context,
+		Cause:   err,
+	}
+}
+
+func capturePageText(websocketURL string) (captureTextResult, error) {
 	response, err := runPageCommand(websocketURL, cdpCommandRequest{
 		ID:     1,
 		Method: "Runtime.evaluate",
@@ -63,15 +106,18 @@ func capturePageText(websocketURL string) (string, error) {
 		},
 	})
 	if err != nil {
-		return "", err
+		return captureTextResult{}, err
 	}
 
 	var payload runtimeEvaluateResult
 	if err := json.Unmarshal(response.Result, &payload); err != nil {
-		return "", err
+		return captureTextResult{}, err
 	}
-	if payload.Result.Type != "string" {
-		return "", fmt.Errorf("unexpected runtime result type %q", payload.Result.Type)
+	if payload.Result.Type != "object" {
+		return captureTextResult{}, fmt.Errorf("unexpected runtime result type %q", payload.Result.Type)
+	}
+	if payload.Result.Value.TextLimit == 0 {
+		payload.Result.Value.TextLimit = maxCapturedTextLength
 	}
 	return payload.Result.Value, nil
 }
@@ -105,6 +151,13 @@ func runPageCommand(websocketURL string, request cdpCommandRequest) (cdpCommandR
 func captureTextExpression() string {
 	return fmt.Sprintf(`(() => {
 		const text = document.body ? (document.body.innerText || "") : "";
-		return text.slice(0, %d);
-	})()`, maxCapturedTextBytes)
+		const limit = %d;
+		const truncated = text.length > limit;
+		return {
+			text: truncated ? text.slice(0, limit) : text,
+			text_truncated: truncated,
+			text_length: text.length,
+			text_limit: limit
+		};
+	})()`, maxCapturedTextLength)
 }

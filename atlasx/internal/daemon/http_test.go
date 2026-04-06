@@ -3,6 +3,7 @@ package daemon
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,8 +19,9 @@ import (
 )
 
 type stubTabsClient struct {
-	openedURL string
-	context   tabs.PageContext
+	openedURL  string
+	context    tabs.PageContext
+	captureErr error
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -44,7 +46,7 @@ func (s *stubTabsClient) Navigate(string, string) error {
 }
 
 func (s *stubTabsClient) Capture(string) (tabs.PageContext, error) {
-	return s.context, nil
+	return s.context, s.captureErr
 }
 
 func TestHistoryOpenEndpoint(t *testing.T) {
@@ -153,10 +155,14 @@ func TestTabContextEndpoint(t *testing.T) {
 
 	restoreDaemonHooks(t, &stubTabsClient{
 		context: tabs.PageContext{
-			ID:    "tab-1",
-			Title: "Atlas",
-			URL:   "https://chatgpt.com/atlas",
-			Text:  "Atlas context",
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-06T10:00:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
 		},
 	})
 
@@ -170,6 +176,52 @@ func TestTabContextEndpoint(t *testing.T) {
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"text":"Atlas context"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"captured_at":"2026-04-06T10:00:00Z"`)) {
+		t.Fatalf("missing captured_at: %s", recorder.Body.String())
+	}
+}
+
+func TestTabContextEndpointReturnsStructuredFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	context := tabs.PageContext{
+		ID:           "tab-1",
+		Title:        "Atlas",
+		URL:          "https://chatgpt.com/atlas",
+		CapturedAt:   "2026-04-06T10:00:00Z",
+		TextLimit:    4096,
+		CaptureError: "cdp error -32000: capture failed",
+	}
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: context,
+		captureErr: &tabs.CaptureError{
+			Context: context,
+			Cause:   errors.New("cdp error -32000: capture failed"),
+		},
+	})
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/tabs/context?id=tab-1", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadGateway {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+	if payload["capture_error"] != "cdp error -32000: capture failed" {
+		t.Fatalf("unexpected payload: %+v", payload)
+	}
+	if payload["captured_at"] != "2026-04-06T10:00:00Z" {
+		t.Fatalf("unexpected payload: %+v", payload)
+	}
+	if payload["error"] != "cdp error -32000: capture failed" {
+		t.Fatalf("unexpected payload: %+v", payload)
 	}
 }
 

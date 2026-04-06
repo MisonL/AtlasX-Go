@@ -113,10 +113,14 @@ func TestTabContextEndpointContract(t *testing.T) {
 
 	restoreDaemonHooks(t, &stubTabsClient{
 		context: tabs.PageContext{
-			ID:    "tab-1",
-			Title: "Atlas",
-			URL:   "https://chatgpt.com/atlas",
-			Text:  "Atlas context",
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-06T10:00:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
 		},
 	})
 
@@ -130,7 +134,17 @@ func TestTabContextEndpointContract(t *testing.T) {
 	}
 
 	payload := decodeObjectResponse(t, recorder)
-	assertMapKeys(t, payload, "id", "title", "url", "text")
+	assertMapKeys(t, payload,
+		"id",
+		"title",
+		"url",
+		"text",
+		"captured_at",
+		"text_truncated",
+		"text_length",
+		"text_limit",
+		"capture_error",
+	)
 	if payload["id"] != "tab-1" || payload["url"] != "https://chatgpt.com/atlas" {
 		t.Fatalf("unexpected payload: %+v", payload)
 	}
