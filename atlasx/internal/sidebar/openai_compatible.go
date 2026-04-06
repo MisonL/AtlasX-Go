@@ -38,10 +38,21 @@ type chatCompletionError struct {
 }
 
 func providerSupported(provider string) bool {
-	return provider == "openai" || provider == "openai-compatible"
+	return provider == "openai" || provider == "openai-compatible" || provider == "openrouter"
 }
 
 func askOpenAICompatible(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext) (string, string, error) {
+	return askChatCompletions(provider, apiKey, question, context, nil)
+}
+
+func askOpenRouter(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext) (string, string, error) {
+	return askChatCompletions(provider, apiKey, question, context, map[string]string{
+		"HTTP-Referer": "https://atlasx.local",
+		"X-Title":      "AtlasX",
+	})
+}
+
+func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, extraHeaders map[string]string) (string, string, error) {
 	payload := chatCompletionRequest{
 		Model: provider.Model,
 		Messages: []chatCompletionMessage{
@@ -67,6 +78,9 @@ func askOpenAICompatible(provider settings.SidebarProviderConfig, apiKey string,
 	}
 	request.Header.Set("Authorization", "Bearer "+apiKey)
 	request.Header.Set("Content-Type", "application/json")
+	for key, value := range extraHeaders {
+		request.Header.Set(key, value)
+	}
 
 	client := http.Client{Timeout: providerRequestTimeout}
 	response, err := client.Do(request)

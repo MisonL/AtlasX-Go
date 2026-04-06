@@ -108,5 +108,5 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。
 - 当前已提供浏览器数据查询与动作：`history list/open`、`downloads list/open`、`bookmarks list/open` 可读取已落盘的 mirror/import 数据，并将选中 URL 打开到受管标签。
 - 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 与 sidebar QA 骨架状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/history/open`、`/v1/downloads/open`、`/v1/bookmarks/open`、`/v1/tabs`、`/v1/tabs/context`、`/v1/sidebar/status`、`/v1/sidebar/ask` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等 API。
-- 当前侧边栏问答已接入第一个 OpenAI-compatible provider adapter：配置使用 `default provider + provider registry`，并只记录 `api_key_env` 这类环境变量名而不写真实密钥；`/v1/sidebar/ask` 会真实抓取当前 tab context 并返回 `answer/provider/model/context_summary`，未配置时显式返回 `503`，不支持的 provider 显式返回 `501`，上游 provider 失败显式返回 `502`。
+- 当前侧边栏问答已接入 `openai/openai-compatible` 与 `openrouter` 两条 provider adapter：配置使用 `default provider + provider registry`，并只记录 `api_key_env` 这类环境变量名而不写真实密钥；`/v1/sidebar/ask` 会真实抓取当前 tab context 并返回 `answer/provider/model/context_summary`，同时支持请求级 `provider_id` 覆盖默认 provider，未配置时显式返回 `503`，错误 provider id 显式返回 `400`，不支持的 provider 显式返回 `501`，上游 provider 失败显式返回 `502`。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。

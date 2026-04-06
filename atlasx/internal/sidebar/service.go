@@ -12,6 +12,7 @@ import (
 var ErrNotConfigured = errors.New("sidebar qa provider is not configured")
 var ErrBackendNotImplemented = errors.New("sidebar qa backend is not implemented")
 var ErrProviderFailed = errors.New("sidebar qa provider request failed")
+var ErrProviderNotFound = errors.New("sidebar qa provider id is not configured")
 
 type Config struct {
 	DefaultProvider string
@@ -39,8 +40,9 @@ type Status struct {
 }
 
 type AskRequest struct {
-	TabID    string `json:"tab_id"`
-	Question string `json:"question"`
+	TabID      string `json:"tab_id"`
+	Question   string `json:"question"`
+	ProviderID string `json:"provider_id,omitempty"`
 }
 
 type AskResponse struct {
@@ -118,23 +120,17 @@ func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, 
 		return AskResponse{}, errors.New("tab_id is required")
 	}
 
-	status := c.Status()
-	if !status.Configured {
-		return AskResponse{}, ErrNotConfigured
-	}
-	if !status.Ready {
-		if status.Reason == ErrBackendNotImplemented.Error() {
-			return AskResponse{}, ErrBackendNotImplemented
-		}
-		return AskResponse{}, fmt.Errorf("%w: %s", ErrNotConfigured, status.Reason)
+	if err := c.Validate(request.ProviderID); err != nil {
+		return AskResponse{}, err
 	}
 
-	selected, ok := c.providerByID(status.DefaultProvider)
-	if !ok {
-		return AskResponse{}, fmt.Errorf("%w: default provider %s not found", ErrNotConfigured, status.DefaultProvider)
+	selected, err := c.resolveProvider(request.ProviderID)
+	if err != nil {
+		return AskResponse{}, err
 	}
 
-	answer, model, err := askOpenAICompatible(selected, os.Getenv(selected.APIKeyEnv), request.Question, context)
+	apiKey := os.Getenv(selected.APIKeyEnv)
+	answer, model, err := c.askProvider(selected, apiKey, request.Question, context)
 	if err != nil {
 		return AskResponse{}, fmt.Errorf("%w: %s", ErrProviderFailed, err)
 	}
@@ -144,6 +140,26 @@ func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, 
 		Model:          model,
 		ContextSummary: buildContextSummary(context),
 	}, nil
+}
+
+func (c Config) Validate(providerID string) error {
+	selected, err := c.resolveProvider(providerID)
+	if err != nil {
+		return err
+	}
+	if selected.Provider == "" || selected.Model == "" || selected.BaseURL == "" {
+		return fmt.Errorf("%w: sidebar qa config is incomplete", ErrNotConfigured)
+	}
+	if selected.APIKeyEnv == "" {
+		return fmt.Errorf("%w: sidebar qa api key env is not configured", ErrNotConfigured)
+	}
+	if os.Getenv(selected.APIKeyEnv) == "" {
+		return fmt.Errorf("%w: sidebar qa api key env %s is not set", ErrNotConfigured, selected.APIKeyEnv)
+	}
+	if !providerSupported(selected.Provider) {
+		return ErrBackendNotImplemented
+	}
+	return nil
 }
 
 func legacyProviderConfig(cfg settings.Config) settings.SidebarProviderConfig {
@@ -195,4 +211,31 @@ func (c Config) providerByID(id string) (settings.SidebarProviderConfig, bool) {
 		}
 	}
 	return settings.SidebarProviderConfig{}, false
+}
+
+func (c Config) resolveProvider(providerID string) (settings.SidebarProviderConfig, error) {
+	if len(c.Providers) == 0 {
+		return settings.SidebarProviderConfig{}, ErrNotConfigured
+	}
+
+	selectedID := providerID
+	if selectedID == "" {
+		selectedID = c.resolvedDefaultProviderID()
+	}
+	provider, ok := c.providerByID(selectedID)
+	if !ok {
+		return settings.SidebarProviderConfig{}, fmt.Errorf("%w: %s", ErrProviderNotFound, selectedID)
+	}
+	return provider, nil
+}
+
+func (c Config) askProvider(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext) (string, string, error) {
+	switch provider.Provider {
+	case "openai", "openai-compatible":
+		return askOpenAICompatible(provider, apiKey, question, context)
+	case "openrouter":
+		return askOpenRouter(provider, apiKey, question, context)
+	default:
+		return "", "", ErrBackendNotImplemented
+	}
 }

@@ -513,6 +513,78 @@ func TestSidebarAskEndpointReturnsStructuredAnswer(t *testing.T) {
 	}
 }
 
+func TestSidebarAskEndpointAllowsProviderOverride(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+	t.Setenv("OPENROUTER_API_KEY", "router-key")
+
+	openAIServerCalled := false
+	openAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		openAIServerCalled = true
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"wrong server"}}]}`))
+	}))
+	defer openAIServer.Close()
+
+	openRouterServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"openai/gpt-5","choices":[{"message":{"content":"OpenRouter answer"}}]}`))
+	}))
+	defer openRouterServer.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   openAIServer.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+			{
+				ID:        "backup",
+				Provider:  "openrouter",
+				Model:     "openai/gpt-5",
+				BaseURL:   openRouterServer.URL,
+				APIKeyEnv: "OPENROUTER_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:    "tab-1",
+			Title: "Atlas",
+			URL:   "https://chatgpt.com/atlas",
+			Text:  "Atlas context",
+		},
+	})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page","provider_id":"backup"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"provider":"openrouter"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"answer":"OpenRouter answer"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if openAIServerCalled {
+		t.Fatal("expected provider override to bypass default provider")
+	}
+}
+
 func TestSidebarAskEndpointRejectsUnimplementedBackend(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("ANTHROPIC_API_KEY", "test-key")
@@ -546,6 +618,45 @@ func TestSidebarAskEndpointRejectsUnimplementedBackend(t *testing.T) {
 
 	if recorder.Code != http.StatusNotImplemented {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestSidebarAskEndpointRejectsUnknownProviderID(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   "https://api.openai.com/v1",
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page","provider_id":"missing"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`provider id is not configured`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
 }
 

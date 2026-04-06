@@ -82,16 +82,17 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := config.Status()
-	switch {
-	case !status.Configured:
-		writeError(w, http.StatusServiceUnavailable, sidebar.ErrNotConfigured)
-		return
-	case !status.Ready && status.Reason == sidebar.ErrBackendNotImplemented.Error():
-		writeError(w, http.StatusNotImplemented, sidebar.ErrBackendNotImplemented)
-		return
-	case !status.Ready:
-		writeError(w, http.StatusServiceUnavailable, errors.New(status.Reason))
+	if err := config.Validate(request.ProviderID); err != nil {
+		switch {
+		case errors.Is(err, sidebar.ErrNotConfigured):
+			writeError(w, http.StatusServiceUnavailable, err)
+		case errors.Is(err, sidebar.ErrBackendNotImplemented):
+			writeError(w, http.StatusNotImplemented, err)
+		case errors.Is(err, sidebar.ErrProviderNotFound):
+			writeError(w, http.StatusBadRequest, err)
+		default:
+			writeError(w, http.StatusBadRequest, err)
+		}
 		return
 	}
 
@@ -120,6 +121,8 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusServiceUnavailable, err)
 		case errors.Is(err, sidebar.ErrBackendNotImplemented):
 			writeError(w, http.StatusNotImplemented, err)
+		case errors.Is(err, sidebar.ErrProviderNotFound):
+			writeError(w, http.StatusBadRequest, err)
 		case errors.Is(err, sidebar.ErrProviderFailed):
 			writeError(w, http.StatusBadGateway, err)
 		default:

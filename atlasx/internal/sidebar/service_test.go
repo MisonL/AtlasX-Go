@@ -183,6 +183,93 @@ func TestAskWithOpenAICompatibleProvider(t *testing.T) {
 	}
 }
 
+func TestAskAllowsProviderOverride(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+	t.Setenv("OPENROUTER_API_KEY", "router-key")
+
+	openAIServerCalled := false
+	openAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		openAIServerCalled = true
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"wrong server"}}]}`))
+	}))
+	defer openAIServer.Close()
+
+	openRouterServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("HTTP-Referer") != "https://atlasx.local" {
+			t.Fatalf("missing openrouter header: %s", r.Header.Get("HTTP-Referer"))
+		}
+		_, _ = w.Write([]byte(`{"model":"openai/gpt-5","choices":[{"message":{"content":"OpenRouter answer"}}]}`))
+	}))
+	defer openRouterServer.Close()
+
+	config := FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   openAIServer.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+			{
+				ID:        "backup",
+				Provider:  "openrouter",
+				Model:     "openai/gpt-5",
+				BaseURL:   openRouterServer.URL,
+				APIKeyEnv: "OPENROUTER_API_KEY",
+			},
+		},
+	})
+	response, err := config.Ask(AskRequest{
+		TabID:      "tab-1",
+		Question:   "summarize this page",
+		ProviderID: "backup",
+	}, tabs.PageContext{
+		ID:    "tab-1",
+		Title: "Atlas",
+		URL:   "https://chatgpt.com/atlas",
+		Text:  "Atlas page text",
+	})
+	if err != nil {
+		t.Fatalf("ask failed: %v", err)
+	}
+	if response.Provider != "openrouter" || response.Model != "openai/gpt-5" {
+		t.Fatalf("unexpected response: %+v", response)
+	}
+	if response.Answer != "OpenRouter answer" {
+		t.Fatalf("unexpected response: %+v", response)
+	}
+	if openAIServerCalled {
+		t.Fatal("expected request override to skip default provider")
+	}
+}
+
+func TestAskRejectsUnknownProviderID(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	config := FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   "https://api.openai.com/v1",
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	})
+	_, err := config.Ask(AskRequest{
+		TabID:      "tab-1",
+		Question:   "summarize this page",
+		ProviderID: "missing",
+	}, tabs.PageContext{ID: "tab-1"})
+	if !errors.Is(err, ErrProviderNotFound) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestAskReturnsProviderFailure(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 
