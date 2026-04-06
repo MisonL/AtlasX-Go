@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -447,17 +448,90 @@ func TestSidebarAskEndpointRejectsUnconfiguredBackend(t *testing.T) {
 	}
 }
 
-func TestSidebarAskEndpointRejectsUnimplementedBackend(t *testing.T) {
+func TestSidebarAskEndpointReturnsStructuredAnswer(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body failed: %v", err)
+		}
+		if !bytes.Contains(body, []byte("Atlas context")) {
+			t.Fatalf("tab context missing from request: %s", string(body))
+		}
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas answer"}}]}`))
+	}))
+	defer server.Close()
 
 	paths, err := macos.DiscoverPaths()
 	if err != nil {
 		t.Fatalf("discover paths failed: %v", err)
 	}
 	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
-		SidebarProvider: "openai",
-		SidebarModel:    "gpt-5.4",
-		SidebarBaseURL:  "https://api.openai.com/v1",
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-06T12:00:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
+		},
+	})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"answer":"Atlas answer"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"context_summary":"title=\"Atlas\"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestSidebarAskEndpointRejectsUnimplementedBackend(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "anthropic",
+				Model:     "claude-sonnet-4",
+				BaseURL:   "https://api.anthropic.com/v1",
+				APIKeyEnv: "ANTHROPIC_API_KEY",
+			},
+		},
 	}); err != nil {
 		t.Fatalf("save config failed: %v", err)
 	}
@@ -472,6 +546,58 @@ func TestSidebarAskEndpointRejectsUnimplementedBackend(t *testing.T) {
 
 	if recorder.Code != http.StatusNotImplemented {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestSidebarAskEndpointSurfacesProviderFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte(`{"error":{"message":"upstream failed"}}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:    "tab-1",
+			Title: "Atlas",
+			URL:   "https://chatgpt.com/atlas",
+			Text:  "Atlas context",
+		},
+	})
+
+	body := bytes.NewBufferString(`{"tab_id":"tab-1","question":"summarize this page"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/ask", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadGateway {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`upstream failed`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
 }
 

@@ -3,12 +3,15 @@ package sidebar
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"atlasx/internal/settings"
+	"atlasx/internal/tabs"
 )
 
 var ErrNotConfigured = errors.New("sidebar qa provider is not configured")
 var ErrBackendNotImplemented = errors.New("sidebar qa backend is not implemented")
+var ErrProviderFailed = errors.New("sidebar qa provider request failed")
 
 type Config struct {
 	DefaultProvider string
@@ -38,6 +41,13 @@ type Status struct {
 type AskRequest struct {
 	TabID    string `json:"tab_id"`
 	Question string `json:"question"`
+}
+
+type AskResponse struct {
+	Answer         string `json:"answer"`
+	Provider       string `json:"provider"`
+	Model          string `json:"model"`
+	ContextSummary string `json:"context_summary"`
 }
 
 func FromSettings(cfg settings.Config) Config {
@@ -84,29 +94,56 @@ func (c Config) Status() Status {
 		status.Reason = "sidebar qa config is incomplete"
 		return status
 	}
-	status.Reason = ErrBackendNotImplemented.Error()
+	if selected.APIKeyEnv == "" {
+		status.Reason = "sidebar qa api key env is not configured"
+		return status
+	}
+	if os.Getenv(selected.APIKeyEnv) == "" {
+		status.Reason = fmt.Sprintf("sidebar qa api key env %s is not set", selected.APIKeyEnv)
+		return status
+	}
+	if !providerSupported(selected.Provider) {
+		status.Reason = ErrBackendNotImplemented.Error()
+		return status
+	}
+	status.Ready = true
 	return status
 }
 
-func (c Config) Ask(request AskRequest) error {
+func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, error) {
 	if request.Question == "" {
-		return errors.New("question is required")
+		return AskResponse{}, errors.New("question is required")
 	}
 	if request.TabID == "" {
-		return errors.New("tab_id is required")
+		return AskResponse{}, errors.New("tab_id is required")
 	}
 
 	status := c.Status()
 	if !status.Configured {
-		return ErrNotConfigured
+		return AskResponse{}, ErrNotConfigured
 	}
-	if status.Ready {
-		return nil
+	if !status.Ready {
+		if status.Reason == ErrBackendNotImplemented.Error() {
+			return AskResponse{}, ErrBackendNotImplemented
+		}
+		return AskResponse{}, fmt.Errorf("%w: %s", ErrNotConfigured, status.Reason)
 	}
-	if status.Reason != "" {
-		return fmt.Errorf("%w: %s", ErrBackendNotImplemented, status.Reason)
+
+	selected, ok := c.providerByID(status.DefaultProvider)
+	if !ok {
+		return AskResponse{}, fmt.Errorf("%w: default provider %s not found", ErrNotConfigured, status.DefaultProvider)
 	}
-	return ErrBackendNotImplemented
+
+	answer, model, err := askOpenAICompatible(selected, os.Getenv(selected.APIKeyEnv), request.Question, context)
+	if err != nil {
+		return AskResponse{}, fmt.Errorf("%w: %s", ErrProviderFailed, err)
+	}
+	return AskResponse{
+		Answer:         answer,
+		Provider:       selected.Provider,
+		Model:          model,
+		ContextSummary: buildContextSummary(context),
+	}, nil
 }
 
 func legacyProviderConfig(cfg settings.Config) settings.SidebarProviderConfig {

@@ -82,21 +82,53 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := config.Ask(request); err != nil {
+	status := config.Status()
+	switch {
+	case !status.Configured:
+		writeError(w, http.StatusServiceUnavailable, sidebar.ErrNotConfigured)
+		return
+	case !status.Ready && status.Reason == sidebar.ErrBackendNotImplemented.Error():
+		writeError(w, http.StatusNotImplemented, sidebar.ErrBackendNotImplemented)
+		return
+	case !status.Ready:
+		writeError(w, http.StatusServiceUnavailable, errors.New(status.Reason))
+		return
+	}
+
+	paths, err := discoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	client, err := newTabsClient(paths)
+	if err != nil {
+		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	context, err := client.Capture(request.TabID)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+
+	response, err := config.Ask(request, context)
+	if err != nil {
 		switch {
 		case errors.Is(err, sidebar.ErrNotConfigured):
 			writeError(w, http.StatusServiceUnavailable, err)
 		case errors.Is(err, sidebar.ErrBackendNotImplemented):
 			writeError(w, http.StatusNotImplemented, err)
+		case errors.Is(err, sidebar.ErrProviderFailed):
+			writeError(w, http.StatusBadGateway, err)
 		default:
 			writeError(w, http.StatusBadRequest, err)
 		}
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status": "ready",
-	})
+	writeJSON(w, http.StatusOK, response)
 }
 
 func serveBrowserData[T any](w http.ResponseWriter, loader dataLoader[T]) {
