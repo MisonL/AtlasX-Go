@@ -12,7 +12,7 @@
 - `atlasctl blueprint`
 - `atlasctl doctor`
 - `atlasctl status`
-- `atlasctl runtime stage|status|verify|clear`
+- `atlasctl runtime stage|status|verify|clear|install`
 - `atlasctl runtime plan create|status|clear`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`

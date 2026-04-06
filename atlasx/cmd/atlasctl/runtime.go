@@ -10,9 +10,13 @@ import (
 	"atlasx/internal/platform/macos"
 )
 
+var runManagedRuntimeInstall = func(paths macos.Paths) (managedruntime.InstallReport, error) {
+	return managedruntime.Install(paths, managedruntime.InstallOptions{})
+}
+
 func runRuntime(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing runtime subcommand: stage, status, verify, clear, plan")
+		return errors.New("missing runtime subcommand: stage, status, verify, clear, install, plan")
 	}
 
 	switch args[0] {
@@ -24,6 +28,8 @@ func runRuntime(args []string) error {
 		return runRuntimeVerify()
 	case "clear":
 		return runRuntimeClear()
+	case "install":
+		return runRuntimeInstall()
 	case "plan":
 		return runRuntimePlan(args[1:])
 	default:
@@ -102,6 +108,20 @@ func runRuntimeVerify() error {
 		return err
 	}
 
+	return nil
+}
+
+func runRuntimeInstall() error {
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	report, err := runManagedRuntimeInstall(paths)
+	fmt.Print(report.Render())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

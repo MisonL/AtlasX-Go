@@ -20,6 +20,7 @@ go run ./cmd/atlasctl runtime stage --bundle-path /path/to/Chromium.app --versio
 go run ./cmd/atlasctl runtime stage --bundle-path /Applications/Google\\ Chrome.app --version 136.0.7103.114
 go run ./cmd/atlasctl runtime status
 go run ./cmd/atlasctl runtime verify
+go run ./cmd/atlasctl runtime install
 go run ./cmd/atlasctl runtime clear
 go run ./cmd/atlasctl runtime plan create --version 123.0.0 --channel stable --url https://example.com/chromium.zip --sha256 deadbeef --archive-path /tmp/chromium.zip --bundle-path /tmp/Chromium.app
 go run ./cmd/atlasctl runtime plan status
@@ -87,7 +88,8 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - 当前 managed runtime 检测已优先读取 manifest 中记录的 `binary_path`，不再硬编码为 `Chromium.app/Contents/MacOS/Chromium`。
 - 当前已提供 `runtime status` 和 `runtime clear`，可查看 staged runtime/manifest/binary 状态，并显式清理 support root/runtime 下的本地 managed runtime。
 - 当前已提供 `runtime verify`，可离线校验 manifest 与 staged bundle/binary/sha256 一致性。
-- 当前已提供 `runtime plan create|status|clear`，可离线维护 install plan 文件，但还不会触发真实下载。
+- 当前已提供 `runtime plan create|status|clear`，可离线维护 install plan 文件。
+- 当前已提供 `runtime install`，会按 install plan 执行下载、archive sha256 校验、本地 stage 与最终 verify，并把 phase/error 落回 install plan 状态面。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/status` 与 `POST /v1/runtime/stage`，可服务化查询 managed runtime 状态并触发本地 bundle stage。
 - 当前 `atlasd` 已提供 `POST /v1/runtime/verify` 与 `POST /v1/runtime/clear`，可服务化执行 runtime 校验与回退。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/plan`、`POST /v1/runtime/plan` 与 `POST /v1/runtime/plan/clear`，可服务化维护 install plan 状态面。
