@@ -20,7 +20,7 @@
 - `atlasctl tabs capture <target-id>`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/tabs|open|activate|close|navigate|context`
-- `atlasd /v1/runtime/status|stage|verify|clear`
+- `atlasd /v1/runtime/status|stage|verify|clear|install`
 - `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
 - `atlasd /v1/sidebar/status` 与 `/v1/sidebar/ask` 控制面骨架
 - support root 下 managed Chromium runtime 的发现、manifest、verify、install plan 状态导出

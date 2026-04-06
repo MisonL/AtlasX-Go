@@ -198,6 +198,107 @@ func TestRuntimePlanClearRejectsMissingPlan(t *testing.T) {
 	}
 }
 
+func TestRuntimeInstallEndpoint(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previousInstall := runManagedRuntimeInstall
+	runManagedRuntimeInstall = func(paths macos.Paths) (managedruntime.InstallReport, error) {
+		return managedruntime.InstallReport{
+			InstallPlanPath:         paths.RuntimeInstallPlanFile,
+			ArchivePath:             "/tmp/chromium.zip",
+			ArchivePartPath:         "/tmp/chromium.zip.part",
+			DownloadedArchiveSHA256: "deadbeef",
+			ExtractedBundlePath:     "/tmp/extract/Chromium.app",
+			StagedBundlePath:        paths.RuntimeRoot + "/Chromium.app",
+			BinaryPath:              paths.RuntimeRoot + "/Chromium.app/Contents/MacOS/Chromium",
+			ManifestPath:            paths.RuntimeManifestFile,
+			Version:                 "123.0.0",
+			Channel:                 "stable",
+			CurrentPhase:            managedruntime.InstallPhaseStaged,
+			Verified:                true,
+		}, nil
+	}
+	t.Cleanup(func() {
+		runManagedRuntimeInstall = previousInstall
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/runtime/install", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"current_phase":"staged"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"verified":true`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestRuntimeInstallEndpointRejectsMissingPlan(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previousInstall := runManagedRuntimeInstall
+	runManagedRuntimeInstall = func(macos.Paths) (managedruntime.InstallReport, error) {
+		return managedruntime.InstallReport{}, managedruntime.ErrInstallPlanNotFound
+	}
+	t.Cleanup(func() {
+		runManagedRuntimeInstall = previousInstall
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/runtime/install", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"error":"file does not exist"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestRuntimeInstallEndpointRejectsGet(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/runtime/install", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestRuntimeInstallEndpointRejectsConcurrentInstall(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previousInstall := runManagedRuntimeInstall
+	runManagedRuntimeInstall = func(macos.Paths) (managedruntime.InstallReport, error) {
+		return managedruntime.InstallReport{}, managedruntime.ErrInstallAlreadyRunning
+	}
+	t.Cleanup(func() {
+		runManagedRuntimeInstall = previousInstall
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/runtime/install", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`managed runtime install is already running`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
 func createDaemonFakeChromiumBundle(t *testing.T) string {
 	t.Helper()
 

@@ -60,6 +60,7 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - `POST /v1/runtime/stage`
 - `POST /v1/runtime/verify`
 - `POST /v1/runtime/clear`
+- `POST /v1/runtime/install`
 - `GET /v1/runtime/plan`
 - `POST /v1/runtime/plan`
 - `POST /v1/runtime/plan/clear`
@@ -91,7 +92,7 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - 当前已提供 `runtime plan create|status|clear`，可离线维护 install plan 文件。
 - 当前已提供 `runtime install`，会按 install plan 执行下载、archive sha256 校验、本地 stage 与最终 verify，并把 phase/error 落回 install plan 状态面。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/status` 与 `POST /v1/runtime/stage`，可服务化查询 managed runtime 状态并触发本地 bundle stage。
-- 当前 `atlasd` 已提供 `POST /v1/runtime/verify` 与 `POST /v1/runtime/clear`，可服务化执行 runtime 校验与回退。
+- 当前 `atlasd` 已提供 `POST /v1/runtime/verify`、`POST /v1/runtime/clear` 与 `POST /v1/runtime/install`，可服务化执行 runtime 校验、回退与 install plan 驱动安装。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/plan`、`POST /v1/runtime/plan` 与 `POST /v1/runtime/plan/clear`，可服务化维护 install plan 状态面。
 - 当前 `/v1/status` 已额外导出 `runtime_bundle_present`、`runtime_binary_present`、`runtime_binary_executable`，避免把 manifest present 误判成 runtime ready。
 - 当前已提供 `mirror-scan`，会把历史/书签/下载的 source metadata 写入 `Application Support/AtlasX/mirrors/browser-data.json`。

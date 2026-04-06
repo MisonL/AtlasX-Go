@@ -147,6 +147,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/runtime/verify", func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeVerify(w, r)
 	})
+	mux.HandleFunc("/v1/runtime/install", func(w http.ResponseWriter, r *http.Request) {
+		serveRuntimeInstall(w, r)
+	})
 	mux.HandleFunc("/v1/runtime/plan", func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimePlan(w, r)
 	})

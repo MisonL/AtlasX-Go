@@ -10,9 +10,14 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync/atomic"
 
 	"atlasx/internal/platform/macos"
 )
+
+var ErrInstallAlreadyRunning = fmt.Errorf("managed runtime install is already running")
+
+var installRunning atomic.Bool
 
 type InstallOptions struct {
 	HTTPClient *http.Client
@@ -52,6 +57,11 @@ func (r InstallReport) Render() string {
 }
 
 func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
+	if !installRunning.CompareAndSwap(false, true) {
+		return InstallReport{}, ErrInstallAlreadyRunning
+	}
+	defer installRunning.Store(false)
+
 	plan, err := LoadInstallPlan(paths)
 	if err != nil {
 		return InstallReport{}, err

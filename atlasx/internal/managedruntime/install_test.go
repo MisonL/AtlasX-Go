@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -150,6 +151,57 @@ func TestInstallFailsVerificationAndPreservesExistingRuntime(t *testing.T) {
 	}
 	if !verifyReport.Verified {
 		t.Fatalf("expected previous runtime to remain verified: %+v", verifyReport)
+	}
+}
+
+func TestInstallRejectsConcurrentExecution(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	archiveBytes := createBundleArchiveBytes(t, createFakeChromiumBundle(t))
+	started := make(chan struct{})
+	release := make(chan struct{})
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-release
+		_, _ = w.Write(archiveBytes)
+	}))
+	defer server.Close()
+
+	plan, err := NewInstallPlan(InstallPlanOptions{
+		Version:          "123.0.0",
+		Channel:          "stable",
+		SourceURL:        server.URL,
+		ExpectedSHA256:   sha256Hex(archiveBytes),
+		ArchivePath:      filepath.Join(t.TempDir(), "downloads", "chromium.zip"),
+		StagedBundlePath: filepath.Join(paths.RuntimeRoot, stagedBundleName),
+	})
+	if err != nil {
+		t.Fatalf("new install plan failed: %v", err)
+	}
+	if err := SaveInstallPlan(paths, plan); err != nil {
+		t.Fatalf("save install plan failed: %v", err)
+	}
+
+	firstDone := make(chan error, 1)
+	go func() {
+		_, installErr := Install(paths, InstallOptions{HTTPClient: server.Client()})
+		firstDone <- installErr
+	}()
+
+	<-started
+	_, err = Install(paths, InstallOptions{HTTPClient: server.Client()})
+	if !errors.Is(err, ErrInstallAlreadyRunning) {
+		t.Fatalf("expected concurrent install rejection, got: %v", err)
+	}
+
+	close(release)
+	if err := <-firstDone; err != nil {
+		t.Fatalf("first install failed: %v", err)
 	}
 }
 
