@@ -78,6 +78,9 @@ func TestAdvanceInstallPlanRollbackPath(t *testing.T) {
 	if plan.CurrentPhase != InstallPhaseRolledBack {
 		t.Fatalf("unexpected rollback phase: %+v", plan)
 	}
+	if plan.LastError == "" {
+		t.Fatalf("expected rollback error to be preserved: %+v", plan)
+	}
 }
 
 func TestAdvanceInstallPlanRejectsInvalidTransition(t *testing.T) {

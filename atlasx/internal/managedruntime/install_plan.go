@@ -157,7 +157,7 @@ func advanceInstallPhase(plan InstallPlan, event InstallEvent, failureReason str
 		return plan, invalidInstallTransition(plan.CurrentPhase, event)
 	}
 	plan.CurrentPhase = to
-	if to != InstallPhaseFailed {
+	if to != InstallPhaseFailed && to != InstallPhaseRollback && to != InstallPhaseRolledBack {
 		plan.LastError = ""
 	}
 	return plan, nil

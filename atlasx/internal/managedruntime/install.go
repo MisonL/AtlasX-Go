@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,9 @@ import (
 var ErrInstallAlreadyRunning = fmt.Errorf("managed runtime install is already running")
 
 var installRunning atomic.Bool
+
+var stageManagedRuntime = StageLocal
+var verifyManagedRuntime = Verify
 
 type InstallOptions struct {
 	HTTPClient *http.Client
@@ -75,6 +79,7 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 		Version:         plan.Version,
 		Channel:         plan.Channel,
 	}
+	cleanup := installCleanup{archivePath: plan.ArchivePath, archivePartPath: plan.ArchivePath + ".part"}
 
 	client := opts.HTTPClient
 	if client == nil {
@@ -83,18 +88,28 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 
 	var backup runtimeBackup
 	fail := func(cause error) (InstallReport, error) {
-		if restoreErr := backup.restore(paths); restoreErr != nil {
-			cause = fmt.Errorf("%v; restore failed: %w", cause, restoreErr)
+		if cleanupErr := cleanup.removeArtifacts(); cleanupErr != nil {
+			cause = fmt.Errorf("%v; cleanup failed: %w", cause, cleanupErr)
 		}
 
-		failedPlan, advanceErr := AdvanceInstallPlan(plan, InstallEventFail, cause.Error())
-		if advanceErr == nil {
-			plan = failedPlan
-			if saveErr := SaveInstallPlan(paths, plan); saveErr != nil {
-				cause = fmt.Errorf("%v; save failed plan: %w", cause, saveErr)
+		if backup.shouldRollback() {
+			var rollbackErr error
+			plan, rollbackErr = failAndRollbackInstallPlan(paths, plan, cause.Error(), func() error {
+				return backup.restore(paths)
+			})
+			if rollbackErr != nil {
+				cause = fmt.Errorf("%v; rollback failed: %w", cause, rollbackErr)
 			}
-		} else if saveErr := SaveInstallPlan(paths, plan); saveErr != nil {
-			cause = fmt.Errorf("%v; save install plan: %w", cause, saveErr)
+		} else {
+			failedPlan, advanceErr := AdvanceInstallPlan(plan, InstallEventFail, cause.Error())
+			if advanceErr == nil {
+				plan = failedPlan
+				if saveErr := SaveInstallPlan(paths, plan); saveErr != nil {
+					cause = fmt.Errorf("%v; save failed plan: %w", cause, saveErr)
+				}
+			} else if saveErr := SaveInstallPlan(paths, plan); saveErr != nil {
+				cause = fmt.Errorf("%v; save install plan: %w", cause, saveErr)
+			}
 		}
 
 		report.CurrentPhase = plan.CurrentPhase
@@ -139,6 +154,7 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 	if err != nil {
 		return fail(err)
 	}
+	cleanup.extractRoot = extractRoot
 	defer os.RemoveAll(extractRoot)
 
 	extractedBundlePath, err := extractBundleArchive(plan.ArchivePath, extractRoot)
@@ -160,7 +176,7 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 		return fail(err)
 	}
 
-	stageReport, err := StageLocal(paths, StageOptions{
+	stageReport, err := stageManagedRuntime(paths, StageOptions{
 		BundlePath: extractedBundlePath,
 		Version:    plan.Version,
 		Channel:    plan.Channel,
@@ -171,7 +187,7 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 	report.StagedBundlePath = stageReport.StagedBundlePath
 	report.BinaryPath = stageReport.BinaryPath
 
-	verifyReport, err := Verify(paths)
+	verifyReport, err := verifyManagedRuntime(paths)
 	if err != nil {
 		return fail(err)
 	}
@@ -186,6 +202,40 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 	}
 	report.CurrentPhase = plan.CurrentPhase
 	return report, nil
+}
+
+func failAndRollbackInstallPlan(paths macos.Paths, plan InstallPlan, reason string, restore func() error) (InstallPlan, error) {
+	failedPlan, err := AdvanceInstallPlan(plan, InstallEventFail, reason)
+	if err != nil {
+		return plan, err
+	}
+	plan = failedPlan
+	if err := SaveInstallPlan(paths, plan); err != nil {
+		return plan, err
+	}
+
+	rollbackPlan, err := AdvanceInstallPlan(plan, InstallEventStartRollback, "")
+	if err != nil {
+		return plan, err
+	}
+	plan = rollbackPlan
+	if err := SaveInstallPlan(paths, plan); err != nil {
+		return plan, err
+	}
+
+	if err := restore(); err != nil {
+		return plan, err
+	}
+
+	rolledBackPlan, err := AdvanceInstallPlan(plan, InstallEventFinishRollback, "")
+	if err != nil {
+		return plan, err
+	}
+	rolledBackPlan.LastError = reason
+	if err := SaveInstallPlan(paths, rolledBackPlan); err != nil {
+		return plan, err
+	}
+	return rolledBackPlan, nil
 }
 
 func advanceAndSaveInstallPlan(paths macos.Paths, plan InstallPlan, event InstallEvent) (InstallPlan, error) {
@@ -324,6 +374,10 @@ type runtimeBackup struct {
 	manifest   string
 }
 
+func (b runtimeBackup) shouldRollback() bool {
+	return b.bundlePath != "" || b.manifest != ""
+}
+
 func backupExistingRuntime(paths macos.Paths) (runtimeBackup, error) {
 	report, err := Status(paths)
 	if err != nil {
@@ -355,7 +409,7 @@ func backupExistingRuntime(paths macos.Paths) (runtimeBackup, error) {
 }
 
 func (b runtimeBackup) restore(paths macos.Paths) error {
-	if b.bundlePath == "" && b.manifest == "" {
+	if !b.shouldRollback() {
 		return nil
 	}
 
@@ -389,6 +443,45 @@ func (b runtimeBackup) cleanup() error {
 		if err := os.Remove(b.manifest); err != nil && !os.IsNotExist(err) {
 			return err
 		}
+	}
+	return nil
+}
+
+type installCleanup struct {
+	archivePath     string
+	archivePartPath string
+	extractRoot     string
+}
+
+func (c installCleanup) removeArtifacts() error {
+	targets := []string{c.archivePartPath, c.archivePath, c.extractRoot}
+	for _, target := range targets {
+		if target == "" {
+			continue
+		}
+		if err := os.RemoveAll(target); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return pruneEmptyParents(filepath.Dir(c.archivePath))
+}
+
+func pruneEmptyParents(path string) error {
+	for path != "" && path != "." && path != string(filepath.Separator) {
+		entries, err := os.ReadDir(path)
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if len(entries) != 0 {
+			return nil
+		}
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+		path = filepath.Dir(path)
 	}
 	return nil
 }

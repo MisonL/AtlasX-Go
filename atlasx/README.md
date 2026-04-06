@@ -91,6 +91,7 @@ go run ./cmd/atlasd --listen 127.0.0.1:17537
 - 当前已提供 `runtime verify`，可离线校验 manifest 与 staged bundle/binary/sha256 一致性。
 - 当前已提供 `runtime plan create|status|clear`，可离线维护 install plan 文件。
 - 当前已提供 `runtime install`，会按 install plan 执行下载、archive sha256 校验、本地 stage 与最终 verify，并把 phase/error 落回 install plan 状态面。
+- 当前 `runtime install` 在失败时会显式清理 `archive_path` 与 `.part` 残留；若安装前已有有效 managed runtime，则会把 install plan phase 推进到 `rolled_back` 并恢复旧 bundle/manifest。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/status` 与 `POST /v1/runtime/stage`，可服务化查询 managed runtime 状态并触发本地 bundle stage。
 - 当前 `atlasd` 已提供 `POST /v1/runtime/verify`、`POST /v1/runtime/clear` 与 `POST /v1/runtime/install`，可服务化执行 runtime 校验、回退与 install plan 驱动安装。
 - 当前 `atlasd` 已提供 `GET /v1/runtime/plan`、`POST /v1/runtime/plan` 与 `POST /v1/runtime/plan/clear`，可服务化维护 install plan 状态面。

@@ -84,24 +84,12 @@ func TestInstallDownloadsArchiveStagesRuntimeAndAdvancesPlan(t *testing.T) {
 	}
 }
 
-func TestInstallFailsVerificationAndPreservesExistingRuntime(t *testing.T) {
+func TestInstallFailsVerificationWithoutExistingRuntimeAndCleansArtifacts(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	paths, err := macos.DiscoverPaths()
 	if err != nil {
 		t.Fatalf("discover paths failed: %v", err)
-	}
-
-	if _, err := StageLocal(paths, StageOptions{
-		BundlePath: createFakeChromiumBundle(t),
-		Version:    "122.0.0",
-		Channel:    "local",
-	}); err != nil {
-		t.Fatalf("stage existing runtime failed: %v", err)
-	}
-	previousManifest, err := LoadManifest(paths)
-	if err != nil {
-		t.Fatalf("load previous manifest failed: %v", err)
 	}
 
 	archiveBytes := createBundleArchiveBytes(t, createFakeChromiumBundle(t))
@@ -137,20 +125,18 @@ func TestInstallFailsVerificationAndPreservesExistingRuntime(t *testing.T) {
 		t.Fatalf("unexpected failed install status: %+v", status)
 	}
 
-	currentManifest, err := LoadManifest(paths)
-	if err != nil {
-		t.Fatalf("load current manifest failed: %v", err)
+	if _, err := os.Stat(plan.ArchivePath); !os.IsNotExist(err) {
+		t.Fatalf("expected archive removed after failure, got: %v", err)
 	}
-	if currentManifest.Version != previousManifest.Version || currentManifest.Channel != previousManifest.Channel {
-		t.Fatalf("expected previous runtime to remain active: before=%+v after=%+v", previousManifest, currentManifest)
+	if _, err := os.Stat(plan.ArchivePath + ".part"); !os.IsNotExist(err) {
+		t.Fatalf("expected archive part removed after failure, got: %v", err)
+	}
+	if _, err := os.Stat(filepath.Dir(plan.ArchivePath)); !os.IsNotExist(err) {
+		t.Fatalf("expected archive directory pruned after failure, got: %v", err)
 	}
 
-	verifyReport, err := Verify(paths)
-	if err != nil {
-		t.Fatalf("verify existing runtime failed: %v", err)
-	}
-	if !verifyReport.Verified {
-		t.Fatalf("expected previous runtime to remain verified: %+v", verifyReport)
+	if _, err := LoadManifest(paths); !os.IsNotExist(err) {
+		t.Fatalf("expected no manifest after failed install without previous runtime, got: %v", err)
 	}
 }
 
@@ -202,6 +188,91 @@ func TestInstallRejectsConcurrentExecution(t *testing.T) {
 	close(release)
 	if err := <-firstDone; err != nil {
 		t.Fatalf("first install failed: %v", err)
+	}
+}
+
+func TestInstallRollsBackToPreviousRuntimeAfterStageFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if _, err := StageLocal(paths, StageOptions{
+		BundlePath: createFakeChromiumBundle(t),
+		Version:    "122.0.0",
+		Channel:    "local",
+	}); err != nil {
+		t.Fatalf("stage existing runtime failed: %v", err)
+	}
+	previousManifest, err := LoadManifest(paths)
+	if err != nil {
+		t.Fatalf("load previous manifest failed: %v", err)
+	}
+
+	archiveBytes := createBundleArchiveBytes(t, createFakeChromiumBundle(t))
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(archiveBytes)
+	}))
+	defer server.Close()
+
+	plan, err := NewInstallPlan(InstallPlanOptions{
+		Version:          "123.0.0",
+		Channel:          "stable",
+		SourceURL:        server.URL,
+		ExpectedSHA256:   sha256Hex(archiveBytes),
+		ArchivePath:      filepath.Join(t.TempDir(), "downloads", "chromium.zip"),
+		StagedBundlePath: filepath.Join(paths.RuntimeRoot, stagedBundleName),
+	})
+	if err != nil {
+		t.Fatalf("new install plan failed: %v", err)
+	}
+	if err := SaveInstallPlan(paths, plan); err != nil {
+		t.Fatalf("save install plan failed: %v", err)
+	}
+
+	previousStage := stageManagedRuntime
+	stageManagedRuntime = func(macos.Paths, StageOptions) (StageReport, error) {
+		return StageReport{}, errors.New("forced stage failure")
+	}
+	t.Cleanup(func() {
+		stageManagedRuntime = previousStage
+	})
+
+	if _, err := Install(paths, InstallOptions{HTTPClient: server.Client()}); err == nil {
+		t.Fatal("expected install stage failure")
+	}
+
+	status, err := InstallPlanInfo(paths)
+	if err != nil {
+		t.Fatalf("install plan info failed: %v", err)
+	}
+	if status.CurrentPhase != InstallPhaseRolledBack || status.LastError == "" {
+		t.Fatalf("unexpected rollback install status: %+v", status)
+	}
+
+	if _, err := os.Stat(plan.ArchivePath); !os.IsNotExist(err) {
+		t.Fatalf("expected archive removed after rollback, got: %v", err)
+	}
+	if _, err := os.Stat(plan.ArchivePath + ".part"); !os.IsNotExist(err) {
+		t.Fatalf("expected archive part removed after rollback, got: %v", err)
+	}
+
+	currentManifest, err := LoadManifest(paths)
+	if err != nil {
+		t.Fatalf("load current manifest failed: %v", err)
+	}
+	if currentManifest.Version != previousManifest.Version || currentManifest.Channel != previousManifest.Channel {
+		t.Fatalf("expected previous runtime restored: before=%+v after=%+v", previousManifest, currentManifest)
+	}
+
+	verifyReport, err := Verify(paths)
+	if err != nil {
+		t.Fatalf("verify restored runtime failed: %v", err)
+	}
+	if !verifyReport.Verified {
+		t.Fatalf("expected restored runtime to remain verified: %+v", verifyReport)
 	}
 }
 
