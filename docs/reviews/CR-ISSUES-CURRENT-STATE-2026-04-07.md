@@ -1,0 +1,79 @@
+# CR-ISSUES-CURRENT-STATE
+
+- 日期: 2026-04-07
+- 目标: 记录当前仓库、当前开发机与当前 gate 的事实状态，供后续继续迭代直接接管
+
+## 任务状态
+
+- `T001-T059`
+  - 当前全部已完成
+- 当前任务源事实
+  - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
+
+## 当前代码能力
+
+- fallback、控制面、browser capability、managed runtime、sidebar intelligence、memory、E2E gate、runbook 已全部落地
+- 当前项目已经具备：
+  - 统一 CLI 与 HTTP 控制面
+  - structured tabs capture
+  - browser-data open
+  - managed runtime stage/verify/install/rollback
+  - sidebar 多 provider 与本地 memory 轻量增强
+  - 项目级 gate 与发布/恢复手册
+
+## 当前开发机观测事实
+
+以下事实来自 `cd atlasx && go run ./cmd/atlasd --once`：
+
+- `ready=true`
+- `chrome_status=ok`
+- `chrome_source=system_auto`
+- `managed_session_live=false`
+- `mirror_present=true`
+- `chrome_import_present=true`
+- `memory_present=false`
+- `runtime_manifest_present=false`
+- `sidebar_qa_ready=false`
+
+当前解释：
+
+- 本机系统 Chrome 可发现
+- 当前没有受管浏览器会话
+- mirror/import 已有历史落盘
+- 当前没有 staged managed runtime
+- 当前没有本地 memory 事件
+- 当前没有配置好真实 provider 凭据或 provider registry
+
+## 当前 Gate 结果
+
+以下事实来自 `cd atlasx && bash scripts/e2e_gate.sh`：
+
+- 离线强制 gate 通过
+- 当前 `UNCOVERED` 项：
+  - `runtime verify smoke`
+  - `runtime install smoke`
+  - `tabs capture smoke`
+  - `browser-data open smoke`
+  - `sidebar ask real smoke`
+
+当前解释：
+
+- 这些未覆盖项不是代码失败，而是本机当前缺少 staged runtime、受管浏览器会话和真实 provider readiness
+- 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
+
+## 当前推荐入口
+
+- 继续开发入口:
+  - `docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md`
+- 发布与恢复入口:
+  - `atlasx/docs/RUNBOOK.md`
+- gate 入口:
+  - `atlasx/scripts/e2e_gate.sh`
+- release checklist:
+  - `docs/reviews/RELEASE-CHECKLIST-2026-04-07.md`
+
+## 注意事项
+
+- 不要把当前开发机的 `UNCOVERED` 项误判成产品缺陷
+- 后续若要继续新增功能，先更新 `tasks.csv`
+- 后续若代码事实再变化，应优先回写本文件和最新 stage alignment，而不是继续依赖旧日期文档

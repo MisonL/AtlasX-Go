@@ -29,5 +29,5 @@
 - `atlasctl stop-webapp`
 - `atlasd --once`
 
-当前阶段对齐与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 和 [`docs/reviews/CR-STAGE-ALIGNMENT-2026-04-06.md`](docs/reviews/CR-STAGE-ALIGNMENT-2026-04-06.md) 为入口。
+当前阶段对齐与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 和 [`docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md`](docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md) 为入口。
 运行手册与发布检查单见 [`atlasx/docs/RUNBOOK.md`](atlasx/docs/RUNBOOK.md)，真实 gate 入口见 [`atlasx/docs/E2E-GATE.md`](atlasx/docs/E2E-GATE.md)。

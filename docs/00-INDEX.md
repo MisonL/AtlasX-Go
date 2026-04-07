@@ -20,8 +20,12 @@
    - 当前状态、已验证事实、下一位接手者的起步动作
 8. [08-HANDOFF-REPORT.md](/Volumes/Work/code/AtlasX-Go/docs/08-HANDOFF-REPORT.md)
    - 正式交接报告，适合直接转交下一位接手者
-9. [CR-STAGE-ALIGNMENT-2026-04-06.md](/Volumes/Work/code/AtlasX-Go/docs/reviews/CR-STAGE-ALIGNMENT-2026-04-06.md)
+9. [CR-STAGE-ALIGNMENT-2026-04-07.md](/Volumes/Work/code/AtlasX-Go/docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md)
    - 当前阶段对齐、已完成能力、冻结边界与后续开发入口
+10. [CR-ISSUES-CURRENT-STATE-2026-04-07.md](/Volumes/Work/code/AtlasX-Go/docs/reviews/CR-ISSUES-CURRENT-STATE-2026-04-07.md)
+   - 当前开发机与当前 gate 事实状态
+11. [RELEASE-CHECKLIST-2026-04-07.md](/Volumes/Work/code/AtlasX-Go/docs/reviews/RELEASE-CHECKLIST-2026-04-07.md)
+   - 发布前统一门禁与证据清单
 
 当前一句话结论：
 
