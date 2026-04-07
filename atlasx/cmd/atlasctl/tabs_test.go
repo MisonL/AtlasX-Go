@@ -13,28 +13,30 @@ import (
 )
 
 type stubCommandTabsClient struct {
-	targets         []tabs.Target
-	listErr         error
-	windows         []tabs.WindowSummary
-	windowsErr      error
-	windowClose     tabs.WindowCloseResult
-	windowCloseErr  error
-	windowState     tabs.WindowBounds
-	windowStateErr  error
-	windowBounds    tabs.WindowBounds
-	windowBoundsErr error
-	openDevTools    tabs.Target
-	openDevToolsErr error
-	context         tabs.PageContext
-	captureErr      error
-	semanticContext tabs.SemanticContext
-	semanticErr     error
-	selection       tabs.SelectionContext
-	selectionErr    error
-	devTools        tabs.DevToolsTarget
-	devToolsErr     error
-	deviceResult    tabs.DeviceEmulationResult
-	deviceErr       error
+	targets           []tabs.Target
+	listErr           error
+	windows           []tabs.WindowSummary
+	windowsErr        error
+	windowActivate    tabs.WindowActivateResult
+	windowActivateErr error
+	windowClose       tabs.WindowCloseResult
+	windowCloseErr    error
+	windowState       tabs.WindowBounds
+	windowStateErr    error
+	windowBounds      tabs.WindowBounds
+	windowBoundsErr   error
+	openDevTools      tabs.Target
+	openDevToolsErr   error
+	context           tabs.PageContext
+	captureErr        error
+	semanticContext   tabs.SemanticContext
+	semanticErr       error
+	selection         tabs.SelectionContext
+	selectionErr      error
+	devTools          tabs.DevToolsTarget
+	devToolsErr       error
+	deviceResult      tabs.DeviceEmulationResult
+	deviceErr         error
 }
 
 func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
@@ -43,6 +45,13 @@ func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
 
 func (s *stubCommandTabsClient) Windows() ([]tabs.WindowSummary, error) {
 	return s.windows, s.windowsErr
+}
+
+func (s *stubCommandTabsClient) ActivateWindow(windowID int) (tabs.WindowActivateResult, error) {
+	if s.windowActivateErr != nil {
+		return tabs.WindowActivateResult{}, s.windowActivateErr
+	}
+	return s.windowActivate, nil
 }
 
 func (s *stubCommandTabsClient) CloseWindow(windowID int) (tabs.WindowCloseResult, error) {

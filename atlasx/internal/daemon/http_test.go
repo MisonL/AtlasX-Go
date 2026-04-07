@@ -23,29 +23,31 @@ import (
 )
 
 type stubTabsClient struct {
-	openedURL       string
-	targets         []tabs.Target
-	listErr         error
-	windows         []tabs.WindowSummary
-	windowsErr      error
-	windowClose     tabs.WindowCloseResult
-	windowCloseErr  error
-	windowState     tabs.WindowBounds
-	windowStateErr  error
-	windowBounds    tabs.WindowBounds
-	windowBoundsErr error
-	openDevTools    tabs.Target
-	openDevToolsErr error
-	context         tabs.PageContext
-	captureErr      error
-	semanticContext tabs.SemanticContext
-	semanticErr     error
-	selection       tabs.SelectionContext
-	selectionErr    error
-	devTools        tabs.DevToolsTarget
-	devToolsErr     error
-	deviceResult    tabs.DeviceEmulationResult
-	deviceErr       error
+	openedURL         string
+	targets           []tabs.Target
+	listErr           error
+	windows           []tabs.WindowSummary
+	windowsErr        error
+	windowActivate    tabs.WindowActivateResult
+	windowActivateErr error
+	windowClose       tabs.WindowCloseResult
+	windowCloseErr    error
+	windowState       tabs.WindowBounds
+	windowStateErr    error
+	windowBounds      tabs.WindowBounds
+	windowBoundsErr   error
+	openDevTools      tabs.Target
+	openDevToolsErr   error
+	context           tabs.PageContext
+	captureErr        error
+	semanticContext   tabs.SemanticContext
+	semanticErr       error
+	selection         tabs.SelectionContext
+	selectionErr      error
+	devTools          tabs.DevToolsTarget
+	devToolsErr       error
+	deviceResult      tabs.DeviceEmulationResult
+	deviceErr         error
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -54,6 +56,13 @@ func (s *stubTabsClient) List() ([]tabs.Target, error) {
 
 func (s *stubTabsClient) Windows() ([]tabs.WindowSummary, error) {
 	return s.windows, s.windowsErr
+}
+
+func (s *stubTabsClient) ActivateWindow(windowID int) (tabs.WindowActivateResult, error) {
+	if s.windowActivateErr != nil {
+		return tabs.WindowActivateResult{}, s.windowActivateErr
+	}
+	return s.windowActivate, nil
 }
 
 func (s *stubTabsClient) CloseWindow(windowID int) (tabs.WindowCloseResult, error) {
