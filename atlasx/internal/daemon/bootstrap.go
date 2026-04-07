@@ -290,6 +290,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/window-state", func(w http.ResponseWriter, r *http.Request) {
 		serveTabWindowState(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/window-bounds", func(w http.ResponseWriter, r *http.Request) {
+		serveTabWindowBounds(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/emulate-device", func(w http.ResponseWriter, r *http.Request) {
 		serveTabEmulateDevice(w, r)
 	})

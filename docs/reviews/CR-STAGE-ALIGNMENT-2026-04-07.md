@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T083` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T083` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T084` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T084` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -45,9 +45,10 @@
   - `import-chrome`
   - `import-safari`
   - `history|downloads|bookmarks list/open`
-  - `tabs list|windows|open|open-window|set-window-state|activate|close|navigate|capture|extract-context|selection|suggest|organize|devtools|emulate-device`
+  - `tabs list|windows|open|open-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|organize|devtools|emulate-device`
   - `/v1/tabs/windows`
   - `/v1/tabs/window-state`
+  - `/v1/tabs/window-bounds`
   - `/v1/tabs/semantic-context`
   - `/v1/tabs/selection`
   - `/v1/tabs/suggestions`
@@ -60,7 +61,7 @@
   - `/v1/mirror/scan` `/v1/import/chrome` `/v1/import/safari`
 - 当前边界:
   - 页面上下文已支持纯文本抓取、DOM 结构化语义提取与原生文本选区抓取，但仍不包含更深的 DOM 动作自动化
-  - DevTools 当前已提供按标签页解析 frontend URL、固定设备预设模拟，以及最小多窗口打开、窗口分组和窗口状态控制入口，尚未提供内置面板壳层或更细粒度窗口移动/编排动作
+  - DevTools 当前已提供按标签页解析 frontend URL、固定设备预设模拟，以及最小多窗口打开、窗口分组、窗口状态控制和窗口 bounds 控制入口，尚未提供内置面板壳层或更细粒度窗口编排动作
   - mirror-scan 与 import-chrome 当前只接受受信 profile 根目录，不再支持任意本地目录输入
   - browser-data open 依赖已落盘 mirror/import 数据
 
@@ -116,7 +117,7 @@
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或多轮代理编排
-  - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、只读窗口分组和显式窗口状态控制，尚未覆盖更深层 DevTools 面板壳层或窗口移动/编排
+  - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、只读窗口分组、显式窗口状态控制和显式 bounds 控制，尚未覆盖更深层 DevTools 面板壳层或窗口编排
 
 ## 冻结边界
 

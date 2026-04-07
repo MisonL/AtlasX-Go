@@ -27,6 +27,7 @@ type tabClient interface {
 	List() ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
+	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -56,6 +57,14 @@ type tabEmulationRequest struct {
 type windowStateRequest struct {
 	WindowID int    `json:"window_id"`
 	State    string `json:"state"`
+}
+
+type windowBoundsRequest struct {
+	WindowID int `json:"window_id"`
+	Left     int `json:"left"`
+	Top      int `json:"top"`
+	Width    int `json:"width"`
+	Height   int `json:"height"`
 }
 
 type openIndexRequest struct {

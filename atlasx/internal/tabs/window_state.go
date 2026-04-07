@@ -27,16 +27,7 @@ func (c Client) SetWindowState(windowID int, state string) (WindowBounds, error)
 		return WindowBounds{}, err
 	}
 
-	if _, err := runPageCommand(browserWS, cdpCommandRequest{
-		ID:     60,
-		Method: "Browser.setWindowBounds",
-		Params: map[string]any{
-			"windowId": windowID,
-			"bounds": map[string]any{
-				"windowState": state,
-			},
-		},
-	}); err != nil {
+	if err := c.setWindowBounds(browserWS, windowID, map[string]any{"windowState": state}, 60); err != nil {
 		return WindowBounds{}, err
 	}
 
@@ -61,4 +52,16 @@ func isSupportedWindowState(state string) bool {
 	default:
 		return false
 	}
+}
+
+func (c Client) setWindowBounds(browserWS string, windowID int, bounds map[string]any, requestID int) error {
+	_, err := runPageCommand(browserWS, cdpCommandRequest{
+		ID:     requestID,
+		Method: "Browser.setWindowBounds",
+		Params: map[string]any{
+			"windowId": windowID,
+			"bounds":   bounds,
+		},
+	})
+	return err
 }

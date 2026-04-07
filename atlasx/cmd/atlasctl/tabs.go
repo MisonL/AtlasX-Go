@@ -18,6 +18,7 @@ type commandTabsClient interface {
 	List() ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
+	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -32,7 +33,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, windows, open, open-window, set-window-state, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, windows, open, open-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -86,6 +87,44 @@ func runTabs(args []string) error {
 			return fmt.Errorf("invalid window id %q", args[1])
 		}
 		result, err := client.SetWindowState(windowID, args[2])
+		if err != nil {
+			return err
+		}
+		fmt.Printf(
+			"window_id=%d state=%s left=%d top=%d width=%d height=%d\n",
+			result.WindowID,
+			result.State,
+			result.Left,
+			result.Top,
+			result.Width,
+			result.Height,
+		)
+		return nil
+	case "set-window-bounds":
+		if len(args) < 6 {
+			return errors.New("missing window id or bounds for tabs set-window-bounds")
+		}
+		windowID, err := strconv.Atoi(args[1])
+		if err != nil {
+			return fmt.Errorf("invalid window id %q", args[1])
+		}
+		left, err := strconv.Atoi(args[2])
+		if err != nil {
+			return fmt.Errorf("invalid left %q", args[2])
+		}
+		top, err := strconv.Atoi(args[3])
+		if err != nil {
+			return fmt.Errorf("invalid top %q", args[3])
+		}
+		width, err := strconv.Atoi(args[4])
+		if err != nil {
+			return fmt.Errorf("invalid width %q", args[4])
+		}
+		height, err := strconv.Atoi(args[5])
+		if err != nil {
+			return fmt.Errorf("invalid height %q", args[5])
+		}
+		result, err := client.SetWindowBounds(windowID, left, top, width, height)
 		if err != nil {
 			return err
 		}
