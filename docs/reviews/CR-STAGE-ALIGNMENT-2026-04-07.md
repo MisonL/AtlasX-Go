@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T076` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T076` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T077` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T077` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -89,15 +89,18 @@
   - `atlasctl memory list`
   - `atlasctl memory search`
   - `atlasctl tabs suggest`
+  - `atlasctl tabs recommend-context`
   - `atlasctl tabs organize`
   - `/v1/memory`
   - `/v1/memory/search`
   - `/v1/tabs/suggestions`
+  - `/v1/tabs/context-recommendations`
   - `/v1/tabs/organize`
   - capture/ask 写 memory
   - selection ask/summarize 写 memory
   - 基于 memory 的轻量检索增强
   - 基于 page context + memory 的结构化页面建议
+  - 基于 page context + 同 host 标签页 + memory 的结构化上下文推荐
   - 基于 page targets 的结构化标签整理建议
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
