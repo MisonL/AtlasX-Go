@@ -103,6 +103,26 @@ func TestMemoryEndpointContract(t *testing.T) {
 	)
 }
 
+func TestMemorySearchEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/memory/search?question=atlas", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"question",
+		"returned",
+		"snippets",
+	)
+}
+
 func TestRuntimeStatusEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

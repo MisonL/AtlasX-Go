@@ -79,6 +79,42 @@ func TestMemoryListWithoutEventsIsExplicitlyEmpty(t *testing.T) {
 	}
 }
 
+func TestMemorySearchOutputsRankedSnippets(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	seedMemoryEventsForCommandTest(t)
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "search", "--tab-id", "tab-1", "--url", "https://chatgpt.com/atlas", "--limit", "1", "what", "is", "atlas"})
+	})
+	if err != nil {
+		t.Fatalf("run memory search failed: %v", err)
+	}
+	for _, fragment := range []string{
+		`question="what is atlas"`,
+		"returned=1",
+		`snippet="qa_turn`,
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Fatalf("expected output to contain %q, got %s", fragment, output)
+		}
+	}
+}
+
+func TestMemorySearchWithoutEventsReturnsEmpty(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "search", "what", "is", "atlas"})
+	})
+	if err != nil {
+		t.Fatalf("run memory search failed: %v", err)
+	}
+	if !strings.Contains(output, "returned=0") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
 func seedMemoryEventsForCommandTest(t *testing.T) macos.Paths {
 	t.Helper()
 

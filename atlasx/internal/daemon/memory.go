@@ -19,6 +19,15 @@ type memoryListResponse struct {
 	Events        []memory.Event `json:"events"`
 }
 
+type memorySearchResponse struct {
+	Question string   `json:"question"`
+	TabID    string   `json:"tab_id,omitempty"`
+	Title    string   `json:"title,omitempty"`
+	URL      string   `json:"url,omitempty"`
+	Returned int      `json:"returned"`
+	Snippets []string `json:"snippets"`
+}
+
 func serveMemoryList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
@@ -52,6 +61,53 @@ func serveMemoryList(w http.ResponseWriter, r *http.Request) {
 		LastEventKind: summary.LastEventKind,
 		Returned:      len(events),
 		Events:        events,
+	})
+}
+
+func serveMemorySearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	question := r.URL.Query().Get("question")
+	if question == "" {
+		writeError(w, http.StatusBadRequest, fmt.Errorf("question is required"))
+		return
+	}
+
+	limit, err := parseOptionalLimit(r.URL.Query().Get("limit"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paths, err := discoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	input := memory.RetrievalInput{
+		TabID:    r.URL.Query().Get("tab_id"),
+		Title:    r.URL.Query().Get("title"),
+		URL:      r.URL.Query().Get("url"),
+		Question: question,
+		Limit:    limit,
+	}
+	snippets, err := memory.FindRelevantSnippets(paths, input)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, memorySearchResponse{
+		Question: input.Question,
+		TabID:    input.TabID,
+		Title:    input.Title,
+		URL:      input.URL,
+		Returned: len(snippets),
+		Snippets: snippets,
 	})
 }
 

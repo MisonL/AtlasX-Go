@@ -19,6 +19,7 @@ type RetrievalInput struct {
 	Title    string
 	URL      string
 	Question string
+	Limit    int
 }
 
 type retrievalCandidate struct {
@@ -59,14 +60,19 @@ func FindRelevantSnippets(paths macos.Paths, input RetrievalInput) ([]string, er
 		return candidates[i].score > candidates[j].score
 	})
 
-	snippets := make([]string, 0, maxRetrievedSnippets)
+	limit := input.Limit
+	if limit <= 0 {
+		limit = maxRetrievedSnippets
+	}
+
+	snippets := make([]string, 0, limit)
 	for _, candidate := range candidates {
 		snippet := renderSnippet(candidate.event)
 		if snippet == "" {
 			continue
 		}
 		snippets = append(snippets, snippet)
-		if len(snippets) == maxRetrievedSnippets {
+		if len(snippets) == limit {
 			break
 		}
 	}

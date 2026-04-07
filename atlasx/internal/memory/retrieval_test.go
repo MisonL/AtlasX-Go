@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -124,5 +125,41 @@ func TestFindRelevantSnippetsWithoutMemoryReturnsEmpty(t *testing.T) {
 	}
 	if len(snippets) != 0 {
 		t.Fatalf("expected empty snippets, got %+v", snippets)
+	}
+}
+
+func TestFindRelevantSnippetsRespectsCustomLimit(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	for index := 0; index < 3; index++ {
+		if err := AppendQATurn(paths, QATurnInput{
+			OccurredAt: fmt.Sprintf("2026-04-07T00:0%d:00Z", index+1),
+			TabID:      "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Question:   fmt.Sprintf("memory retrieval %d", index+1),
+			Answer:     "Atlas answer",
+			CitedURLs:  []string{"https://chatgpt.com/atlas"},
+			TraceID:    fmt.Sprintf("trace-%d", index+1),
+		}); err != nil {
+			t.Fatalf("append qa turn failed: %v", err)
+		}
+	}
+
+	snippets, err := FindRelevantSnippets(paths, RetrievalInput{
+		URL:      "https://chatgpt.com/atlas",
+		Question: "memory retrieval",
+		Limit:    1,
+	})
+	if err != nil {
+		t.Fatalf("find relevant snippets failed: %v", err)
+	}
+	if len(snippets) != 1 {
+		t.Fatalf("unexpected snippets: %+v", snippets)
 	}
 }

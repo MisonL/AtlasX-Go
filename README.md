@@ -13,6 +13,7 @@
 - `atlasctl doctor`
 - `atlasctl settings`
 - `atlasctl memory list`
+- `atlasctl memory search <question>`
 - `atlasctl sidebar status`
 - `atlasctl sidebar ask <target-id> <question>`
 - `atlasctl sidebar selection-ask <target-id> <question>`
@@ -25,7 +26,7 @@
 - `atlasctl tabs list|open|activate|close|navigate|capture|selection|devtools`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/settings`
-- `atlasd /v1/memory`
+- `atlasd /v1/memory` 与 `/v1/memory/search`
 - `atlasd /v1/tabs|open|activate|close|navigate|context|selection|devtools`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
 - `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
