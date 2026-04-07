@@ -78,6 +78,31 @@ func TestSettingsEndpointContract(t *testing.T) {
 	)
 }
 
+func TestMemoryEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/memory", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"root",
+		"events_file",
+		"present",
+		"event_count",
+		"last_event_at",
+		"last_event_kind",
+		"returned",
+		"events",
+	)
+}
+
 func TestRuntimeStatusEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

@@ -82,3 +82,57 @@ func TestLoadSummaryWithoutMemoryIsExplicitlyEmpty(t *testing.T) {
 		t.Fatalf("unexpected summary paths: %+v", summary)
 	}
 }
+
+func TestLoadRecentReturnsLastNEventsInChronologicalOrder(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := AppendPageCapture(paths, PageCaptureInput{
+		OccurredAt: "2026-04-07T00:00:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas/1",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+	if err := AppendQATurn(paths, QATurnInput{
+		OccurredAt: "2026-04-07T00:01:00Z",
+		TabID:      "tab-2",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas/2",
+		Question:   "what changed",
+		Answer:     "Atlas answer",
+		TraceID:    "trace-2",
+	}); err != nil {
+		t.Fatalf("append qa turn failed: %v", err)
+	}
+	if err := AppendQATurn(paths, QATurnInput{
+		OccurredAt: "2026-04-07T00:02:00Z",
+		TabID:      "tab-3",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas/3",
+		Question:   "what next",
+		Answer:     "Atlas next",
+		TraceID:    "trace-3",
+	}); err != nil {
+		t.Fatalf("append qa turn failed: %v", err)
+	}
+
+	summary, events, err := LoadRecent(paths, 2)
+	if err != nil {
+		t.Fatalf("load recent failed: %v", err)
+	}
+	if !summary.Present || summary.EventCount != 3 || summary.LastEventKind != EventKindQATurn {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	if len(events) != 2 {
+		t.Fatalf("unexpected events: %+v", events)
+	}
+	if events[0].TabID != "tab-2" || events[1].TabID != "tab-3" {
+		t.Fatalf("unexpected event order: %+v", events)
+	}
+}

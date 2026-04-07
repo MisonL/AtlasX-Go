@@ -25,7 +25,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, settings, sidebar, stop-webapp, runtime, mirror-scan, tabs, import-chrome, import-safari, history, downloads, bookmarks")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, settings, sidebar, stop-webapp, runtime, mirror-scan, tabs, memory, import-chrome, import-safari, history, downloads, bookmarks")
 	}
 
 	switch args[0] {
@@ -55,6 +55,8 @@ func run(args []string) error {
 		return runMirrorScan(args[1:])
 	case "tabs":
 		return runTabs(args[1:])
+	case "memory":
+		return runMemory(args[1:])
 	case "import-chrome":
 		return runImportChrome(args[1:])
 	case "import-safari":

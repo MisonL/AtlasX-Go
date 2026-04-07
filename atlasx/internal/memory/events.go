@@ -128,6 +128,35 @@ func LoadSummary(paths macos.Paths) (Summary, error) {
 	return summary, nil
 }
 
+func LoadRecent(paths macos.Paths, limit int) (Summary, []Event, error) {
+	summary := Summary{
+		Root:       paths.MemoryRoot,
+		EventsFile: paths.MemoryEventsFile,
+	}
+
+	events, err := Load(paths)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return summary, []Event{}, nil
+		}
+		return Summary{}, nil, err
+	}
+
+	summary.Present = true
+	summary.EventCount = len(events)
+	if len(events) > 0 {
+		last := events[len(events)-1]
+		summary.LastEventAt = last.OccurredAt
+		summary.LastEventKind = last.Kind
+	}
+
+	if limit > 0 && len(events) > limit {
+		events = append([]Event(nil), events[len(events)-limit:]...)
+		return summary, events, nil
+	}
+	return summary, append([]Event(nil), events...), nil
+}
+
 func appendEvent(paths macos.Paths, event Event) error {
 	if err := macos.EnsureDir(paths.MemoryRoot); err != nil {
 		return err

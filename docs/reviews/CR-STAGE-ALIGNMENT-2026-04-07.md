@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T072` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T072` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T073` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T073` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -24,7 +24,9 @@
   - `/healthz`
   - `/v1/status`
   - `atlasctl settings`
+  - `atlasctl memory list`
   - `atlasctl sidebar status`
+  - `/v1/memory`
   - `/v1/settings`
   - config/profile/support root 基础状态面
   - runtime、mirror/import、memory、sidebar 的统一状态导出
@@ -80,6 +82,8 @@
   - `openai/openai-compatible` 与 `openrouter` provider
   - timeout/retry/token budget/trace/last error 观测
   - `memory/events.jsonl` 状态面
+  - `atlasctl memory list`
+  - `/v1/memory`
   - capture/ask 写 memory
   - selection ask/summarize 写 memory
   - 基于 memory 的轻量检索增强
