@@ -11,10 +11,24 @@ import (
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
 	"atlasx/internal/launcher"
+	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/tabs"
 )
+
+var newCommandTabsClient = func(paths macos.Paths) (commandTabsClient, error) {
+	return tabs.New(paths)
+}
+
+type commandTabsClient interface {
+	List() ([]tabs.Target, error)
+	Open(string) (tabs.Target, error)
+	Activate(string) error
+	Close(string) error
+	Navigate(string, string) error
+	Capture(string) (tabs.PageContext, error)
+}
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -158,7 +172,7 @@ func runTabs(args []string) error {
 		return err
 	}
 
-	client, err := tabs.New(paths)
+	client, err := newCommandTabsClient(paths)
 	if err != nil {
 		return err
 	}
@@ -215,10 +229,19 @@ func runTabs(args []string) error {
 			return errors.New("missing target id for tabs capture")
 		}
 		context, err := client.Capture(args[1])
-		printPageContext(context)
 		if err != nil {
+			printPageContext(context)
 			return err
 		}
+		if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+			OccurredAt: context.CapturedAt,
+			TabID:      context.ID,
+			Title:      context.Title,
+			URL:        context.URL,
+		}); err != nil {
+			return err
+		}
+		printPageContext(context)
 		return nil
 	default:
 		return fmt.Errorf("unknown tabs subcommand %q", args[0])

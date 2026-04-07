@@ -13,6 +13,7 @@ import (
 
 	"atlasx/internal/imports"
 	"atlasx/internal/managedruntime"
+	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
@@ -180,6 +181,18 @@ func TestTabContextEndpoint(t *testing.T) {
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"captured_at":"2026-04-06T10:00:00Z"`)) {
 		t.Fatalf("missing captured_at: %s", recorder.Body.String())
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	events, err := memory.Load(paths)
+	if err != nil {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 1 || events[0].Kind != memory.EventKindPageCapture {
+		t.Fatalf("unexpected memory events: %+v", events)
 	}
 }
 
@@ -513,6 +526,20 @@ func TestSidebarAskEndpointReturnsStructuredAnswer(t *testing.T) {
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"trace_id":"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+
+	events, err := memory.Load(paths)
+	if err != nil {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 1 || events[0].Kind != memory.EventKindQATurn {
+		t.Fatalf("unexpected memory events: %+v", events)
+	}
+	if events[0].Question != "summarize this page" || events[0].Answer != "Atlas answer" {
+		t.Fatalf("unexpected memory event: %+v", events[0])
+	}
+	if len(events[0].CitedURLs) != 1 || events[0].CitedURLs[0] != "https://chatgpt.com/atlas" {
+		t.Fatalf("unexpected memory event: %+v", events[0])
 	}
 }
 

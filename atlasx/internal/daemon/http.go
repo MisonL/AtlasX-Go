@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"atlasx/internal/imports"
+	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
@@ -153,6 +155,20 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.TraceID = traceID
+	if err := memory.AppendQATurn(paths, memory.QATurnInput{
+		OccurredAt: time.Now().UTC().Format(time.RFC3339Nano),
+		TabID:      context.ID,
+		Title:      context.Title,
+		URL:        context.URL,
+		Question:   request.Question,
+		Answer:     response.Answer,
+		CitedURLs:  nonEmptyURLs(context.URL),
+		TraceID:    traceID,
+	}); err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		writeSidebarAskError(w, http.StatusInternalServerError, traceID, err)
+		return
+	}
 	_ = sidebar.SaveRuntimeResult(paths, traceID, nil)
 	writeJSON(w, http.StatusOK, response)
 }
@@ -295,6 +311,15 @@ func serveTabContext(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, err)
 		return
 	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: context.CapturedAt,
+		TabID:      context.ID,
+		Title:      context.Title,
+		URL:        context.URL,
+	}); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	writeJSON(w, http.StatusOK, context)
 }
@@ -409,6 +434,17 @@ func writeSidebarAskError(w http.ResponseWriter, code int, traceID string, err e
 		"error":    err.Error(),
 		"trace_id": traceID,
 	})
+}
+
+func nonEmptyURLs(values ...string) []string {
+	urls := make([]string, 0, len(values))
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		urls = append(urls, value)
+	}
+	return urls
 }
 
 func serveSafariImport(w http.ResponseWriter, r *http.Request) {
