@@ -16,6 +16,8 @@ var ErrProviderFailed = errors.New("sidebar qa provider request failed")
 var ErrProviderNotFound = errors.New("sidebar qa provider id is not configured")
 var ErrTokenBudgetExceeded = errors.New("sidebar qa token budget exceeded")
 
+const PageSummaryQuestion = "Summarize this page in 3-5 concise bullet points using only the current page context."
+
 type Config struct {
 	DefaultProvider string
 	Providers       []settings.SidebarProviderConfig
@@ -55,6 +57,19 @@ type AskRequest struct {
 
 type AskResponse struct {
 	Answer         string `json:"answer"`
+	Provider       string `json:"provider"`
+	Model          string `json:"model"`
+	ContextSummary string `json:"context_summary"`
+	TraceID        string `json:"trace_id"`
+}
+
+type SummarizeRequest struct {
+	TabID      string `json:"tab_id"`
+	ProviderID string `json:"provider_id,omitempty"`
+}
+
+type SummarizeResponse struct {
+	Summary        string `json:"summary"`
 	Provider       string `json:"provider"`
 	Model          string `json:"model"`
 	ContextSummary string `json:"context_summary"`
@@ -128,6 +143,10 @@ func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, 
 	return c.AskWithMemory(request, context, nil)
 }
 
+func (c Config) Summarize(request SummarizeRequest, context tabs.PageContext) (SummarizeResponse, error) {
+	return c.SummarizeWithMemory(request, context, nil)
+}
+
 func (c Config) AskWithMemory(request AskRequest, context tabs.PageContext, memorySnippets []string) (AskResponse, error) {
 	if request.Question == "" {
 		return AskResponse{}, errors.New("question is required")
@@ -158,6 +177,23 @@ func (c Config) AskWithMemory(request AskRequest, context tabs.PageContext, memo
 		Provider:       selected.Provider,
 		Model:          model,
 		ContextSummary: buildContextSummary(context),
+	}, nil
+}
+
+func (c Config) SummarizeWithMemory(request SummarizeRequest, context tabs.PageContext, memorySnippets []string) (SummarizeResponse, error) {
+	response, err := c.AskWithMemory(AskRequest{
+		TabID:      request.TabID,
+		Question:   PageSummaryQuestion,
+		ProviderID: request.ProviderID,
+	}, context, memorySnippets)
+	if err != nil {
+		return SummarizeResponse{}, err
+	}
+	return SummarizeResponse{
+		Summary:        response.Answer,
+		Provider:       response.Provider,
+		Model:          response.Model,
+		ContextSummary: response.ContextSummary,
 	}, nil
 }
 

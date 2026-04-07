@@ -22,7 +22,7 @@
 - `atlasd /v1/tabs|open|activate|close|navigate|context`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
 - `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
-- `atlasd /v1/sidebar/status` 与 `/v1/sidebar/ask` 控制面骨架
+- `atlasd /v1/sidebar/status`、`/v1/sidebar/ask` 与 `/v1/sidebar/summarize`
 - support root 下 managed Chromium runtime 的发现、manifest、verify、install plan 状态导出
 - launcher dry-run 与 session status 的 `runtime_source` 可观测性
 - `atlasctl launch-webapp --dry-run`

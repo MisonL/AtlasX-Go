@@ -238,6 +238,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/sidebar/ask", func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarAsk(w, r)
 	})
+	mux.HandleFunc("/v1/sidebar/summarize", func(w http.ResponseWriter, r *http.Request) {
+		serveSidebarSummarize(w, r)
+	})
 	mux.HandleFunc("/v1/tabs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))

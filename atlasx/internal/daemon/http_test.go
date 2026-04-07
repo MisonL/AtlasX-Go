@@ -17,6 +17,7 @@ import (
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
+	"atlasx/internal/sidebar"
 	"atlasx/internal/tabs"
 )
 
@@ -539,6 +540,81 @@ func TestSidebarAskEndpointReturnsStructuredAnswer(t *testing.T) {
 		t.Fatalf("unexpected memory event: %+v", events[0])
 	}
 	if len(events[0].CitedURLs) != 1 || events[0].CitedURLs[0] != "https://chatgpt.com/atlas" {
+		t.Fatalf("unexpected memory event: %+v", events[0])
+	}
+}
+
+func TestSidebarSummarizeEndpointReturnsStructuredSummary(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body failed: %v", err)
+		}
+		if !bytes.Contains(body, []byte(sidebar.PageSummaryQuestion)) {
+			t.Fatalf("summary prompt missing from request: %s", string(body))
+		}
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas summary"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-06T12:00:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
+		},
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/sidebar/summarize", bytes.NewBufferString(`{"tab_id":"tab-1"}`))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"summary":"Atlas summary"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"trace_id":"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+
+	events, err := memory.Load(paths)
+	if err != nil {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 1 || events[0].Kind != memory.EventKindQATurn {
+		t.Fatalf("unexpected memory events: %+v", events)
+	}
+	if events[0].Question != sidebar.PageSummaryQuestion || events[0].Answer != "Atlas summary" {
 		t.Fatalf("unexpected memory event: %+v", events[0])
 	}
 }
