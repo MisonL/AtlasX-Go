@@ -40,6 +40,7 @@ go run ./cmd/atlasctl tabs windows
 go run ./cmd/atlasctl tabs open https://openai.com
 go run ./cmd/atlasctl tabs open-window https://openai.com
 go run ./cmd/atlasctl tabs open-devtools <target-id>
+go run ./cmd/atlasctl tabs close-duplicates
 go run ./cmd/atlasctl tabs activate-window <window-id>
 go run ./cmd/atlasctl tabs close-window <window-id>
 go run ./cmd/atlasctl tabs set-window-state <window-id> <state>
@@ -113,6 +114,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/tabs/open`
 - `POST /v1/tabs/open-window`
 - `POST /v1/tabs/open-devtools`
+- `POST /v1/tabs/close-duplicates`
 - `POST /v1/tabs/activate-window`
 - `POST /v1/tabs/close-window`
 - `POST /v1/tabs/window-state`
@@ -155,6 +157,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs windows`，可通过 browser websocket 对当前 page targets 按浏览器窗口分组，输出 `window_id/state/targets` 等只读结构化窗口视图。
 - 当前已提供 `tabs open-window <url>`，可通过 browser websocket 调用 `Target.createTarget(newWindow=true)` 显式创建新浏览器窗口中的 page target。
 - 当前已提供 `tabs open-devtools <target-id>`，可解析指定标签页的 `devtools_frontend_url` 并复用新窗口打开主链，把对应 DevTools 放到独立浏览器窗口。
+- 当前已提供 `tabs close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
 - 当前已提供 `tabs activate-window <window-id>`，可基于当前窗口分组结果选定目标窗口中的第一个 page target，并复用既有 `activate(target)` 主链完成窗口聚焦。
 - 当前已提供 `tabs close-window <window-id>`，可基于当前窗口分组结果逐个关闭指定窗口中的 page targets，返回结构化关闭结果。
 - 当前已提供 `tabs set-window-state <window-id> <state>`，可对指定浏览器窗口应用显式 `windowState` 并返回更新后的结构化窗口 bounds。
@@ -179,6 +182,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
 - 当前已提供 `GET /v1/tabs/windows`，可按当前 page targets 返回结构化浏览器窗口分组结果，不执行窗口移动或关闭。
 - 当前已提供 `POST /v1/tabs/open-devtools`，可解析指定标签页的 `devtools_frontend_url` 并在新窗口中打开该 DevTools，不引入第二套 URL 推导逻辑。
+- 当前已提供 `POST /v1/tabs/close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
 - 当前已提供 `POST /v1/tabs/activate-window`，可基于当前窗口分组结果选定目标窗口中的第一个 page target，并复用既有 `activate(target)` 主链完成窗口聚焦。
 - 当前已提供 `POST /v1/tabs/close-window`，可基于当前窗口分组结果逐个关闭指定窗口中的 page targets，返回结构化关闭结果。
 - 当前已提供 `POST /v1/tabs/window-state`，可对指定浏览器窗口应用显式 `windowState` 并返回更新后的 bounds，不执行窗口移动或关闭。

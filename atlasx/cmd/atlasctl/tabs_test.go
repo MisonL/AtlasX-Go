@@ -17,6 +17,8 @@ type stubCommandTabsClient struct {
 	listErr           error
 	windows           []tabs.WindowSummary
 	windowsErr        error
+	duplicateClose    tabs.CloseDuplicatesResult
+	duplicateCloseErr error
 	windowActivate    tabs.WindowActivateResult
 	windowActivateErr error
 	windowClose       tabs.WindowCloseResult
@@ -45,6 +47,13 @@ func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
 
 func (s *stubCommandTabsClient) Windows() ([]tabs.WindowSummary, error) {
 	return s.windows, s.windowsErr
+}
+
+func (s *stubCommandTabsClient) CloseDuplicates() (tabs.CloseDuplicatesResult, error) {
+	if s.duplicateCloseErr != nil {
+		return tabs.CloseDuplicatesResult{}, s.duplicateCloseErr
+	}
+	return s.duplicateClose, nil
 }
 
 func (s *stubCommandTabsClient) ActivateWindow(windowID int) (tabs.WindowActivateResult, error) {
