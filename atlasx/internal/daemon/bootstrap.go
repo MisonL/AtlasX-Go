@@ -272,6 +272,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/suggestions", func(w http.ResponseWriter, r *http.Request) {
 		serveTabSuggestions(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/memories", func(w http.ResponseWriter, r *http.Request) {
+		serveTabMemories(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/context-recommendations", func(w http.ResponseWriter, r *http.Request) {
 		serveTabContextRecommendations(w, r)
 	})

@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T078`
+- `T001-T079`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -23,6 +23,7 @@
   - `atlasctl sidebar selection-ask` 与 `/v1/sidebar/selection/ask`
   - `atlasctl sidebar summarize` 与 `/v1/sidebar/summarize`
   - `atlasctl tabs suggest` 与 `/v1/tabs/suggestions`
+  - `atlasctl tabs memories` 与 `/v1/tabs/memories`
   - `atlasctl tabs recommend-context` 与 `/v1/tabs/context-recommendations`
   - `atlasctl tabs extract-context` 与 `/v1/tabs/semantic-context`
   - `atlasctl tabs organize` 与 `/v1/tabs/organize`
@@ -32,7 +33,7 @@
   - browser-data open
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
-  - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、结构化页面建议、结构化上下文推荐与标签整理建议
+  - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐与标签整理建议
   - 项目级 gate 与发布/恢复手册
 
 ## 当前开发机观测事实

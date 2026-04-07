@@ -23,14 +23,15 @@
 - `atlasctl runtime plan create|resolve|status|clear`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`
-- `atlasctl tabs list|open|activate|close|navigate|capture|extract-context|selection|suggest|recommend-context|organize|devtools`
+- `atlasctl tabs list|open|activate|close|navigate|capture|extract-context|selection|suggest|memories|recommend-context|organize|devtools`
 - `atlasctl tabs suggest <target-id>`
+- `atlasctl tabs memories <target-id>`
 - `atlasctl tabs recommend-context <target-id>`
 - `atlasctl tabs extract-context <target-id>`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/settings`
 - `atlasd /v1/memory` 与 `/v1/memory/search`
-- `atlasd /v1/tabs|open|activate|close|navigate|context|semantic-context|selection|suggestions|context-recommendations|organize|devtools`
+- `atlasd /v1/tabs|open|activate|close|navigate|context|semantic-context|selection|suggestions|memories|context-recommendations|organize|devtools`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
 - `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
 - `atlasd /v1/sidebar/status`、`/v1/sidebar/ask`、`/v1/sidebar/selection/ask` 与 `/v1/sidebar/summarize`

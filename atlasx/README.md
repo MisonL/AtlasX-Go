@@ -44,6 +44,7 @@ go run ./cmd/atlasctl tabs capture <target-id>
 go run ./cmd/atlasctl tabs extract-context <target-id>
 go run ./cmd/atlasctl tabs selection <target-id>
 go run ./cmd/atlasctl tabs suggest <target-id>
+go run ./cmd/atlasctl tabs memories <target-id>
 go run ./cmd/atlasctl tabs recommend-context <target-id>
 go run ./cmd/atlasctl tabs organize
 go run ./cmd/atlasctl tabs devtools <target-id>
@@ -95,6 +96,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs/semantic-context`
 - `GET /v1/tabs/selection`
 - `GET /v1/tabs/suggestions`
+- `GET /v1/tabs/memories`
 - `GET /v1/tabs/context-recommendations`
 - `GET /v1/tabs/organize`
 - `GET /v1/tabs/devtools`
@@ -140,12 +142,14 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs extract-context <id>`，可在 CLI 中抓取当前 page target 的 DOM 结构化语义上下文，输出 headings、links、forms 等最小摘要。
 - 当前已提供 `tabs selection <id>`，可在 CLI 中抓取当前 page target 的浏览器原生选区文本与长度/截断元数据。
 - 当前已提供 `tabs suggest <id>`，可在 CLI 中基于当前 page context 和本地 memory retrieval 生成结构化页面建议。
+- 当前已提供 `tabs memories <id>`，可在 CLI 中按当前 page context 聚合输出相关 Browser memories snippets，作为浏览器内按页查看记忆的最小只读入口。
 - 当前已提供 `tabs recommend-context <id>`，可在 CLI 中基于当前 page context、同 host 标签页与本地 memory retrieval 生成结构化上下文推荐。
 - 当前已提供 `tabs organize`，可在 CLI 中基于当前 page targets 输出结构化分组建议，作为标签自动整理的最小只读入口。
 - 当前已提供 `tabs devtools <id>`，可在 CLI 中输出当前 page target 对应的 `devtools_frontend_url`。
 - 当前已提供 `GET /v1/tabs/semantic-context?id=<target-id>`，可抓取当前 page target 的 DOM 结构化语义上下文，返回 headings、links、forms 等最小摘要，不写 memory。
 - 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
 - 当前已提供 `GET /v1/tabs/suggestions?id=<target-id>`，可基于当前页上下文和本地 memory retrieval 返回结构化页面建议，不依赖真实 provider。
+- 当前已提供 `GET /v1/tabs/memories?id=<target-id>`，可基于当前页上下文返回相关 Browser memories snippets，不写 memory，也不引入第二套检索排序逻辑。
 - 当前已提供 `GET /v1/tabs/context-recommendations?id=<target-id>`，可基于当前页上下文、同 host 标签页与本地 memory retrieval 返回结构化上下文推荐，不直接改动浏览器状态或写 memory。
 - 当前已提供 `GET /v1/tabs/organize`，可基于当前 page targets 返回结构化分组建议，不直接改动浏览器状态。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。

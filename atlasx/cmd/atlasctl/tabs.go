@@ -27,7 +27,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, extract-context, selection, devtools, suggest, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, extract-context, selection, devtools, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -97,6 +97,8 @@ func runTabs(args []string) error {
 		return runTabsDevTools(client, args[1:])
 	case "suggest":
 		return runTabsSuggest(paths, client, args[1:])
+	case "memories":
+		return runTabsMemories(paths, client, args[1:])
 	case "organize":
 		return runTabsOrganize(paths, client)
 	case "recommend-context":
