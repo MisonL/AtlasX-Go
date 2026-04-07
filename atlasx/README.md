@@ -49,6 +49,7 @@ bash scripts/e2e_gate.sh
 ```
 
 完整 gate 说明见 `docs/E2E-GATE.md`。脚本会先跑离线强制 gate，再根据当前本机是否具备 managed runtime、受管浏览器和真实 provider 条件执行 smoke；条件不足时会显式输出 `UNCOVERED`。
+发布与恢复手册见 `docs/RUNBOOK.md`。其中收口了 support root 布局、runtime/provider 配置、恢复步骤和发布检查单。
 
 ## 主要 HTTP API
 
