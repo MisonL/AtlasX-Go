@@ -66,6 +66,15 @@ func TestOpenTarget(t *testing.T) {
 	}
 }
 
+func TestOpenTargetRejectsUnsupportedScheme(t *testing.T) {
+	client := Client{}
+	if _, err := client.Open("devtools://devtools/bundled/inspector.html"); err == nil {
+		t.Fatal("expected unsupported scheme failure")
+	} else if !strings.Contains(err.Error(), "unsupported url scheme") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestActivateTarget(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/json/activate/123" {
@@ -93,6 +102,15 @@ func TestCloseTarget(t *testing.T) {
 	client := Client{baseURL: server.URL, httpClient: *server.Client()}
 	if err := client.Close("321"); err != nil {
 		t.Fatalf("close failed: %v", err)
+	}
+}
+
+func TestNavigateRejectsUnsupportedScheme(t *testing.T) {
+	client := Client{}
+	if err := client.Navigate("123", "javascript:alert(1)"); err == nil {
+		t.Fatal("expected unsupported scheme failure")
+	} else if !strings.Contains(err.Error(), "unsupported url scheme") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

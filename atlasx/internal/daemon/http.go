@@ -10,6 +10,7 @@ import (
 	"atlasx/internal/imports"
 	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
+	"atlasx/internal/openurl"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
 	"atlasx/internal/sidebar"
@@ -457,6 +458,14 @@ func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {
 	if err := decodeRequiredJSON(r, &request); err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
+	}
+	if request.URL != "" {
+		validatedURL, validateErr := openurl.Validate(request.URL)
+		if validateErr != nil {
+			writeError(w, http.StatusBadRequest, validateErr)
+			return
+		}
+		request.URL = validatedURL
 	}
 
 	paths, err := discoverPaths()

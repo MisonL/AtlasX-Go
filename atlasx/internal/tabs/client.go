@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"atlasx/internal/launcher"
+	"atlasx/internal/openurl"
 	"atlasx/internal/platform/macos"
 )
 
@@ -104,6 +105,11 @@ func PageTargets(targets []Target) []Target {
 }
 
 func (c Client) Open(targetURL string) (Target, error) {
+	targetURL, err := openurl.Validate(targetURL)
+	if err != nil {
+		return Target{}, err
+	}
+
 	request, err := http.NewRequest(http.MethodPut, c.baseURL+"/json/new?"+url.QueryEscape(targetURL), nil)
 	if err != nil {
 		return Target{}, err
@@ -163,6 +169,11 @@ func (c Client) Close(targetID string) error {
 }
 
 func (c Client) Navigate(targetID string, targetURL string) error {
+	targetURL, err := openurl.Validate(targetURL)
+	if err != nil {
+		return err
+	}
+
 	targets, err := c.List()
 	if err != nil {
 		return err

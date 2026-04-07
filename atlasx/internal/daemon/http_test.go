@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"atlasx/internal/imports"
@@ -106,6 +107,43 @@ func TestHistoryOpenEndpoint(t *testing.T) {
 	}
 }
 
+func TestHistoryOpenEndpointRejectsUnsupportedScheme(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	snapshot := mirror.Snapshot{
+		HistoryRows: []mirror.HistoryEntry{
+			{URL: "javascript:alert(1)"},
+		},
+	}
+	if err := mirror.Save(paths, snapshot); err != nil {
+		t.Fatalf("save mirror failed: %v", err)
+	}
+
+	client := &stubTabsClient{}
+	restoreDaemonHooks(t, client)
+
+	body := bytes.NewBufferString(`{"index":0}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/history/open", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if client.openedURL != "" {
+		t.Fatalf("unexpected opened url: %s", client.openedURL)
+	}
+	if !strings.Contains(recorder.Body.String(), "unsupported url scheme") {
+		t.Fatalf("unexpected body: %s", recorder.Body.String())
+	}
+}
+
 func TestDownloadsOpenEndpointRejectsEmptyTabURL(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
@@ -136,6 +174,43 @@ func TestDownloadsOpenEndpointRejectsEmptyTabURL(t *testing.T) {
 	}
 }
 
+func TestDownloadsOpenEndpointRejectsUnsupportedScheme(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	snapshot := mirror.Snapshot{
+		DownloadRows: []mirror.DownloadEntry{
+			{TargetPath: "/tmp/file.zip", TabURL: "file:///tmp/file.zip"},
+		},
+	}
+	if err := mirror.Save(paths, snapshot); err != nil {
+		t.Fatalf("save mirror failed: %v", err)
+	}
+
+	client := &stubTabsClient{}
+	restoreDaemonHooks(t, client)
+
+	body := bytes.NewBufferString(`{"index":0}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/downloads/open", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if client.openedURL != "" {
+		t.Fatalf("unexpected opened url: %s", client.openedURL)
+	}
+	if !strings.Contains(recorder.Body.String(), "unsupported url scheme") {
+		t.Fatalf("unexpected body: %s", recorder.Body.String())
+	}
+}
+
 func TestBookmarksOpenEndpointRejectsGet(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
@@ -162,6 +237,66 @@ func TestBookmarksOpenEndpointRejectsGet(t *testing.T) {
 
 	if recorder.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestBookmarksOpenEndpointRejectsUnsupportedScheme(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	importRoot := imports.DefaultChromeImportRoot(paths)
+	if err := os.MkdirAll(importRoot, 0o755); err != nil {
+		t.Fatalf("mkdir failed: %v", err)
+	}
+	payload := `{"roots":{"bookmark_bar":{"children":[{"type":"url","name":"Chrome Settings","url":"chrome://settings"}]}}}`
+	if err := os.WriteFile(filepath.Join(importRoot, "Bookmarks.json"), []byte(payload), 0o644); err != nil {
+		t.Fatalf("write bookmarks failed: %v", err)
+	}
+
+	client := &stubTabsClient{}
+	restoreDaemonHooks(t, client)
+
+	body := bytes.NewBufferString(`{"index":0}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/bookmarks/open", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if client.openedURL != "" {
+		t.Fatalf("unexpected opened url: %s", client.openedURL)
+	}
+	if !strings.Contains(recorder.Body.String(), "unsupported url scheme") {
+		t.Fatalf("unexpected body: %s", recorder.Body.String())
+	}
+}
+
+func TestTabsOpenEndpointRejectsUnsupportedScheme(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	client := &stubTabsClient{}
+	restoreDaemonHooks(t, client)
+
+	body := bytes.NewBufferString(`{"url":"file:///tmp/secret.txt"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/tabs/open", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if client.openedURL != "" {
+		t.Fatalf("unexpected opened url: %s", client.openedURL)
+	}
+	if !strings.Contains(recorder.Body.String(), "unsupported url scheme") {
+		t.Fatalf("unexpected body: %s", recorder.Body.String())
 	}
 }
 
