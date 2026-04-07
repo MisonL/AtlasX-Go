@@ -15,6 +15,8 @@ import (
 type stubCommandTabsClient struct {
 	targets         []tabs.Target
 	listErr         error
+	windows         []tabs.WindowSummary
+	windowsErr      error
 	context         tabs.PageContext
 	captureErr      error
 	semanticContext tabs.SemanticContext
@@ -29,6 +31,10 @@ type stubCommandTabsClient struct {
 
 func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
 	return s.targets, s.listErr
+}
+
+func (s *stubCommandTabsClient) Windows() ([]tabs.WindowSummary, error) {
+	return s.windows, s.windowsErr
 }
 
 func (s *stubCommandTabsClient) Open(string) (tabs.Target, error) {
