@@ -16,6 +16,7 @@ var newCommandTabsClient = func(paths macos.Paths) (commandTabsClient, error) {
 type commandTabsClient interface {
 	List() ([]tabs.Target, error)
 	Open(string) (tabs.Target, error)
+	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
 	Close(string) error
 	Navigate(string, string) error
@@ -28,7 +29,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, open, open-window, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -56,6 +57,16 @@ func runTabs(args []string) error {
 			return errors.New("missing url for tabs open")
 		}
 		target, err := client.Open(args[1])
+		if err != nil {
+			return err
+		}
+		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	case "open-window":
+		if len(args) < 2 {
+			return errors.New("missing url for tabs open-window")
+		}
+		target, err := client.OpenWindow(args[1])
 		if err != nil {
 			return err
 		}

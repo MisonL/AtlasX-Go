@@ -75,6 +75,81 @@ func TestOpenTargetRejectsUnsupportedScheme(t *testing.T) {
 	}
 }
 
+func TestOpenWindowCreatesNewWindowTarget(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	browserWSURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/devtools/browser/root"
+
+	mux.HandleFunc("/json/version", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"webSocketDebuggerUrl":"` + browserWSURL + `"}`))
+	})
+	mux.HandleFunc("/json/list", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`[{"id":"window-tab-1","type":"page","title":"OpenAI","url":"https://openai.com"}]`))
+	})
+	mux.HandleFunc("/devtools/browser/root", func(w http.ResponseWriter, r *http.Request) {
+		connection, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("upgrade failed: %v", err)
+		}
+		defer connection.Close()
+
+		var request cdpCommandRequest
+		if err := connection.ReadJSON(&request); err != nil {
+			t.Fatalf("read request failed: %v", err)
+		}
+		if request.Method != "Target.createTarget" {
+			t.Fatalf("unexpected method: %s", request.Method)
+		}
+		if request.Params["url"] != "https://openai.com" || request.Params["newWindow"] != true {
+			t.Fatalf("unexpected params: %+v", request.Params)
+		}
+		if err := connection.WriteJSON(cdpCommandResponse{
+			ID:     request.ID,
+			Result: mustMarshalJSON(t, map[string]any{"targetId": "window-tab-1"}),
+		}); err != nil {
+			t.Fatalf("write response failed: %v", err)
+		}
+	})
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	target, err := client.OpenWindow("https://openai.com")
+	if err != nil {
+		t.Fatalf("open window failed: %v", err)
+	}
+	if target.ID != "window-tab-1" || target.URL != "https://openai.com" {
+		t.Fatalf("unexpected target: %+v", target)
+	}
+}
+
+func TestOpenWindowFailsWithoutBrowserWebSocket(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/json/version" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"webSocketDebuggerUrl":""}`))
+	}))
+	defer server.Close()
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	if _, err := client.OpenWindow("https://openai.com"); err == nil {
+		t.Fatal("expected open-window to fail without browser websocket")
+	} else if !strings.Contains(err.Error(), "browser websocket debugger url is not available") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestOpenWindowRejectsUnsupportedScheme(t *testing.T) {
+	client := Client{}
+	if _, err := client.OpenWindow("devtools://devtools/bundled/inspector.html"); err == nil {
+		t.Fatal("expected unsupported scheme failure")
+	} else if !strings.Contains(err.Error(), "unsupported url scheme") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestActivateTarget(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/json/activate/123" {

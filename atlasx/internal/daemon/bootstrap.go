@@ -292,6 +292,11 @@ func NewMux(_ Status) *http.ServeMux {
 			return client.Open(request.URL)
 		})
 	})
+	mux.HandleFunc("/v1/tabs/open-window", func(w http.ResponseWriter, r *http.Request) {
+		serveTabAction(w, r, func(client tabClient, request tabActionRequest) (any, error) {
+			return client.OpenWindow(request.URL)
+		})
+	})
 	mux.HandleFunc("/v1/tabs/activate", func(w http.ResponseWriter, r *http.Request) {
 		serveTabAction(w, r, func(client tabClient, request tabActionRequest) (any, error) {
 			return map[string]string{"activated": request.ID}, client.Activate(request.ID)

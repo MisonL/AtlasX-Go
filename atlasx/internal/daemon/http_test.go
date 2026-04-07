@@ -47,6 +47,11 @@ func (s *stubTabsClient) Open(targetURL string) (tabs.Target, error) {
 	return tabs.Target{ID: "tab-1", URL: targetURL}, nil
 }
 
+func (s *stubTabsClient) OpenWindow(targetURL string) (tabs.Target, error) {
+	s.openedURL = targetURL
+	return tabs.Target{ID: "tab-window", Type: "page", Title: "OpenAI", URL: targetURL}, nil
+}
+
 func (s *stubTabsClient) Activate(string) error {
 	return nil
 }

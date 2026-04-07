@@ -35,6 +35,10 @@ func (s *stubCommandTabsClient) Open(string) (tabs.Target, error) {
 	return tabs.Target{}, nil
 }
 
+func (s *stubCommandTabsClient) OpenWindow(string) (tabs.Target, error) {
+	return tabs.Target{ID: "tab-window", Type: "page", Title: "Window", URL: "https://openai.com"}, nil
+}
+
 func (s *stubCommandTabsClient) Activate(string) error {
 	return nil
 }

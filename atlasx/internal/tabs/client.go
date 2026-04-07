@@ -27,8 +27,9 @@ type Target struct {
 }
 
 type Client struct {
-	baseURL    string
-	httpClient http.Client
+	baseURL             string
+	browserWebSocketURL string
+	httpClient          http.Client
 }
 
 type cdpCommandRequest struct {
@@ -46,6 +47,10 @@ type cdpCommandResponse struct {
 type cdpError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+type versionResponse struct {
+	WebSocketDebuggerURL string `json:"webSocketDebuggerUrl"`
 }
 
 func New(paths macos.Paths) (Client, error) {
@@ -69,7 +74,8 @@ func New(paths macos.Paths) (Client, error) {
 	}
 
 	return Client{
-		baseURL: baseURL,
+		baseURL:             baseURL,
+		browserWebSocketURL: status.CDP.BrowserWebSocketURL,
 		httpClient: http.Client{
 			Timeout: requestTimeout,
 		},
@@ -130,6 +136,53 @@ func (c Client) Open(targetURL string) (Target, error) {
 		return Target{}, err
 	}
 	return target, nil
+}
+
+type createTargetResult struct {
+	TargetID string `json:"targetId"`
+}
+
+func (c Client) OpenWindow(targetURL string) (Target, error) {
+	targetURL, err := openurl.Validate(targetURL)
+	if err != nil {
+		return Target{}, err
+	}
+
+	browserWS, err := c.browserWS()
+	if err != nil {
+		return Target{}, err
+	}
+
+	response, err := runPageCommand(browserWS, cdpCommandRequest{
+		ID:     20,
+		Method: "Target.createTarget",
+		Params: map[string]any{
+			"url":       targetURL,
+			"newWindow": true,
+		},
+	})
+	if err != nil {
+		return Target{}, err
+	}
+
+	var payload createTargetResult
+	if err := json.Unmarshal(response.Result, &payload); err != nil {
+		return Target{}, err
+	}
+	if payload.TargetID == "" {
+		return Target{}, errors.New("missing targetId in createTarget response")
+	}
+
+	targets, err := c.List()
+	if err != nil {
+		return Target{}, err
+	}
+	for _, target := range targets {
+		if target.ID == payload.TargetID {
+			return target, nil
+		}
+	}
+	return Target{}, fmt.Errorf("target %s not found after open-window", payload.TargetID)
 }
 
 func (c Client) Activate(targetID string) error {
@@ -207,6 +260,31 @@ func baseURLFromVersionEndpoint(endpoint string) (string, error) {
 		return "", fmt.Errorf("unsupported cdp version endpoint %q", endpoint)
 	}
 	return strings.TrimSuffix(endpoint, "/json/version"), nil
+}
+
+func (c Client) browserWS() (string, error) {
+	if strings.TrimSpace(c.browserWebSocketURL) != "" {
+		return c.browserWebSocketURL, nil
+	}
+
+	response, err := c.httpClient.Get(c.baseURL + "/json/version")
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status %d", response.StatusCode)
+	}
+
+	var payload versionResponse
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(payload.WebSocketDebuggerURL) == "" {
+		return "", errors.New("browser websocket debugger url is not available")
+	}
+	return payload.WebSocketDebuggerURL, nil
 }
 
 func unexpectedStatus(response *http.Response) error {
