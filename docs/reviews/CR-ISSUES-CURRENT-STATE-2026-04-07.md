@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T062`
+- `T001-T063`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -15,7 +15,7 @@
 - fallback、控制面、browser capability、managed runtime、sidebar intelligence、memory、E2E gate、runbook 已全部落地
 - 当前项目已经具备：
   - 统一 CLI 与 HTTP 控制面
-  - structured tabs capture 与原生文本选区捕获
+  - structured tabs capture、原生文本选区捕获与按标签页 DevTools URL 解析
   - browser-data open
   - managed runtime stage/verify/install/rollback
   - sidebar 多 provider、页内总结、原生选区提问与本地 memory 轻量增强

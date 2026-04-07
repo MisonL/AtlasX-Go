@@ -22,6 +22,7 @@ type Target struct {
 	Title                string `json:"title"`
 	URL                  string `json:"url"`
 	WebSocketDebuggerURL string `json:"webSocketDebuggerUrl"`
+	DevToolsFrontendURL  string `json:"devtoolsFrontendUrl"`
 }
 
 type Client struct {

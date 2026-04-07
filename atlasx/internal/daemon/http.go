@@ -29,6 +29,7 @@ type tabClient interface {
 	Navigate(string, string) error
 	Capture(string) (tabs.PageContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
+	DevTools(string) (tabs.DevToolsTarget, error)
 }
 
 type dataLoader[T any] func(macos.Paths) ([]T, error)

@@ -38,11 +38,13 @@
   - `history|downloads|bookmarks list/open`
   - `tabs list|open|activate|close|navigate|capture`
   - `/v1/tabs/selection`
+  - `/v1/tabs/devtools`
   - `/v1/history*` `/v1/downloads*` `/v1/bookmarks*`
   - `/v1/tabs*`
   - `/v1/mirror/scan` `/v1/import/chrome` `/v1/import/safari`
 - 当前边界:
   - 页面上下文已支持纯文本抓取与原生文本选区抓取，但仍不包含 DOM 级语义抽取
+  - DevTools 当前只提供按标签页解析 frontend URL 的最小入口，尚未提供内置面板壳层或设备模拟
   - browser-data open 依赖已落盘 mirror/import 数据
 
 ### Phase 3 Managed Chromium Runtime

@@ -27,6 +27,8 @@ type stubTabsClient struct {
 	captureErr   error
 	selection    tabs.SelectionContext
 	selectionErr error
+	devTools     tabs.DevToolsTarget
+	devToolsErr  error
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -56,6 +58,10 @@ func (s *stubTabsClient) Capture(string) (tabs.PageContext, error) {
 
 func (s *stubTabsClient) CaptureSelection(string) (tabs.SelectionContext, error) {
 	return s.selection, s.selectionErr
+}
+
+func (s *stubTabsClient) DevTools(string) (tabs.DevToolsTarget, error) {
+	return s.devTools, s.devToolsErr
 }
 
 func TestHistoryOpenEndpoint(t *testing.T) {
