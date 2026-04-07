@@ -40,7 +40,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, stop-webapp, runtime, mirror-scan, tabs, import-chrome, import-safari, history, downloads, bookmarks")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, settings, stop-webapp, runtime, mirror-scan, tabs, import-chrome, import-safari, history, downloads, bookmarks")
 	}
 
 	switch args[0] {
@@ -58,6 +58,8 @@ func run(args []string) error {
 		return runLaunch(args[1:])
 	case "status":
 		return runStatus()
+	case "settings":
+		return runSettings(args[1:])
 	case "stop-webapp":
 		return runStop()
 	case "runtime":

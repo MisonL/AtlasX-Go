@@ -193,6 +193,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", serveStatus)
 	mux.HandleFunc("/v1/status", serveStatus)
+	mux.HandleFunc("/v1/settings", func(w http.ResponseWriter, r *http.Request) {
+		serveSettings(w, r)
+	})
 	mux.HandleFunc("/v1/history", func(w http.ResponseWriter, _ *http.Request) {
 		serveBrowserData(w, browserdata.LoadHistory)
 	})

@@ -11,6 +11,7 @@
 
 - `atlasctl blueprint`
 - `atlasctl doctor`
+- `atlasctl settings`
 - `atlasctl status`
 - `atlasctl runtime stage|status|verify|clear|install`
 - `atlasctl runtime plan create|resolve|status|clear`
@@ -19,6 +20,7 @@
 - `atlasctl tabs list|open|activate|close|navigate|capture`
 - `atlasctl tabs capture <target-id>`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
+- `atlasd /v1/settings`
 - `atlasd /v1/tabs|open|activate|close|navigate|context|selection|devtools`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
 - `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`

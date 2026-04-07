@@ -5,6 +5,7 @@
 当前仓库这部分已经落下最小控制面骨架：
 
 - `atlasctl` 诊断、蓝图展示、fallback 启动
+- `atlasctl settings` 当前有效配置读取
 - `atlasd` 一次性初始化与本地健康检查
 - Profile、Config、Chrome runtime 探测
 - 产品蓝图与阶段划分
@@ -15,6 +16,7 @@
 cd atlasx
 go run ./cmd/atlasctl doctor
 go run ./cmd/atlasctl blueprint
+go run ./cmd/atlasctl settings
 go run ./cmd/atlasctl status
 go run ./cmd/atlasctl runtime stage --bundle-path /path/to/Chromium.app --version 123.0.0
 go run ./cmd/atlasctl runtime stage --bundle-path /Applications/Google\\ Chrome.app --version 136.0.7103.114
@@ -61,6 +63,7 @@ bash scripts/e2e_gate.sh
 
 - `GET /healthz`
 - `GET /v1/status`
+- `GET /v1/settings`
 - `GET /v1/history`
 - `GET /v1/downloads`
 - `GET /v1/bookmarks`
@@ -92,6 +95,7 @@ bash scripts/e2e_gate.sh
 
 - `launch-webapp` 只会启动 Atlas Web 入口，不等于官方原生 Atlas。
 - 当前控制面只覆盖离线诊断、配置、profile 和本地健康检查。
+- 当前已提供 `atlasctl settings` 与 `GET /v1/settings`，可通过统一只读视图读取当前有效配置与 sidebar provider registry。
 - 受管 launcher management 当前只覆盖隔离 profile 模式；共享 profile 模式明确视为非受管。
 - 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
 - 当前 Chrome runtime 探测已区分 `system_auto` 与 `managed_auto` 来源；若 `Application Support/AtlasX/runtime/Chromium.app` 下存在可执行 bundle，诊断口径会优先识别为 managed runtime。

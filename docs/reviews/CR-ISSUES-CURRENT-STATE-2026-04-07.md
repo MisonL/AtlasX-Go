@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T065`
+- `T001-T067`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -15,6 +15,7 @@
 - fallback、控制面、browser capability、managed runtime、sidebar intelligence、memory、E2E gate、runbook 已全部落地
 - 当前项目已经具备：
   - 统一 CLI 与 HTTP 控制面
+  - 统一 settings 只读入口：`atlasctl settings` 与 `/v1/settings`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - structured tabs capture、原生文本选区捕获与按标签页 DevTools URL 解析
   - browser-data open
