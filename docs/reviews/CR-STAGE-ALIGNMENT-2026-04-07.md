@@ -25,8 +25,10 @@
   - `/v1/status`
   - config/profile/support root 基础状态面
   - runtime、mirror/import、memory、sidebar 的统一状态导出
+  - `atlasd` 默认仅允许回环监听
 - 当前边界:
   - 当前仍是本地单机模式
+  - 远程控制监听需要显式危险开关 `--allow-remote-control`
   - 没有长期后台作业编排或多节点协调
 
 ### Phase 2 Browser Capability Takeover

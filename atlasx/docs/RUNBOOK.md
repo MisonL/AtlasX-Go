@@ -232,6 +232,30 @@ go run ./cmd/atlasd --once | rg '^sidebar_qa_'
 - 再检查对应环境变量是否已导出
 - 再检查 `base_url`、`model`、`provider` 是否完整
 
+## 控制面监听边界
+
+默认启动：
+
+```bash
+cd atlasx
+go run ./cmd/atlasd
+```
+
+当前安全约束：
+
+- `atlasd` 默认只允许回环监听地址，例如 `127.0.0.1:17537`、`localhost:17537`、`[::1]:17537`
+- 若传入 `0.0.0.0:17537` 或其他非回环地址，进程会显式失败
+- 只有显式传入 `--allow-remote-control` 时，才允许非回环监听
+
+危险示例：
+
+```bash
+cd atlasx
+go run ./cmd/atlasd --listen 0.0.0.0:17537 --allow-remote-control
+```
+
+仅在你明确接受“无鉴权控制面会被远程网络访问”的风险时才使用该模式。
+
 ## 真实 Gate 操作
 
 当前统一 gate 入口：
