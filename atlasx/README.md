@@ -19,6 +19,7 @@ go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl settings
 go run ./cmd/atlasctl status
 go run ./cmd/atlasctl sidebar status
+go run ./cmd/atlasctl sidebar summarize <target-id>
 go run ./cmd/atlasctl runtime stage --bundle-path /path/to/Chromium.app --version 123.0.0
 go run ./cmd/atlasctl runtime stage --bundle-path /Applications/Google\\ Chrome.app --version 136.0.7103.114
 go run ./cmd/atlasctl runtime status
@@ -135,4 +136,5 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `POST /v1/sidebar/summarize`，可对指定 tab 生成结构化页内总结，复用既有 provider、memory 与 trace/runtime state 主链。
 - 当前已提供本地 memory v1 状态面：事件文件落在 `Application Support/AtlasX/memory/events.jsonl`，格式只定义 `page_capture` 与 `qa_turn` 两类显式事件；`/v1/status` 可直接观察 memory root/file、是否存在、事件数和最近事件时间/类型。
 - 当前已提供 `atlasctl sidebar status`，可在 CLI 中读取 provider readiness、runtime 护栏与最近错误/trace。
+- 当前已提供 `atlasctl sidebar summarize <id>`，可在 CLI 中对指定 tab 执行页内总结，并沿用既有 provider、runtime state 与 memory 主链。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。
