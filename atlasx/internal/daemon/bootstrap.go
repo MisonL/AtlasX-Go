@@ -263,6 +263,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/context", func(w http.ResponseWriter, r *http.Request) {
 		serveTabContext(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/semantic-context", func(w http.ResponseWriter, r *http.Request) {
+		serveTabSemanticContext(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/selection", func(w http.ResponseWriter, r *http.Request) {
 		serveTabSelection(w, r)
 	})

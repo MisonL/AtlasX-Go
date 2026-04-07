@@ -41,6 +41,7 @@ go run ./cmd/atlasctl tabs navigate <target-id> https://openai.com
 go run ./cmd/atlasctl tabs activate <target-id>
 go run ./cmd/atlasctl tabs close <target-id>
 go run ./cmd/atlasctl tabs capture <target-id>
+go run ./cmd/atlasctl tabs extract-context <target-id>
 go run ./cmd/atlasctl tabs selection <target-id>
 go run ./cmd/atlasctl tabs suggest <target-id>
 go run ./cmd/atlasctl tabs recommend-context <target-id>
@@ -91,6 +92,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/runtime/plan/clear`
 - `GET /v1/tabs`
 - `GET /v1/tabs/context`
+- `GET /v1/tabs/semantic-context`
 - `GET /v1/tabs/selection`
 - `GET /v1/tabs/suggestions`
 - `GET /v1/tabs/context-recommendations`
@@ -135,11 +137,13 @@ bash scripts/e2e_gate.sh
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 `tabs capture <id>`，可抓取受管 page target 的标题、URL、正文文本以及 `captured_at`、`text_length`、`text_limit`、`text_truncated`、`capture_error` 等结构化上下文字段。
+- 当前已提供 `tabs extract-context <id>`，可在 CLI 中抓取当前 page target 的 DOM 结构化语义上下文，输出 headings、links、forms 等最小摘要。
 - 当前已提供 `tabs selection <id>`，可在 CLI 中抓取当前 page target 的浏览器原生选区文本与长度/截断元数据。
 - 当前已提供 `tabs suggest <id>`，可在 CLI 中基于当前 page context 和本地 memory retrieval 生成结构化页面建议。
 - 当前已提供 `tabs recommend-context <id>`，可在 CLI 中基于当前 page context、同 host 标签页与本地 memory retrieval 生成结构化上下文推荐。
 - 当前已提供 `tabs organize`，可在 CLI 中基于当前 page targets 输出结构化分组建议，作为标签自动整理的最小只读入口。
 - 当前已提供 `tabs devtools <id>`，可在 CLI 中输出当前 page target 对应的 `devtools_frontend_url`。
+- 当前已提供 `GET /v1/tabs/semantic-context?id=<target-id>`，可抓取当前 page target 的 DOM 结构化语义上下文，返回 headings、links、forms 等最小摘要，不写 memory。
 - 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
 - 当前已提供 `GET /v1/tabs/suggestions?id=<target-id>`，可基于当前页上下文和本地 memory retrieval 返回结构化页面建议，不依赖真实 provider。
 - 当前已提供 `GET /v1/tabs/context-recommendations?id=<target-id>`，可基于当前页上下文、同 host 标签页与本地 memory retrieval 返回结构化上下文推荐，不直接改动浏览器状态或写 memory。
@@ -148,7 +152,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。
 - 当前已提供浏览器数据查询与动作：`history list/open`、`downloads list/open`、`bookmarks list/open` 可读取已落盘的 mirror/import 数据，并将选中 URL 打开到受管标签。
-- 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 与 sidebar QA 骨架状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/history/open`、`/v1/downloads/open`、`/v1/bookmarks/open`、`/v1/tabs`、`/v1/tabs/context`、`/v1/sidebar/status`、`/v1/sidebar/ask` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等 API。
+- 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 与 sidebar QA 骨架状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/history/open`、`/v1/downloads/open`、`/v1/bookmarks/open`、`/v1/tabs`、`/v1/tabs/context`、`/v1/tabs/semantic-context`、`/v1/sidebar/status`、`/v1/sidebar/ask` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等 API。
 - 当前已提供 `GET /v1/memory`，可只读返回 memory root、events file、事件摘要与最近 N 条 memory events，作为 Browser memories 的最小读控制面。
 - 当前已提供 `GET /v1/memory/search`，可按 `question` 以及可选 `tab_id/title/url/limit` 查询相关 memory snippets，复用既有 retrieval 排序逻辑。
 - 当前侧边栏问答已接入 `openai/openai-compatible` 与 `openrouter` 两条 provider adapter：配置使用 `default provider + provider registry`，并只记录 `api_key_env` 这类环境变量名而不写真实密钥；`/v1/sidebar/ask` 会真实抓取当前 tab context 并返回 `answer/provider/model/context_summary/trace_id`，同时支持请求级 `provider_id` 覆盖默认 provider。当前还带默认 timeout、单次 retry、token budget 护栏，并把最近错误与最近 trace 暴露到 `/v1/sidebar/status` 和 `/v1/status`。未配置时显式返回 `503`，错误 provider id 显式返回 `400`，不支持的 provider 显式返回 `501`，上游 provider 失败显式返回 `502`。

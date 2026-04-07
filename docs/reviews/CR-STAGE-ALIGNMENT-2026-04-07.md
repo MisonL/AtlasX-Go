@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T077` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T077` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T078` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T078` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -45,7 +45,8 @@
   - `import-chrome`
   - `import-safari`
   - `history|downloads|bookmarks list/open`
-  - `tabs list|open|activate|close|navigate|capture|selection|suggest|organize|devtools`
+  - `tabs list|open|activate|close|navigate|capture|extract-context|selection|suggest|organize|devtools`
+  - `/v1/tabs/semantic-context`
   - `/v1/tabs/selection`
   - `/v1/tabs/suggestions`
   - `/v1/tabs/organize`
@@ -54,7 +55,7 @@
   - `/v1/tabs*`
   - `/v1/mirror/scan` `/v1/import/chrome` `/v1/import/safari`
 - 当前边界:
-  - 页面上下文已支持纯文本抓取与原生文本选区抓取，但仍不包含 DOM 级语义抽取
+  - 页面上下文已支持纯文本抓取、DOM 结构化语义提取与原生文本选区抓取，但仍不包含更深的 DOM 动作自动化
   - DevTools 当前只提供按标签页解析 frontend URL 的最小入口，尚未提供内置面板壳层或设备模拟
   - mirror-scan 与 import-chrome 当前只接受受信 profile 根目录，不再支持任意本地目录输入
   - browser-data open 依赖已落盘 mirror/import 数据
@@ -90,22 +91,25 @@
   - `atlasctl memory search`
   - `atlasctl tabs suggest`
   - `atlasctl tabs recommend-context`
+  - `atlasctl tabs extract-context`
   - `atlasctl tabs organize`
   - `/v1/memory`
   - `/v1/memory/search`
   - `/v1/tabs/suggestions`
   - `/v1/tabs/context-recommendations`
+  - `/v1/tabs/semantic-context`
   - `/v1/tabs/organize`
   - capture/ask 写 memory
   - selection ask/summarize 写 memory
   - 基于 memory 的轻量检索增强
   - 基于 page context + memory 的结构化页面建议
   - 基于 page context + 同 host 标签页 + memory 的结构化上下文推荐
+  - 基于 DOM 的结构化上下文提取
   - 基于 page targets 的结构化标签整理建议
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或多轮代理编排
-  - 选区提问当前已支持浏览器原生文本选区，但仍未覆盖 DOM 级结构上下文抽取
+  - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要，尚未覆盖更深层 DOM 动作自动化或设备模拟
 
 ## 冻结边界
 

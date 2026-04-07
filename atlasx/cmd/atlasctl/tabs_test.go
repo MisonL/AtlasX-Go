@@ -13,14 +13,16 @@ import (
 )
 
 type stubCommandTabsClient struct {
-	targets      []tabs.Target
-	listErr      error
-	context      tabs.PageContext
-	captureErr   error
-	selection    tabs.SelectionContext
-	selectionErr error
-	devTools     tabs.DevToolsTarget
-	devToolsErr  error
+	targets         []tabs.Target
+	listErr         error
+	context         tabs.PageContext
+	captureErr      error
+	semanticContext tabs.SemanticContext
+	semanticErr     error
+	selection       tabs.SelectionContext
+	selectionErr    error
+	devTools        tabs.DevToolsTarget
+	devToolsErr     error
 }
 
 func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
@@ -45,6 +47,10 @@ func (s *stubCommandTabsClient) Navigate(string, string) error {
 
 func (s *stubCommandTabsClient) Capture(string) (tabs.PageContext, error) {
 	return s.context, s.captureErr
+}
+
+func (s *stubCommandTabsClient) CaptureSemanticContext(string) (tabs.SemanticContext, error) {
+	return s.semanticContext, s.semanticErr
 }
 
 func (s *stubCommandTabsClient) CaptureSelection(string) (tabs.SelectionContext, error) {

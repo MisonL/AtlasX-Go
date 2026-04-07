@@ -30,6 +30,7 @@ type tabClient interface {
 	Close(string) error
 	Navigate(string, string) error
 	Capture(string) (tabs.PageContext, error)
+	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
 }

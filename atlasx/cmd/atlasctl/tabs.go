@@ -20,13 +20,14 @@ type commandTabsClient interface {
 	Close(string) error
 	Navigate(string, string) error
 	Capture(string) (tabs.PageContext, error)
+	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
 }
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, selection, devtools, suggest, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, extract-context, selection, devtools, suggest, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -88,6 +89,8 @@ func runTabs(args []string) error {
 		return nil
 	case "capture":
 		return runTabsCapture(paths, client, args[1:])
+	case "extract-context":
+		return runTabsExtractContext(client, args[1:])
 	case "selection":
 		return runTabsSelection(client, args[1:])
 	case "devtools":
