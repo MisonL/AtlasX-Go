@@ -33,6 +33,7 @@ type tabClient interface {
 	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
+	EmulateDevice(string, string) (tabs.DeviceEmulationResult, error)
 }
 
 type dataLoader[T any] func(macos.Paths) ([]T, error)
@@ -42,6 +43,11 @@ type tabAction func(client tabClient, request tabActionRequest) (any, error)
 type tabActionRequest struct {
 	ID  string `json:"id"`
 	URL string `json:"url"`
+}
+
+type tabEmulationRequest struct {
+	ID     string `json:"id"`
+	Preset string `json:"preset"`
 }
 
 type openIndexRequest struct {

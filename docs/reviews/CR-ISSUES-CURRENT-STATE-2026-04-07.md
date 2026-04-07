@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T079`
+- `T001-T080`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -26,14 +26,15 @@
   - `atlasctl tabs memories` 与 `/v1/tabs/memories`
   - `atlasctl tabs recommend-context` 与 `/v1/tabs/context-recommendations`
   - `atlasctl tabs extract-context` 与 `/v1/tabs/semantic-context`
+  - `atlasctl tabs emulate-device` 与 `/v1/tabs/emulate-device`
   - `atlasctl tabs organize` 与 `/v1/tabs/organize`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
-  - structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获与按标签页 DevTools URL 解析
+  - structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获、按标签页 DevTools URL 解析与固定设备预设模拟
   - browser-data open
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
-  - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐与标签整理建议
+  - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐、标签整理建议与固定设备预设模拟
   - 项目级 gate 与发布/恢复手册
 
 ## 当前开发机观测事实

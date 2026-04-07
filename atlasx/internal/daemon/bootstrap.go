@@ -284,6 +284,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/devtools", func(w http.ResponseWriter, r *http.Request) {
 		serveTabDevTools(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/emulate-device", func(w http.ResponseWriter, r *http.Request) {
+		serveTabEmulateDevice(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/open", func(w http.ResponseWriter, r *http.Request) {
 		serveTabAction(w, r, func(client tabClient, request tabActionRequest) (any, error) {
 			return client.Open(request.URL)

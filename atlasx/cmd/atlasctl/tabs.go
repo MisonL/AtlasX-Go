@@ -23,11 +23,12 @@ type commandTabsClient interface {
 	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
+	EmulateDevice(string, string) (tabs.DeviceEmulationResult, error)
 }
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, extract-context, selection, devtools, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, open, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -95,6 +96,8 @@ func runTabs(args []string) error {
 		return runTabsSelection(client, args[1:])
 	case "devtools":
 		return runTabsDevTools(client, args[1:])
+	case "emulate-device":
+		return runTabsEmulateDevice(client, args[1:])
 	case "suggest":
 		return runTabsSuggest(paths, client, args[1:])
 	case "memories":

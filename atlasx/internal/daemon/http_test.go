@@ -34,6 +34,8 @@ type stubTabsClient struct {
 	selectionErr    error
 	devTools        tabs.DevToolsTarget
 	devToolsErr     error
+	deviceResult    tabs.DeviceEmulationResult
+	deviceErr       error
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -71,6 +73,10 @@ func (s *stubTabsClient) CaptureSelection(string) (tabs.SelectionContext, error)
 
 func (s *stubTabsClient) DevTools(string) (tabs.DevToolsTarget, error) {
 	return s.devTools, s.devToolsErr
+}
+
+func (s *stubTabsClient) EmulateDevice(string, string) (tabs.DeviceEmulationResult, error) {
+	return s.deviceResult, s.deviceErr
 }
 
 func TestHistoryOpenEndpoint(t *testing.T) {

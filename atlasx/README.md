@@ -48,6 +48,7 @@ go run ./cmd/atlasctl tabs memories <target-id>
 go run ./cmd/atlasctl tabs recommend-context <target-id>
 go run ./cmd/atlasctl tabs organize
 go run ./cmd/atlasctl tabs devtools <target-id>
+go run ./cmd/atlasctl tabs emulate-device <target-id> <preset>
 go run ./cmd/atlasctl import-chrome
 go run ./cmd/atlasctl import-safari
 go run ./cmd/atlasctl history list
@@ -100,6 +101,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs/context-recommendations`
 - `GET /v1/tabs/organize`
 - `GET /v1/tabs/devtools`
+- `POST /v1/tabs/emulate-device`
 - `POST /v1/tabs/open`
 - `POST /v1/tabs/activate`
 - `POST /v1/tabs/close`
@@ -146,6 +148,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs recommend-context <id>`，可在 CLI 中基于当前 page context、同 host 标签页与本地 memory retrieval 生成结构化上下文推荐。
 - 当前已提供 `tabs organize`，可在 CLI 中基于当前 page targets 输出结构化分组建议，作为标签自动整理的最小只读入口。
 - 当前已提供 `tabs devtools <id>`，可在 CLI 中输出当前 page target 对应的 `devtools_frontend_url`。
+- 当前已提供 `tabs emulate-device <id> <preset>`，可在 CLI 中对指定 page target 应用固定设备预设或用 `off` 显式清除模拟，作为最小可控的设备模拟入口。
 - 当前已提供 `GET /v1/tabs/semantic-context?id=<target-id>`，可抓取当前 page target 的 DOM 结构化语义上下文，返回 headings、links、forms 等最小摘要，不写 memory。
 - 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
 - 当前已提供 `GET /v1/tabs/suggestions?id=<target-id>`，可基于当前页上下文和本地 memory retrieval 返回结构化页面建议，不依赖真实 provider。
@@ -153,6 +156,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/context-recommendations?id=<target-id>`，可基于当前页上下文、同 host 标签页与本地 memory retrieval 返回结构化上下文推荐，不直接改动浏览器状态或写 memory。
 - 当前已提供 `GET /v1/tabs/organize`，可基于当前 page targets 返回结构化分组建议，不直接改动浏览器状态。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
+- 当前已提供 `POST /v1/tabs/emulate-device`，可对指定标签页应用固定设备预设或清除模拟，返回结构化 `preset/viewport/mobile/touch` 结果。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。
 - 当前已提供浏览器数据查询与动作：`history list/open`、`downloads list/open`、`bookmarks list/open` 可读取已落盘的 mirror/import 数据，并将选中 URL 打开到受管标签。
