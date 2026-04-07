@@ -22,9 +22,11 @@ import (
 )
 
 type stubTabsClient struct {
-	openedURL  string
-	context    tabs.PageContext
-	captureErr error
+	openedURL    string
+	context      tabs.PageContext
+	captureErr   error
+	selection    tabs.SelectionContext
+	selectionErr error
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -50,6 +52,10 @@ func (s *stubTabsClient) Navigate(string, string) error {
 
 func (s *stubTabsClient) Capture(string) (tabs.PageContext, error) {
 	return s.context, s.captureErr
+}
+
+func (s *stubTabsClient) CaptureSelection(string) (tabs.SelectionContext, error) {
+	return s.selection, s.selectionErr
 }
 
 func TestHistoryOpenEndpoint(t *testing.T) {

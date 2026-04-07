@@ -37,11 +37,12 @@
   - `import-safari`
   - `history|downloads|bookmarks list/open`
   - `tabs list|open|activate|close|navigate|capture`
+  - `/v1/tabs/selection`
   - `/v1/history*` `/v1/downloads*` `/v1/bookmarks*`
   - `/v1/tabs*`
   - `/v1/mirror/scan` `/v1/import/chrome` `/v1/import/safari`
 - 当前边界:
-  - 页面上下文仍是结构化纯文本抓取，不包含 DOM 级语义抽取
+  - 页面上下文已支持纯文本抓取与原生文本选区抓取，但仍不包含 DOM 级语义抽取
   - browser-data open 依赖已落盘 mirror/import 数据
 
 ### Phase 3 Managed Chromium Runtime
@@ -73,7 +74,7 @@
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或多轮代理编排
-  - 选区提问当前仅支持显式 `selection_text` 输入，尚未自动读取浏览器原生选区状态
+  - 选区提问当前已支持浏览器原生文本选区，但仍未覆盖 DOM 级结构上下文抽取
 
 ## 冻结边界
 

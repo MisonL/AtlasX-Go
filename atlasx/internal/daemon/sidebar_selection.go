@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"atlasx/internal/memory"
 	"atlasx/internal/sidebar"
+	"atlasx/internal/tabs"
 )
 
 func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
@@ -27,13 +29,6 @@ func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
 	paths, err := discoverPaths()
 	if err != nil {
 		writeSidebarAskError(w, http.StatusInternalServerError, traceID, err)
-		return
-	}
-
-	selectionQuestion, err := sidebar.BuildSelectionQuestion(request.SelectionText, request.Question)
-	if err != nil {
-		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
-		writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
 		return
 	}
 
@@ -67,10 +62,29 @@ func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	selectionText, err := resolveSelectionText(client, request)
+	if err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		var captureErr *tabs.SelectionCaptureError
+		if errors.As(err, &captureErr) {
+			writeSidebarAskError(w, http.StatusBadGateway, traceID, err)
+			return
+		}
+		writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
+		return
+	}
+
 	context, err := client.Capture(request.TabID)
 	if err != nil {
 		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
 		writeSidebarAskError(w, http.StatusBadGateway, traceID, err)
+		return
+	}
+
+	selectionQuestion, err := sidebar.BuildSelectionQuestion(selectionText, request.Question)
+	if err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
 		return
 	}
 
@@ -86,6 +100,7 @@ func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	request.SelectionText = selectionText
 	response, err := config.AskSelectionWithMemory(request, context, memorySnippets)
 	if err != nil {
 		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
@@ -124,4 +139,19 @@ func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
 
 	_ = sidebar.SaveRuntimeResult(paths, traceID, nil)
 	writeJSON(w, http.StatusOK, response)
+}
+
+func resolveSelectionText(client tabClient, request sidebar.SelectionAskRequest) (string, error) {
+	if strings.TrimSpace(request.SelectionText) != "" {
+		return request.SelectionText, nil
+	}
+
+	selection, err := client.CaptureSelection(request.TabID)
+	if err != nil {
+		return "", err
+	}
+	if !selection.SelectionPresent || strings.TrimSpace(selection.SelectionText) == "" {
+		return "", errors.New("selection_text is required when page selection is empty")
+	}
+	return selection.SelectionText, nil
 }

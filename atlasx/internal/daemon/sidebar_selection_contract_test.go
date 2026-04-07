@@ -40,6 +40,17 @@ func TestSidebarSelectionAskEndpointContract(t *testing.T) {
 	}
 
 	restoreDaemonHooks(t, &stubTabsClient{
+		selection: tabs.SelectionContext{
+			ID:                     "tab-1",
+			Title:                  "Atlas",
+			URL:                    "https://chatgpt.com/atlas",
+			SelectionText:          "Atlas selected text",
+			CapturedAt:             "2026-04-07T12:00:00Z",
+			SelectionPresent:       true,
+			SelectionTextTruncated: false,
+			SelectionTextLength:    20,
+			SelectionTextLimit:     1024,
+		},
 		context: tabs.PageContext{
 			ID:    "tab-1",
 			Title: "Atlas",

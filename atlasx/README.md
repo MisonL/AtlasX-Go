@@ -109,12 +109,13 @@ bash scripts/e2e_gate.sh
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 `tabs capture <id>`，可抓取受管 page target 的标题、URL、正文文本以及 `captured_at`、`text_length`、`text_limit`、`text_truncated`、`capture_error` 等结构化上下文字段。
+- 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。
 - 当前已提供浏览器数据查询与动作：`history list/open`、`downloads list/open`、`bookmarks list/open` 可读取已落盘的 mirror/import 数据，并将选中 URL 打开到受管标签。
 - 当前 `atlasd` 的 `/v1/status` 与 `/healthz` 已输出 launcher、mirror、import 与 sidebar QA 骨架状态，并额外提供 `/v1/history`、`/v1/downloads`、`/v1/bookmarks`、`/v1/history/open`、`/v1/downloads/open`、`/v1/bookmarks/open`、`/v1/tabs`、`/v1/tabs/context`、`/v1/sidebar/status`、`/v1/sidebar/ask` 以及 `/v1/mirror/scan`、`/v1/import/chrome`、`/v1/import/safari` 等 API。
 - 当前侧边栏问答已接入 `openai/openai-compatible` 与 `openrouter` 两条 provider adapter：配置使用 `default provider + provider registry`，并只记录 `api_key_env` 这类环境变量名而不写真实密钥；`/v1/sidebar/ask` 会真实抓取当前 tab context 并返回 `answer/provider/model/context_summary/trace_id`，同时支持请求级 `provider_id` 覆盖默认 provider。当前还带默认 timeout、单次 retry、token budget 护栏，并把最近错误与最近 trace 暴露到 `/v1/sidebar/status` 和 `/v1/status`。未配置时显式返回 `503`，错误 provider id 显式返回 `400`，不支持的 provider 显式返回 `501`，上游 provider 失败显式返回 `502`。
-- 当前已提供 `POST /v1/sidebar/selection/ask`，通过显式 `selection_text + question` 在当前 tab 上发起结构化选区提问，复用既有 provider、memory 与 trace/runtime state 主链，不伪造浏览器原生选区状态。
+- 当前已提供 `POST /v1/sidebar/selection/ask`，可通过显式 `selection_text + question` 发起结构化选区提问，也可在未传 `selection_text` 时自动读取当前 tab 的浏览器原生选区；仍复用既有 provider、memory 与 trace/runtime state 主链，无选区时显式失败。
 - 当前已提供 `POST /v1/sidebar/summarize`，可对指定 tab 生成结构化页内总结，复用既有 provider、memory 与 trace/runtime state 主链。
 - 当前已提供本地 memory v1 状态面：事件文件落在 `Application Support/AtlasX/memory/events.jsonl`，格式只定义 `page_capture` 与 `qa_turn` 两类显式事件；`/v1/status` 可直接观察 memory root/file、是否存在、事件数和最近事件时间/类型。
 - 真正的产品目标是逐步替换为自管 Chromium runtime 与 Go 控制面。
