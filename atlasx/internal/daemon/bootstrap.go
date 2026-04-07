@@ -266,6 +266,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/selection", func(w http.ResponseWriter, r *http.Request) {
 		serveTabSelection(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/suggestions", func(w http.ResponseWriter, r *http.Request) {
+		serveTabSuggestions(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/devtools", func(w http.ResponseWriter, r *http.Request) {
 		serveTabDevTools(w, r)
 	})

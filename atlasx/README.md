@@ -42,6 +42,7 @@ go run ./cmd/atlasctl tabs activate <target-id>
 go run ./cmd/atlasctl tabs close <target-id>
 go run ./cmd/atlasctl tabs capture <target-id>
 go run ./cmd/atlasctl tabs selection <target-id>
+go run ./cmd/atlasctl tabs suggest <target-id>
 go run ./cmd/atlasctl tabs devtools <target-id>
 go run ./cmd/atlasctl import-chrome
 go run ./cmd/atlasctl import-safari
@@ -128,8 +129,10 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 `tabs capture <id>`，可抓取受管 page target 的标题、URL、正文文本以及 `captured_at`、`text_length`、`text_limit`、`text_truncated`、`capture_error` 等结构化上下文字段。
 - 当前已提供 `tabs selection <id>`，可在 CLI 中抓取当前 page target 的浏览器原生选区文本与长度/截断元数据。
+- 当前已提供 `tabs suggest <id>`，可在 CLI 中基于当前 page context 和本地 memory retrieval 生成结构化页面建议。
 - 当前已提供 `tabs devtools <id>`，可在 CLI 中输出当前 page target 对应的 `devtools_frontend_url`。
 - 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
+- 当前已提供 `GET /v1/tabs/suggestions?id=<target-id>`，可基于当前页上下文和本地 memory retrieval 返回结构化页面建议，不依赖真实 provider。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
 - 当前已提供 Safari 导入基线：`import-safari` 会导出 Safari 书签到 `Application Support/AtlasX/imports/safari/Bookmarks.json`，并记录 History.db source metadata。

@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T074` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T074` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T075` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T075` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -45,8 +45,9 @@
   - `import-chrome`
   - `import-safari`
   - `history|downloads|bookmarks list/open`
-  - `tabs list|open|activate|close|navigate|capture|selection|devtools`
+  - `tabs list|open|activate|close|navigate|capture|selection|suggest|devtools`
   - `/v1/tabs/selection`
+  - `/v1/tabs/suggestions`
   - `/v1/tabs/devtools`
   - `/v1/history*` `/v1/downloads*` `/v1/bookmarks*`
   - `/v1/tabs*`
@@ -86,11 +87,14 @@
   - `memory/events.jsonl` 状态面
   - `atlasctl memory list`
   - `atlasctl memory search`
+  - `atlasctl tabs suggest`
   - `/v1/memory`
   - `/v1/memory/search`
+  - `/v1/tabs/suggestions`
   - capture/ask 写 memory
   - selection ask/summarize 写 memory
   - 基于 memory 的轻量检索增强
+  - 基于 page context + memory 的结构化页面建议
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或多轮代理编排
