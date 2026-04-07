@@ -16,7 +16,7 @@ import (
 
 func runSidebar(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing sidebar subcommand: status, ask, summarize")
+		return errors.New("missing sidebar subcommand: status, ask, summarize, selection-ask")
 	}
 
 	switch args[0] {
@@ -26,6 +26,8 @@ func runSidebar(args []string) error {
 		return runSidebarAsk(args[1:])
 	case "summarize":
 		return runSidebarSummarize(args[1:])
+	case "selection-ask":
+		return runSidebarSelectionAsk(args[1:])
 	default:
 		return fmt.Errorf("unknown sidebar subcommand %q", args[0])
 	}
@@ -66,7 +68,7 @@ func runSidebarSummarize(args []string) error {
 	}
 
 	traceID := sidebar.NewTraceID()
-	context, memorySnippets, err := loadSidebarCommandContext(paths, command, traceID, args[0], sidebar.PageSummaryQuestion)
+	context, memorySnippets, err := loadSidebarCommandContext(paths, command, traceID, "", args[0], sidebar.PageSummaryQuestion)
 	if err != nil {
 		return err
 	}
@@ -110,7 +112,7 @@ func runSidebarAsk(args []string) error {
 	}
 
 	traceID := sidebar.NewTraceID()
-	context, memorySnippets, err := loadSidebarCommandContext(paths, command, traceID, tabID, question)
+	context, memorySnippets, err := loadSidebarCommandContext(paths, command, traceID, *providerID, tabID, question)
 	if err != nil {
 		return err
 	}
@@ -183,8 +185,8 @@ func prepareSidebarCommand() (macos.Paths, sidebarCommand, error) {
 	return paths, command, nil
 }
 
-func loadSidebarCommandContext(paths macos.Paths, command sidebarCommand, traceID string, tabID string, question string) (tabs.PageContext, []string, error) {
-	if err := command.Config.Validate(""); err != nil {
+func loadSidebarCommandContext(paths macos.Paths, command sidebarCommand, traceID string, providerID string, tabID string, question string) (tabs.PageContext, []string, error) {
+	if err := command.Config.Validate(providerID); err != nil {
 		return tabs.PageContext{}, nil, finishSidebarCommand(paths, traceID, err)
 	}
 

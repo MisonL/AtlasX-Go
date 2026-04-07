@@ -14,6 +14,7 @@
 - `atlasctl settings`
 - `atlasctl sidebar status`
 - `atlasctl sidebar ask <target-id> <question>`
+- `atlasctl sidebar selection-ask <target-id> <question>`
 - `atlasctl sidebar summarize <target-id>`
 - `atlasctl status`
 - `atlasctl runtime stage|status|verify|clear|install`
