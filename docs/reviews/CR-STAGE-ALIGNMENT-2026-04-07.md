@@ -62,14 +62,18 @@
 - 已完成:
   - `/v1/sidebar/status`
   - `/v1/sidebar/ask`
+  - `/v1/sidebar/selection/ask`
+  - `/v1/sidebar/summarize`
   - `openai/openai-compatible` 与 `openrouter` provider
   - timeout/retry/token budget/trace/last error 观测
   - `memory/events.jsonl` 状态面
   - capture/ask 写 memory
+  - selection ask/summarize 写 memory
   - 基于 memory 的轻量检索增强
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或多轮代理编排
+  - 选区提问当前仅支持显式 `selection_text` 输入，尚未自动读取浏览器原生选区状态
 
 ## 冻结边界
 

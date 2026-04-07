@@ -238,6 +238,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/sidebar/ask", func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarAsk(w, r)
 	})
+	mux.HandleFunc("/v1/sidebar/selection/ask", func(w http.ResponseWriter, r *http.Request) {
+		serveSidebarSelectionAsk(w, r)
+	})
 	mux.HandleFunc("/v1/sidebar/summarize", func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarSummarize(w, r)
 	})
