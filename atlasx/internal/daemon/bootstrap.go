@@ -260,6 +260,9 @@ func NewMux(_ Status) *http.ServeMux {
 		}
 		serveTabsList(w)
 	})
+	mux.HandleFunc("/v1/tabs/search", func(w http.ResponseWriter, r *http.Request) {
+		serveTabSearch(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/context", func(w http.ResponseWriter, r *http.Request) {
 		serveTabContext(w, r)
 	})

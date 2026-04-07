@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T088` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T088` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T089` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T089` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -45,7 +45,8 @@
   - `import-chrome`
   - `import-safari`
   - `history|downloads|bookmarks list/open`
-  - `tabs list|windows|open|open-window|open-devtools|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|organize|devtools|emulate-device`
+  - `tabs list|search|windows|open|open-window|open-devtools|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|organize|devtools|emulate-device`
+  - `/v1/tabs/search`
   - `/v1/tabs/windows`
   - `/v1/tabs/open-devtools`
   - `/v1/tabs/close-duplicates`
@@ -64,7 +65,7 @@
   - `/v1/tabs*`
   - `/v1/mirror/scan` `/v1/import/chrome` `/v1/import/safari`
 - 当前边界:
-  - 页面上下文已支持纯文本抓取、DOM 结构化语义提取与原生文本选区抓取，但仍不包含更深的 DOM 动作自动化
+  - 页面上下文已支持标签页搜索、纯文本抓取、DOM 结构化语义提取与原生文本选区抓取，但仍不包含更深的 DOM 动作自动化
   - DevTools 当前已提供按标签页解析 frontend URL、独立新窗口打开、固定设备预设模拟，以及最小多窗口打开、窗口分组、重复页清理、窗口激活、窗口关闭、窗口状态控制和窗口 bounds 控制入口，尚未提供内置面板壳层或更细粒度窗口编排动作
   - mirror-scan 与 import-chrome 当前只接受受信 profile 根目录，不再支持任意本地目录输入
   - browser-data open 依赖已落盘 mirror/import 数据

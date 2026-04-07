@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T088`
+- `T001-T089`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -27,6 +27,7 @@
   - `atlasctl tabs recommend-context` 与 `/v1/tabs/context-recommendations`
   - `atlasctl tabs extract-context` 与 `/v1/tabs/semantic-context`
   - `atlasctl tabs windows` 与 `/v1/tabs/windows`
+  - `atlasctl tabs search` 与 `/v1/tabs/search`
   - `atlasctl tabs open-devtools` 与 `/v1/tabs/open-devtools`
   - `atlasctl tabs close-duplicates` 与 `/v1/tabs/close-duplicates`
   - `atlasctl tabs activate-window` 与 `/v1/tabs/activate-window`

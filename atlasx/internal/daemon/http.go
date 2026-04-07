@@ -25,6 +25,7 @@ var newTabsClient = func(paths macos.Paths) (tabClient, error) {
 
 type tabClient interface {
 	List() ([]tabs.Target, error)
+	Search(string) ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)

@@ -16,6 +16,7 @@ var newCommandTabsClient = func(paths macos.Paths) (commandTabsClient, error) {
 
 type commandTabsClient interface {
 	List() ([]tabs.Target, error)
+	Search(string) ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)
@@ -37,7 +38,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, windows, open, open-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -60,6 +61,8 @@ func runTabs(args []string) error {
 			fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
 		}
 		return nil
+	case "search":
+		return runTabsSearch(client, args[1:])
 	case "windows":
 		return runTabsWindows(client)
 	case "open":

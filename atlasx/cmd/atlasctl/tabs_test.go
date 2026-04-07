@@ -15,6 +15,8 @@ import (
 type stubCommandTabsClient struct {
 	targets           []tabs.Target
 	listErr           error
+	searchTargets     []tabs.Target
+	searchErr         error
 	windows           []tabs.WindowSummary
 	windowsErr        error
 	duplicateClose    tabs.CloseDuplicatesResult
@@ -43,6 +45,13 @@ type stubCommandTabsClient struct {
 
 func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
 	return s.targets, s.listErr
+}
+
+func (s *stubCommandTabsClient) Search(query string) ([]tabs.Target, error) {
+	if s.searchErr != nil {
+		return nil, s.searchErr
+	}
+	return s.searchTargets, nil
 }
 
 func (s *stubCommandTabsClient) Windows() ([]tabs.WindowSummary, error) {
