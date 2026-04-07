@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T064`
+- `T001-T065`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -18,6 +18,7 @@
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - structured tabs capture、原生文本选区捕获与按标签页 DevTools URL 解析
   - browser-data open
+  - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
   - sidebar 多 provider、页内总结、原生选区提问与本地 memory 轻量增强
   - 项目级 gate 与发布/恢复手册

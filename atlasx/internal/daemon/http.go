@@ -13,6 +13,7 @@ import (
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
 	"atlasx/internal/sidebar"
+	"atlasx/internal/sourcepaths"
 	"atlasx/internal/tabs"
 )
 
@@ -501,6 +502,10 @@ func serveMirrorScan(w http.ResponseWriter, r *http.Request) {
 	if profileDir == "" {
 		profileDir = mirror.DefaultProfilePath(paths)
 	}
+	if err := sourcepaths.ValidateMirrorProfileDir(paths, profileDir); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 
 	snapshot, err := mirror.Scan(paths, profileDir)
 	if err != nil {
@@ -532,6 +537,10 @@ func serveChromeImport(w http.ResponseWriter, r *http.Request) {
 	sourceProfileDir := request.SourceProfileDir
 	if sourceProfileDir == "" {
 		sourceProfileDir = imports.DefaultChromeProfileDir(paths)
+	}
+	if err := sourcepaths.ValidateChromeImportSourceDir(paths, sourceProfileDir); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
 	}
 
 	report, err := imports.ImportChrome(paths, sourceProfileDir)

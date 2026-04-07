@@ -165,6 +165,34 @@ func TestBookmarksOpenEndpointRejectsGet(t *testing.T) {
 	}
 }
 
+func TestMirrorScanRejectsOutsideProfileDir(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	requestBody := `{"profile_dir":"` + filepath.Join(t.TempDir(), "outside-profile") + `"}`
+	request := httptest.NewRequest(http.MethodPost, "/v1/mirror/scan", bytes.NewBufferString(requestBody))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestChromeImportRejectsOutsideProfileDir(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	requestBody := `{"source_profile_dir":"` + filepath.Join(t.TempDir(), "outside-profile") + `"}`
+	request := httptest.NewRequest(http.MethodPost, "/v1/import/chrome", bytes.NewBufferString(requestBody))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestTabContextEndpoint(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
