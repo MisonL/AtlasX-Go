@@ -134,7 +134,19 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := config.Ask(request, context)
+	memorySnippets, err := memory.FindRelevantSnippets(paths, memory.RetrievalInput{
+		TabID:    context.ID,
+		Title:    context.Title,
+		URL:      context.URL,
+		Question: request.Question,
+	})
+	if err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		writeSidebarAskError(w, http.StatusInternalServerError, traceID, err)
+		return
+	}
+
+	response, err := config.AskWithMemory(request, context, memorySnippets)
 	if err != nil {
 		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
 		switch {

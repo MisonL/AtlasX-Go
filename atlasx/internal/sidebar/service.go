@@ -125,6 +125,10 @@ func (c Config) Status() Status {
 }
 
 func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, error) {
+	return c.AskWithMemory(request, context, nil)
+}
+
+func (c Config) AskWithMemory(request AskRequest, context tabs.PageContext, memorySnippets []string) (AskResponse, error) {
 	if request.Question == "" {
 		return AskResponse{}, errors.New("question is required")
 	}
@@ -142,7 +146,7 @@ func (c Config) Ask(request AskRequest, context tabs.PageContext) (AskResponse, 
 	}
 
 	apiKey := os.Getenv(selected.APIKeyEnv)
-	answer, model, err := c.askProvider(selected, apiKey, request.Question, context)
+	answer, model, err := c.askProvider(selected, apiKey, request.Question, context, memorySnippets)
 	if err != nil {
 		if errors.Is(err, ErrTokenBudgetExceeded) {
 			return AskResponse{}, err
@@ -244,12 +248,12 @@ func (c Config) resolveProvider(providerID string) (settings.SidebarProviderConf
 	return provider, nil
 }
 
-func (c Config) askProvider(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext) (string, string, error) {
+func (c Config) askProvider(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, memorySnippets []string) (string, string, error) {
 	switch provider.Provider {
 	case "openai", "openai-compatible":
-		return askOpenAICompatible(provider, apiKey, question, context)
+		return askOpenAICompatible(provider, apiKey, question, context, memorySnippets)
 	case "openrouter":
-		return askOpenRouter(provider, apiKey, question, context)
+		return askOpenRouter(provider, apiKey, question, context, memorySnippets)
 	default:
 		return "", "", ErrBackendNotImplemented
 	}

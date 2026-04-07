@@ -47,19 +47,19 @@ func providerSupported(provider string) bool {
 	return provider == "openai" || provider == "openai-compatible" || provider == "openrouter"
 }
 
-func askOpenAICompatible(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext) (string, string, error) {
-	return askChatCompletions(provider, apiKey, question, context, nil)
+func askOpenAICompatible(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, memorySnippets []string) (string, string, error) {
+	return askChatCompletions(provider, apiKey, question, context, memorySnippets, nil)
 }
 
-func askOpenRouter(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext) (string, string, error) {
-	return askChatCompletions(provider, apiKey, question, context, map[string]string{
+func askOpenRouter(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, memorySnippets []string) (string, string, error) {
+	return askChatCompletions(provider, apiKey, question, context, memorySnippets, map[string]string{
 		"HTTP-Referer": "https://atlasx.local",
 		"X-Title":      "AtlasX",
 	})
 }
 
-func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, extraHeaders map[string]string) (string, string, error) {
-	prompt := buildPrompt(question, context)
+func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, question string, context tabs.PageContext, memorySnippets []string, extraHeaders map[string]string) (string, string, error) {
+	prompt := buildPrompt(question, context, memorySnippets)
 	if estimatePromptTokens(prompt) > providerTokenBudget {
 		return "", "", ErrTokenBudgetExceeded
 	}
@@ -121,11 +121,45 @@ func askChatCompletions(provider settings.SidebarProviderConfig, apiKey string, 
 	return "", "", lastErr
 }
 
-func buildPrompt(question string, context tabs.PageContext) string {
-	return fmt.Sprintf(
+func buildPrompt(question string, context tabs.PageContext, memorySnippets []string) string {
+	basePrompt := fmt.Sprintf(
 		"Question:\n%s\n\nContext Summary:\n%s\n\nPage Text:\n%s",
 		question,
 		buildContextSummary(context),
+		context.Text,
+	)
+	if len(memorySnippets) == 0 || estimatePromptTokens(basePrompt) >= providerTokenBudget {
+		return basePrompt
+	}
+
+	memoryLines := make([]string, 0, len(memorySnippets))
+	for _, snippet := range memorySnippets {
+		if strings.TrimSpace(snippet) == "" {
+			continue
+		}
+
+		candidateLines := append(memoryLines, fmt.Sprintf("%d. %s", len(memoryLines)+1, snippet))
+		candidatePrompt := fmt.Sprintf(
+			"Question:\n%s\n\nContext Summary:\n%s\n\nRelevant Memory:\n%s\n\nPage Text:\n%s",
+			question,
+			buildContextSummary(context),
+			strings.Join(candidateLines, "\n"),
+			context.Text,
+		)
+		if estimatePromptTokens(candidatePrompt) > providerTokenBudget {
+			break
+		}
+		memoryLines = candidateLines
+	}
+	if len(memoryLines) == 0 {
+		return basePrompt
+	}
+
+	return fmt.Sprintf(
+		"Question:\n%s\n\nContext Summary:\n%s\n\nRelevant Memory:\n%s\n\nPage Text:\n%s",
+		question,
+		buildContextSummary(context),
+		strings.Join(memoryLines, "\n"),
 		context.Text,
 	)
 }

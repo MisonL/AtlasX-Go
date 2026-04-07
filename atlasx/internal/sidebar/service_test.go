@@ -184,6 +184,67 @@ func TestAskWithOpenAICompatibleProvider(t *testing.T) {
 	}
 }
 
+func TestAskWithMemoryIncludesRelevantHistory(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	var capturedBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body failed: %v", err)
+		}
+		if err := json.Unmarshal(body, &capturedBody); err != nil {
+			t.Fatalf("decode body failed: %v", err)
+		}
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas answer"}}]}`))
+	}))
+	defer server.Close()
+
+	config := FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	})
+	_, err := config.AskWithMemory(AskRequest{
+		TabID:    "tab-1",
+		Question: "summarize this page",
+	}, tabs.PageContext{
+		ID:         "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+		Text:       "Atlas page text",
+		CapturedAt: "2026-04-06T12:00:00Z",
+	}, []string{
+		`qa_turn occurred_at=2026-04-06T11:00:00Z title="Atlas" url=https://chatgpt.com/atlas question="what is atlas" answer="Atlas is memory-aware." cited_urls=https://chatgpt.com/atlas`,
+	})
+	if err != nil {
+		t.Fatalf("ask with memory failed: %v", err)
+	}
+
+	messages, ok := capturedBody["messages"].([]any)
+	if !ok || len(messages) != 2 {
+		t.Fatalf("unexpected request body: %+v", capturedBody)
+	}
+	userMessage, ok := messages[1].(map[string]any)
+	if !ok {
+		t.Fatalf("unexpected request body: %+v", capturedBody)
+	}
+	content, _ := userMessage["content"].(string)
+	if !strings.Contains(content, "Relevant Memory:") {
+		t.Fatalf("missing memory section: %s", content)
+	}
+	if !strings.Contains(content, "Atlas is memory-aware.") {
+		t.Fatalf("missing memory snippet: %s", content)
+	}
+}
+
 func TestAskAllowsProviderOverride(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 	t.Setenv("OPENROUTER_API_KEY", "router-key")
@@ -329,6 +390,19 @@ func TestAskRejectsTokenBudgetOverflow(t *testing.T) {
 	})
 	if !errors.Is(err, ErrTokenBudgetExceeded) {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestBuildPromptDropsMemoryWhenBudgetIsTight(t *testing.T) {
+	prompt := buildPrompt("summarize this page", tabs.PageContext{
+		ID:   "tab-1",
+		Text: strings.Repeat("A", providerTokenBudget*4),
+	}, []string{
+		"qa_turn occurred_at=2026-04-06T11:00:00Z title=\"Atlas\" url=https://chatgpt.com/atlas question=\"what is atlas\" answer=\"Atlas is memory-aware.\" cited_urls=https://chatgpt.com/atlas",
+	})
+
+	if strings.Contains(prompt, "Relevant Memory:") {
+		t.Fatalf("expected prompt to drop memory section when budget is tight: %s", prompt)
 	}
 }
 
