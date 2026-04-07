@@ -26,6 +26,7 @@ var newTabsClient = func(paths macos.Paths) (tabClient, error) {
 type tabClient interface {
 	List() ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
+	CloseWindow(int) (tabs.WindowCloseResult, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
 	OpenDevToolsWindow(string) (tabs.Target, error)
@@ -66,6 +67,10 @@ type windowBoundsRequest struct {
 	Top      int `json:"top"`
 	Width    int `json:"width"`
 	Height   int `json:"height"`
+}
+
+type windowIDRequest struct {
+	WindowID int `json:"window_id"`
 }
 
 type openIndexRequest struct {

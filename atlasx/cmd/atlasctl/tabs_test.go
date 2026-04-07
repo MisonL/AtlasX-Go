@@ -17,6 +17,8 @@ type stubCommandTabsClient struct {
 	listErr         error
 	windows         []tabs.WindowSummary
 	windowsErr      error
+	windowClose     tabs.WindowCloseResult
+	windowCloseErr  error
 	windowState     tabs.WindowBounds
 	windowStateErr  error
 	windowBounds    tabs.WindowBounds
@@ -41,6 +43,13 @@ func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
 
 func (s *stubCommandTabsClient) Windows() ([]tabs.WindowSummary, error) {
 	return s.windows, s.windowsErr
+}
+
+func (s *stubCommandTabsClient) CloseWindow(windowID int) (tabs.WindowCloseResult, error) {
+	if s.windowCloseErr != nil {
+		return tabs.WindowCloseResult{}, s.windowCloseErr
+	}
+	return s.windowClose, nil
 }
 
 func (s *stubCommandTabsClient) SetWindowState(windowID int, state string) (tabs.WindowBounds, error) {
