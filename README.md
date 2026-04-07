@@ -12,6 +12,7 @@
 - `atlasctl blueprint`
 - `atlasctl doctor`
 - `atlasctl settings`
+- `atlasctl sidebar status`
 - `atlasctl status`
 - `atlasctl runtime stage|status|verify|clear|install`
 - `atlasctl runtime plan create|resolve|status|clear`

@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T067`
+- `T001-T069`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -16,6 +16,7 @@
 - 当前项目已经具备：
   - 统一 CLI 与 HTTP 控制面
   - 统一 settings 只读入口：`atlasctl settings` 与 `/v1/settings`
+  - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
   - structured tabs capture、原生文本选区捕获与按标签页 DevTools URL 解析

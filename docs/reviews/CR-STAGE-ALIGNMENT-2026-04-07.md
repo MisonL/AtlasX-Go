@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-07
-- 目标: 将 `T001-T067` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T067` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T069` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T069` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -24,6 +24,7 @@
   - `/healthz`
   - `/v1/status`
   - `atlasctl settings`
+  - `atlasctl sidebar status`
   - `/v1/settings`
   - config/profile/support root 基础状态面
   - runtime、mirror/import、memory、sidebar 的统一状态导出
