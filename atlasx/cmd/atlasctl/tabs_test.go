@@ -13,8 +13,12 @@ import (
 )
 
 type stubCommandTabsClient struct {
-	context    tabs.PageContext
-	captureErr error
+	context      tabs.PageContext
+	captureErr   error
+	selection    tabs.SelectionContext
+	selectionErr error
+	devTools     tabs.DevToolsTarget
+	devToolsErr  error
 }
 
 func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
@@ -39,6 +43,14 @@ func (s *stubCommandTabsClient) Navigate(string, string) error {
 
 func (s *stubCommandTabsClient) Capture(string) (tabs.PageContext, error) {
 	return s.context, s.captureErr
+}
+
+func (s *stubCommandTabsClient) CaptureSelection(string) (tabs.SelectionContext, error) {
+	return s.selection, s.selectionErr
+}
+
+func (s *stubCommandTabsClient) DevTools(string) (tabs.DevToolsTarget, error) {
+	return s.devTools, s.devToolsErr
 }
 
 func TestTabsCaptureWritesMemoryEvent(t *testing.T) {
@@ -159,6 +171,90 @@ func TestTabsCaptureFailsWhenMemoryWriteFails(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "not a directory") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestTabsSelectionOutputsSelectionContext(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		selection: tabs.SelectionContext{
+			ID:                     "tab-1",
+			Title:                  "Atlas",
+			URL:                    "https://chatgpt.com/atlas",
+			SelectionText:          "Atlas selected text",
+			CapturedAt:             "2026-04-07T09:00:00Z",
+			SelectionPresent:       true,
+			SelectionTextLength:    20,
+			SelectionTextLimit:     1024,
+			SelectionTextTruncated: false,
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "selection", "tab-1"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs selection failed: %v", err)
+	}
+	if !strings.Contains(output, `selection_text="Atlas selected text"`) {
+		t.Fatalf("unexpected output: %s", output)
+	}
+	if !strings.Contains(output, `selection_present=true`) {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestTabsSelectionFailurePrintsCaptureError(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	selection := tabs.SelectionContext{
+		ID:                 "tab-1",
+		Title:              "Atlas",
+		URL:                "https://chatgpt.com/atlas",
+		CapturedAt:         "2026-04-07T09:00:00Z",
+		SelectionTextLimit: 1024,
+		CaptureError:       "cdp error -32000: selection failed",
+	}
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		selection: selection,
+		selectionErr: &tabs.SelectionCaptureError{
+			Context: selection,
+			Cause:   errors.New("cdp error -32000: selection failed"),
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "selection", "tab-1"})
+	})
+	if err == nil {
+		t.Fatal("expected tabs selection to fail")
+	}
+	if !strings.Contains(output, `capture_error="cdp error -32000: selection failed"`) {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestTabsDevToolsOutputsFrontendURL(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		devTools: tabs.DevToolsTarget{
+			ID:                  "tab-1",
+			Title:               "Atlas",
+			URL:                 "https://chatgpt.com/atlas",
+			DevToolsFrontendURL: "http://127.0.0.1:9222/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1",
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "devtools", "tab-1"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs devtools failed: %v", err)
+	}
+	if !strings.Contains(output, "devtools_frontend_url=http://127.0.0.1:9222/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1") {
+		t.Fatalf("unexpected output: %s", output)
 	}
 }
 

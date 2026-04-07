@@ -35,6 +35,8 @@ go run ./cmd/atlasctl tabs navigate <target-id> https://openai.com
 go run ./cmd/atlasctl tabs activate <target-id>
 go run ./cmd/atlasctl tabs close <target-id>
 go run ./cmd/atlasctl tabs capture <target-id>
+go run ./cmd/atlasctl tabs selection <target-id>
+go run ./cmd/atlasctl tabs devtools <target-id>
 go run ./cmd/atlasctl import-chrome
 go run ./cmd/atlasctl import-safari
 go run ./cmd/atlasctl history list
@@ -119,6 +121,8 @@ bash scripts/e2e_gate.sh
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 `tabs capture <id>`，可抓取受管 page target 的标题、URL、正文文本以及 `captured_at`、`text_length`、`text_limit`、`text_truncated`、`capture_error` 等结构化上下文字段。
+- 当前已提供 `tabs selection <id>`，可在 CLI 中抓取当前 page target 的浏览器原生选区文本与长度/截断元数据。
+- 当前已提供 `tabs devtools <id>`，可在 CLI 中输出当前 page target 对应的 `devtools_frontend_url`。
 - 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。

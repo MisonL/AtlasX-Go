@@ -17,6 +17,7 @@
   - 统一 CLI 与 HTTP 控制面
   - 统一 settings 只读入口：`atlasctl settings` 与 `/v1/settings`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
+  - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
   - structured tabs capture、原生文本选区捕获与按标签页 DevTools URL 解析
   - browser-data open
   - mirror/chrome import 来源目录白名单校验

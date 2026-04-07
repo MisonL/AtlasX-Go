@@ -40,7 +40,7 @@
   - `import-chrome`
   - `import-safari`
   - `history|downloads|bookmarks list/open`
-  - `tabs list|open|activate|close|navigate|capture`
+  - `tabs list|open|activate|close|navigate|capture|selection|devtools`
   - `/v1/tabs/selection`
   - `/v1/tabs/devtools`
   - `/v1/history*` `/v1/downloads*` `/v1/bookmarks*`

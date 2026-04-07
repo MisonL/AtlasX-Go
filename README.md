@@ -17,8 +17,7 @@
 - `atlasctl runtime plan create|resolve|status|clear`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`
-- `atlasctl tabs list|open|activate|close|navigate|capture`
-- `atlasctl tabs capture <target-id>`
+- `atlasctl tabs list|open|activate|close|navigate|capture|selection|devtools`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/settings`
 - `atlasd /v1/tabs|open|activate|close|navigate|context|selection|devtools`
