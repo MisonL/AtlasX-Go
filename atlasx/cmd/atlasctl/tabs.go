@@ -19,6 +19,7 @@ type commandTabsClient interface {
 	Windows() ([]tabs.WindowSummary, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
+	OpenDevToolsWindow(string) (tabs.Target, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -33,7 +34,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, windows, open, open-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, windows, open, open-window, open-devtools, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -73,6 +74,16 @@ func runTabs(args []string) error {
 			return errors.New("missing url for tabs open-window")
 		}
 		target, err := client.OpenWindow(args[1])
+		if err != nil {
+			return err
+		}
+		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	case "open-devtools":
+		if len(args) < 2 {
+			return errors.New("missing target id for tabs open-devtools")
+		}
+		target, err := client.OpenDevToolsWindow(args[1])
 		if err != nil {
 			return err
 		}

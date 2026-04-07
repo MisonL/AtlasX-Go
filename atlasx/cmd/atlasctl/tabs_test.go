@@ -21,6 +21,8 @@ type stubCommandTabsClient struct {
 	windowStateErr  error
 	windowBounds    tabs.WindowBounds
 	windowBoundsErr error
+	openDevTools    tabs.Target
+	openDevToolsErr error
 	context         tabs.PageContext
 	captureErr      error
 	semanticContext tabs.SemanticContext
@@ -53,6 +55,13 @@ func (s *stubCommandTabsClient) SetWindowBounds(windowID int, left int, top int,
 		return tabs.WindowBounds{}, s.windowBoundsErr
 	}
 	return s.windowBounds, nil
+}
+
+func (s *stubCommandTabsClient) OpenDevToolsWindow(targetID string) (tabs.Target, error) {
+	if s.openDevToolsErr != nil {
+		return tabs.Target{}, s.openDevToolsErr
+	}
+	return s.openDevTools, nil
 }
 
 func (s *stubCommandTabsClient) Open(string) (tabs.Target, error) {

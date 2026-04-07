@@ -28,6 +28,7 @@ type tabClient interface {
 	Windows() ([]tabs.WindowSummary, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
+	OpenDevToolsWindow(string) (tabs.Target, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
