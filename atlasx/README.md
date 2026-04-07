@@ -39,6 +39,7 @@ go run ./cmd/atlasctl tabs list
 go run ./cmd/atlasctl tabs windows
 go run ./cmd/atlasctl tabs open https://openai.com
 go run ./cmd/atlasctl tabs open-window https://openai.com
+go run ./cmd/atlasctl tabs set-window-state <window-id> <state>
 go run ./cmd/atlasctl tabs navigate <target-id> https://openai.com
 go run ./cmd/atlasctl tabs activate <target-id>
 go run ./cmd/atlasctl tabs close <target-id>
@@ -107,6 +108,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/tabs/emulate-device`
 - `POST /v1/tabs/open`
 - `POST /v1/tabs/open-window`
+- `POST /v1/tabs/window-state`
 - `POST /v1/tabs/activate`
 - `POST /v1/tabs/close`
 - `POST /v1/tabs/navigate`
@@ -144,6 +146,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供 `tabs windows`，可通过 browser websocket 对当前 page targets 按浏览器窗口分组，输出 `window_id/state/targets` 等只读结构化窗口视图。
 - 当前已提供 `tabs open-window <url>`，可通过 browser websocket 调用 `Target.createTarget(newWindow=true)` 显式创建新浏览器窗口中的 page target。
+- 当前已提供 `tabs set-window-state <window-id> <state>`，可对指定浏览器窗口应用显式 `windowState` 并返回更新后的结构化窗口 bounds。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 `tabs capture <id>`，可抓取受管 page target 的标题、URL、正文文本以及 `captured_at`、`text_length`、`text_limit`、`text_truncated`、`capture_error` 等结构化上下文字段。
@@ -163,6 +166,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/organize`，可基于当前 page targets 返回结构化分组建议，不直接改动浏览器状态。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
 - 当前已提供 `GET /v1/tabs/windows`，可按当前 page targets 返回结构化浏览器窗口分组结果，不执行窗口移动或关闭。
+- 当前已提供 `POST /v1/tabs/window-state`，可对指定浏览器窗口应用显式 `windowState` 并返回更新后的 bounds，不执行窗口移动或关闭。
 - 当前已提供 `POST /v1/tabs/emulate-device`，可对指定标签页应用固定设备预设或清除模拟，返回结构化 `preset/viewport/mobile/touch` 结果。
 - 当前已提供 `POST /v1/tabs/open-window`，可通过 browser websocket 创建新浏览器窗口并返回结构化 target JSON，不复用现有 tab。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。

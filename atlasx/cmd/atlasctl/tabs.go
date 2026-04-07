@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"atlasx/internal/memory"
 	"atlasx/internal/platform/macos"
@@ -16,6 +17,7 @@ var newCommandTabsClient = func(paths macos.Paths) (commandTabsClient, error) {
 type commandTabsClient interface {
 	List() ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
+	SetWindowState(int, string) (tabs.WindowBounds, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -30,7 +32,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, windows, open, open-window, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, windows, open, open-window, set-window-state, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -74,6 +76,28 @@ func runTabs(args []string) error {
 			return err
 		}
 		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	case "set-window-state":
+		if len(args) < 3 {
+			return errors.New("missing window id or state for tabs set-window-state")
+		}
+		windowID, err := strconv.Atoi(args[1])
+		if err != nil {
+			return fmt.Errorf("invalid window id %q", args[1])
+		}
+		result, err := client.SetWindowState(windowID, args[2])
+		if err != nil {
+			return err
+		}
+		fmt.Printf(
+			"window_id=%d state=%s left=%d top=%d width=%d height=%d\n",
+			result.WindowID,
+			result.State,
+			result.Left,
+			result.Top,
+			result.Width,
+			result.Height,
+		)
 		return nil
 	case "activate":
 		if len(args) < 2 {

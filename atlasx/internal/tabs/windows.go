@@ -100,3 +100,24 @@ func (c Client) windowForTarget(browserWS string, target Target, requestID int) 
 	}
 	return payload, nil
 }
+
+func (c Client) getWindowBounds(browserWS string, windowID int, requestID int) (windowBounds, error) {
+	response, err := runPageCommand(browserWS, cdpCommandRequest{
+		ID:     requestID,
+		Method: "Browser.getWindowBounds",
+		Params: map[string]any{
+			"windowId": windowID,
+		},
+	})
+	if err != nil {
+		return windowBounds{}, err
+	}
+
+	var payload struct {
+		Bounds windowBounds `json:"bounds"`
+	}
+	if err := json.Unmarshal(response.Result, &payload); err != nil {
+		return windowBounds{}, err
+	}
+	return payload.Bounds, nil
+}

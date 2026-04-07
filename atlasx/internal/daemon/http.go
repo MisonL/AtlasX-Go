@@ -26,6 +26,7 @@ var newTabsClient = func(paths macos.Paths) (tabClient, error) {
 type tabClient interface {
 	List() ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
+	SetWindowState(int, string) (tabs.WindowBounds, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -50,6 +51,11 @@ type tabActionRequest struct {
 type tabEmulationRequest struct {
 	ID     string `json:"id"`
 	Preset string `json:"preset"`
+}
+
+type windowStateRequest struct {
+	WindowID int    `json:"window_id"`
+	State    string `json:"state"`
 }
 
 type openIndexRequest struct {

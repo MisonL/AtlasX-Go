@@ -28,6 +28,8 @@ type stubTabsClient struct {
 	listErr         error
 	windows         []tabs.WindowSummary
 	windowsErr      error
+	windowState     tabs.WindowBounds
+	windowStateErr  error
 	context         tabs.PageContext
 	captureErr      error
 	semanticContext tabs.SemanticContext
@@ -46,6 +48,13 @@ func (s *stubTabsClient) List() ([]tabs.Target, error) {
 
 func (s *stubTabsClient) Windows() ([]tabs.WindowSummary, error) {
 	return s.windows, s.windowsErr
+}
+
+func (s *stubTabsClient) SetWindowState(windowID int, state string) (tabs.WindowBounds, error) {
+	if s.windowStateErr != nil {
+		return tabs.WindowBounds{}, s.windowStateErr
+	}
+	return s.windowState, nil
 }
 
 func (s *stubTabsClient) Open(targetURL string) (tabs.Target, error) {
