@@ -13,6 +13,8 @@ import (
 )
 
 type stubCommandTabsClient struct {
+	targets      []tabs.Target
+	listErr      error
 	context      tabs.PageContext
 	captureErr   error
 	selection    tabs.SelectionContext
@@ -22,7 +24,7 @@ type stubCommandTabsClient struct {
 }
 
 func (s *stubCommandTabsClient) List() ([]tabs.Target, error) {
-	return nil, nil
+	return s.targets, s.listErr
 }
 
 func (s *stubCommandTabsClient) Open(string) (tabs.Target, error) {
@@ -255,6 +257,36 @@ func TestTabsDevToolsOutputsFrontendURL(t *testing.T) {
 	}
 	if !strings.Contains(output, "devtools_frontend_url=http://127.0.0.1:9222/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1") {
 		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestTabsOrganizeOutputsStructuredGroups(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+			{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+			{ID: "tab-3", Type: "page", Title: "Elsewhere", URL: "https://example.com/other"},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "organize"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs organize failed: %v", err)
+	}
+	for _, fragment := range []string{
+		"returned=1",
+		"group_id=host:chatgpt.com",
+		`label="chatgpt.com"`,
+		`title="Atlas A"`,
+		`title="Atlas B"`,
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Fatalf("expected output to contain %q, got %s", fragment, output)
+		}
 	}
 }
 

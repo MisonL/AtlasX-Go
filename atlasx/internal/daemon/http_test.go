@@ -24,6 +24,8 @@ import (
 
 type stubTabsClient struct {
 	openedURL    string
+	targets      []tabs.Target
+	listErr      error
 	context      tabs.PageContext
 	captureErr   error
 	selection    tabs.SelectionContext
@@ -33,7 +35,7 @@ type stubTabsClient struct {
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
-	return nil, nil
+	return s.targets, s.listErr
 }
 
 func (s *stubTabsClient) Open(targetURL string) (tabs.Target, error) {

@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T075`
+- `T001-T076`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -23,13 +23,14 @@
   - `atlasctl sidebar selection-ask` 与 `/v1/sidebar/selection/ask`
   - `atlasctl sidebar summarize` 与 `/v1/sidebar/summarize`
   - `atlasctl tabs suggest` 与 `/v1/tabs/suggestions`
+  - `atlasctl tabs organize` 与 `/v1/tabs/organize`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
   - structured tabs capture、原生文本选区捕获与按标签页 DevTools URL 解析
   - browser-data open
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
-  - sidebar 多 provider、页内总结、原生选区提问、本地 memory 轻量增强与结构化页面建议
+  - sidebar 多 provider、页内总结、原生选区提问、本地 memory 轻量增强、结构化页面建议与标签整理建议
   - 项目级 gate 与发布/恢复手册
 
 ## 当前开发机观测事实
