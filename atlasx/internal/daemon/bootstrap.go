@@ -9,6 +9,7 @@ import (
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
 	"atlasx/internal/managedruntime"
+	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/settings"
 	"atlasx/internal/sidebar"
@@ -48,6 +49,12 @@ type Status struct {
 	SafariImportLastSource     string                   `json:"safari_import_last_source"`
 	SafariImportLastResult     string                   `json:"safari_import_last_result"`
 	SafariImportLastError      string                   `json:"safari_import_last_error"`
+	MemoryRoot                 string                   `json:"memory_root"`
+	MemoryEventsFile           string                   `json:"memory_events_file"`
+	MemoryPresent              bool                     `json:"memory_present"`
+	MemoryEventCount           int                      `json:"memory_event_count"`
+	MemoryLastEventAt          string                   `json:"memory_last_event_at"`
+	MemoryLastEventKind        string                   `json:"memory_last_event_kind"`
 	RuntimeManifestPath        string                   `json:"runtime_manifest_path"`
 	RuntimeManifestPresent     bool                     `json:"runtime_manifest_present"`
 	RuntimeManifestVersion     string                   `json:"runtime_manifest_version"`
@@ -90,6 +97,8 @@ func Bootstrap() (Status, error) {
 		ManagedSessionCDP:          report.Session.CDP.Status,
 		ManagedSessionCDPURL:       report.Session.CDP.VersionEndpoint,
 		MirrorFile:                 report.Paths.MirrorFile,
+		MemoryRoot:                 report.Paths.MemoryRoot,
+		MemoryEventsFile:           report.Paths.MemoryEventsFile,
 		RuntimeManifestPath:        report.RuntimeManifest.Path,
 	}
 
@@ -134,6 +143,14 @@ func Bootstrap() (Status, error) {
 	} else if !os.IsNotExist(err) {
 		return Status{}, err
 	}
+	memorySummary, err := memory.LoadSummary(report.Paths)
+	if err != nil {
+		return Status{}, err
+	}
+	status.MemoryPresent = memorySummary.Present
+	status.MemoryEventCount = memorySummary.EventCount
+	status.MemoryLastEventAt = memorySummary.LastEventAt
+	status.MemoryLastEventKind = memorySummary.LastEventKind
 	status.RuntimeManifestPresent = report.RuntimeManifest.Present
 	status.RuntimeManifestVersion = report.RuntimeManifest.Version
 	status.RuntimeManifestChannel = report.RuntimeManifest.Channel

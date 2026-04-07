@@ -13,6 +13,8 @@ type Paths struct {
 	ConfigFile             string
 	ProfilesRoot           string
 	LogsRoot               string
+	MemoryRoot             string
+	MemoryEventsFile       string
 	StateRoot              string
 	SessionFile            string
 	MirrorsRoot            string
@@ -30,6 +32,7 @@ func DiscoverPaths() (Paths, error) {
 	}
 
 	supportRoot := filepath.Join(home, "Library", "Application Support", appName)
+	memoryRoot := filepath.Join(supportRoot, "memory")
 	stateRoot := filepath.Join(supportRoot, "state")
 	mirrorsRoot := filepath.Join(supportRoot, "mirrors")
 	importsRoot := filepath.Join(supportRoot, "imports")
@@ -40,6 +43,8 @@ func DiscoverPaths() (Paths, error) {
 		ConfigFile:             filepath.Join(supportRoot, "config.json"),
 		ProfilesRoot:           filepath.Join(supportRoot, "profiles"),
 		LogsRoot:               filepath.Join(supportRoot, "logs"),
+		MemoryRoot:             memoryRoot,
+		MemoryEventsFile:       filepath.Join(memoryRoot, "events.jsonl"),
 		StateRoot:              stateRoot,
 		SessionFile:            filepath.Join(stateRoot, "webapp-session.json"),
 		MirrorsRoot:            mirrorsRoot,

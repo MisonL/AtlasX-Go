@@ -9,6 +9,7 @@ import (
 	"atlasx/internal/imports"
 	"atlasx/internal/launcher"
 	"atlasx/internal/managedruntime"
+	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/profile"
@@ -126,5 +127,52 @@ func TestBootstrapIncludesMirrorAndImportRefreshStatus(t *testing.T) {
 	}
 	if status.SafariImportLastAt != "2026-04-06T02:00:00Z" || status.SafariImportLastError != "missing" {
 		t.Fatalf("unexpected safari import refresh status: %+v", status)
+	}
+}
+
+func TestBootstrapIncludesMemorySummary(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-07T00:00:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append memory event failed: %v", err)
+	}
+
+	status, err := Bootstrap()
+	if err != nil {
+		t.Fatalf("bootstrap failed: %v", err)
+	}
+	if !status.MemoryPresent || status.MemoryEventCount != 1 {
+		t.Fatalf("unexpected memory summary: %+v", status)
+	}
+	if status.MemoryLastEventAt != "2026-04-07T00:00:00Z" || status.MemoryLastEventKind != memory.EventKindPageCapture {
+		t.Fatalf("unexpected memory summary: %+v", status)
+	}
+}
+
+func TestBootstrapLeavesMemorySummaryEmptyWhenAbsent(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	status, err := Bootstrap()
+	if err != nil {
+		t.Fatalf("bootstrap failed: %v", err)
+	}
+	if status.MemoryPresent {
+		t.Fatalf("expected memory absent: %+v", status)
+	}
+	if status.MemoryEventCount != 0 || status.MemoryLastEventAt != "" || status.MemoryLastEventKind != "" {
+		t.Fatalf("unexpected empty memory summary: %+v", status)
+	}
+	if status.MemoryRoot == "" || status.MemoryEventsFile == "" {
+		t.Fatalf("expected memory paths: %+v", status)
 	}
 }
