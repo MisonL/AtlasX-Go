@@ -30,6 +30,7 @@ type commandTabsClient interface {
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
 	OpenDevToolsWindow(string) (tabs.Target, error)
 	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
+	OpenDevToolsPanelInWindow(string, string, int) (tabs.WindowOpenResult, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -45,7 +46,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, agent-execute, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, open-devtools-panel-in-window, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, agent-execute, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -205,6 +206,28 @@ func runTabs(args []string) error {
 			return err
 		}
 		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	case "open-devtools-panel-in-window":
+		if len(args) < 4 {
+			return errors.New("missing target id or panel or window id for tabs open-devtools-panel-in-window")
+		}
+		windowID, err := strconv.Atoi(args[3])
+		if err != nil {
+			return fmt.Errorf("invalid window id %q", args[3])
+		}
+		result, err := client.OpenDevToolsPanelInWindow(args[1], args[2], windowID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf(
+			"window_id=%d activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+			result.WindowID,
+			result.ActivatedTargetID,
+			result.Target.ID,
+			result.Target.Type,
+			result.Target.Title,
+			result.Target.URL,
+		)
 		return nil
 	case "close-duplicates":
 		return runTabsCloseDuplicates(client)

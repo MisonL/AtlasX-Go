@@ -61,6 +61,7 @@ go run ./cmd/atlasctl tabs organize-window-group-into-window <source-window-id> 
 go run ./cmd/atlasctl tabs merge-window <source-window-id> <target-window-id>
 go run ./cmd/atlasctl tabs open-devtools <target-id>
 go run ./cmd/atlasctl tabs open-devtools-panel <target-id> <panel>
+go run ./cmd/atlasctl tabs open-devtools-panel-in-window <target-id> <panel> <window-id>
 go run ./cmd/atlasctl tabs devtools-panel <target-id> <panel>
 go run ./cmd/atlasctl tabs close-duplicates
 go run ./cmd/atlasctl tabs activate-window <window-id>
@@ -166,6 +167,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/tabs/merge-window`
 - `POST /v1/tabs/open-devtools`
 - `POST /v1/tabs/open-devtools-panel`
+- `POST /v1/tabs/open-devtools-panel-in-window`
 - `POST /v1/tabs/close-duplicates`
 - `POST /v1/tabs/activate-window`
 - `POST /v1/tabs/close-window`
@@ -231,6 +233,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs merge-window <source-window-id> <target-window-id>`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `tabs open-devtools <target-id>`，可解析指定标签页的 `devtools_frontend_url` 并复用新窗口打开主链，把对应 DevTools 放到独立浏览器窗口。
 - 当前已提供 `tabs open-devtools-panel <target-id> <panel>`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后复用新窗口打开主链，把对应 DevTools 面板放到独立浏览器窗口。
+- 当前已提供 `tabs open-devtools-panel-in-window <target-id> <panel> <window-id>`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后复用 `open-in-window` 主链，把 DevTools 面板定向打开到指定现有窗口。
 - 当前已提供 `tabs devtools-panel <target-id> <panel>`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后返回结构化只读 DevTools 面板 URL，不直接打开新窗口。
 - 当前已提供 `tabs close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
 - 当前已提供 `tabs activate-window <window-id>`，可基于当前窗口分组结果选定目标窗口中的第一个 page target，并复用既有 `activate(target)` 主链完成窗口聚焦。
@@ -277,6 +280,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `POST /v1/tabs/merge-window`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `POST /v1/tabs/open-devtools`，可解析指定标签页的 `devtools_frontend_url` 并在新窗口中打开该 DevTools，不引入第二套 URL 推导逻辑。
 - 当前已提供 `POST /v1/tabs/open-devtools-panel`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后复用新窗口打开主链，把对应 DevTools 面板放到独立浏览器窗口。
+- 当前已提供 `POST /v1/tabs/open-devtools-panel-in-window`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后复用 `open-in-window` 主链，把 DevTools 面板定向打开到指定现有窗口。
 - 当前已提供 `POST /v1/tabs/close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
 - 当前已提供 `POST /v1/tabs/activate-window`，可基于当前窗口分组结果选定目标窗口中的第一个 page target，并复用既有 `activate(target)` 主链完成窗口聚焦。
 - 当前已提供 `POST /v1/tabs/close-window`，可基于当前窗口分组结果逐个关闭指定窗口中的 page targets，返回结构化关闭结果。

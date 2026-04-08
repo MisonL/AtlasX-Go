@@ -386,6 +386,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/open-devtools-panel", func(w http.ResponseWriter, r *http.Request) {
 		serveTabOpenDevToolsPanel(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/open-devtools-panel-in-window", func(w http.ResponseWriter, r *http.Request) {
+		serveTabOpenDevToolsPanelInWindow(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/close-duplicates", func(w http.ResponseWriter, r *http.Request) {
 		serveTabCloseDuplicates(w, r)
 	})
