@@ -28,6 +28,7 @@ type tabClient interface {
 	Search(string) ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
+	OpenInWindow(int, string) (tabs.WindowOpenResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)
 	CloseWindow(int) (tabs.WindowCloseResult, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
@@ -74,6 +75,11 @@ type windowBoundsRequest struct {
 
 type windowIDRequest struct {
 	WindowID int `json:"window_id"`
+}
+
+type windowOpenRequest struct {
+	WindowID int    `json:"window_id"`
+	URL      string `json:"url"`
 }
 
 type openIndexRequest struct {

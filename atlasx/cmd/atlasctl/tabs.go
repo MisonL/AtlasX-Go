@@ -19,6 +19,7 @@ type commandTabsClient interface {
 	Search(string) ([]tabs.Target, error)
 	Windows() ([]tabs.WindowSummary, error)
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
+	OpenInWindow(int, string) (tabs.WindowOpenResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)
 	CloseWindow(int) (tabs.WindowCloseResult, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
@@ -38,7 +39,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -84,6 +85,28 @@ func runTabs(args []string) error {
 			return err
 		}
 		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	case "open-in-window":
+		if len(args) < 3 {
+			return errors.New("missing window id or url for tabs open-in-window")
+		}
+		windowID, err := strconv.Atoi(args[1])
+		if err != nil {
+			return fmt.Errorf("invalid window id %q", args[1])
+		}
+		result, err := client.OpenInWindow(windowID, args[2])
+		if err != nil {
+			return err
+		}
+		fmt.Printf(
+			"window_id=%d activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+			result.WindowID,
+			result.ActivatedTargetID,
+			result.Target.ID,
+			result.Target.Type,
+			result.Target.Title,
+			result.Target.URL,
+		)
 		return nil
 	case "open-devtools":
 		if len(args) < 2 {

@@ -5,7 +5,7 @@
 
 ## 任务状态
 
-- `T001-T089`
+- `T001-T090`
   - 当前全部已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -28,6 +28,7 @@
   - `atlasctl tabs extract-context` 与 `/v1/tabs/semantic-context`
   - `atlasctl tabs windows` 与 `/v1/tabs/windows`
   - `atlasctl tabs search` 与 `/v1/tabs/search`
+  - `atlasctl tabs open-in-window` 与 `/v1/tabs/open-in-window`
   - `atlasctl tabs open-devtools` 与 `/v1/tabs/open-devtools`
   - `atlasctl tabs close-duplicates` 与 `/v1/tabs/close-duplicates`
   - `atlasctl tabs activate-window` 与 `/v1/tabs/activate-window`
@@ -39,7 +40,7 @@
   - `atlasctl tabs organize` 与 `/v1/tabs/organize`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
-  - structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获、按标签页 DevTools URL 解析、固定设备预设模拟、browser websocket 新窗口打开、DevTools 新窗口打开、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制与显式窗口 bounds 控制
+  - 标签页搜索、structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获、按标签页 DevTools URL 解析、固定设备预设模拟、browser websocket 新窗口打开、窗口内打开、DevTools 新窗口打开、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制与显式窗口 bounds 控制
   - browser-data open
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback

@@ -21,6 +21,8 @@ type stubCommandTabsClient struct {
 	windowsErr        error
 	duplicateClose    tabs.CloseDuplicatesResult
 	duplicateCloseErr error
+	windowOpen        tabs.WindowOpenResult
+	windowOpenErr     error
 	windowActivate    tabs.WindowActivateResult
 	windowActivateErr error
 	windowClose       tabs.WindowCloseResult
@@ -63,6 +65,13 @@ func (s *stubCommandTabsClient) CloseDuplicates() (tabs.CloseDuplicatesResult, e
 		return tabs.CloseDuplicatesResult{}, s.duplicateCloseErr
 	}
 	return s.duplicateClose, nil
+}
+
+func (s *stubCommandTabsClient) OpenInWindow(windowID int, targetURL string) (tabs.WindowOpenResult, error) {
+	if s.windowOpenErr != nil {
+		return tabs.WindowOpenResult{}, s.windowOpenErr
+	}
+	return s.windowOpen, nil
 }
 
 func (s *stubCommandTabsClient) ActivateWindow(windowID int) (tabs.WindowActivateResult, error) {
