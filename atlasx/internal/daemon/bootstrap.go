@@ -312,6 +312,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/open-in-window", func(w http.ResponseWriter, r *http.Request) {
 		serveTabOpenInWindow(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/move-to-window", func(w http.ResponseWriter, r *http.Request) {
+		serveTabMoveToWindow(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/merge-window", func(w http.ResponseWriter, r *http.Request) {
 		serveTabMergeWindow(w, r)
 	})

@@ -41,6 +41,7 @@ go run ./cmd/atlasctl tabs windows
 go run ./cmd/atlasctl tabs open https://openai.com
 go run ./cmd/atlasctl tabs open-window https://openai.com
 go run ./cmd/atlasctl tabs open-in-window <window-id> https://openai.com
+go run ./cmd/atlasctl tabs move-to-window <tab-id> <target-window-id>
 go run ./cmd/atlasctl tabs merge-window <source-window-id> <target-window-id>
 go run ./cmd/atlasctl tabs open-devtools <target-id>
 go run ./cmd/atlasctl tabs close-duplicates
@@ -118,6 +119,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/tabs/open`
 - `POST /v1/tabs/open-window`
 - `POST /v1/tabs/open-in-window`
+- `POST /v1/tabs/move-to-window`
 - `POST /v1/tabs/merge-window`
 - `POST /v1/tabs/open-devtools`
 - `POST /v1/tabs/close-duplicates`
@@ -164,6 +166,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs windows`，可通过 browser websocket 对当前 page targets 按浏览器窗口分组，输出 `window_id/state/targets` 等只读结构化窗口视图。
 - 当前已提供 `tabs open-window <url>`，可通过 browser websocket 调用 `Target.createTarget(newWindow=true)` 显式创建新浏览器窗口中的 page target。
 - 当前已提供 `tabs open-in-window <window-id> <url>`，可先聚焦目标窗口，再复用既有 `open(url)` 主链在该窗口中打开新标签。
+- 当前已提供 `tabs move-to-window <tab-id> <target-window-id>`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
 - 当前已提供 `tabs merge-window <source-window-id> <target-window-id>`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `tabs open-devtools <target-id>`，可解析指定标签页的 `devtools_frontend_url` 并复用新窗口打开主链，把对应 DevTools 放到独立浏览器窗口。
 - 当前已提供 `tabs close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
@@ -192,6 +195,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/search?q=<query>`，可在当前 page target 列表上按 `title/url` 大小写不敏感匹配查询词，返回结构化命中结果。
 - 当前已提供 `GET /v1/tabs/windows`，可按当前 page targets 返回结构化浏览器窗口分组结果，不执行窗口移动或关闭。
 - 当前已提供 `POST /v1/tabs/open-in-window`，可先聚焦目标窗口，再复用既有 `open(url)` 主链在该窗口中打开新标签。
+- 当前已提供 `POST /v1/tabs/move-to-window`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
 - 当前已提供 `POST /v1/tabs/merge-window`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `POST /v1/tabs/open-devtools`，可解析指定标签页的 `devtools_frontend_url` 并在新窗口中打开该 DevTools，不引入第二套 URL 推导逻辑。
 - 当前已提供 `POST /v1/tabs/close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。

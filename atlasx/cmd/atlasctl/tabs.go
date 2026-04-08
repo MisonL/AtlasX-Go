@@ -20,6 +20,7 @@ type commandTabsClient interface {
 	Windows() ([]tabs.WindowSummary, error)
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
 	OpenInWindow(int, string) (tabs.WindowOpenResult, error)
+	MoveToWindow(string, int) (tabs.WindowMoveResult, error)
 	MergeWindow(int, int) (tabs.WindowMergeResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)
 	CloseWindow(int) (tabs.WindowCloseResult, error)
@@ -40,7 +41,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -102,6 +103,30 @@ func runTabs(args []string) error {
 		fmt.Printf(
 			"window_id=%d activated_target_id=%s id=%s type=%s title=%q url=%s\n",
 			result.WindowID,
+			result.ActivatedTargetID,
+			result.Target.ID,
+			result.Target.Type,
+			result.Target.Title,
+			result.Target.URL,
+		)
+		return nil
+	case "move-to-window":
+		if len(args) < 3 {
+			return errors.New("missing target id or target window id for tabs move-to-window")
+		}
+		targetWindowID, err := strconv.Atoi(args[2])
+		if err != nil {
+			return fmt.Errorf("invalid target window id %q", args[2])
+		}
+		result, err := client.MoveToWindow(args[1], targetWindowID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf(
+			"source_window_id=%d target_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+			result.SourceWindowID,
+			result.TargetWindowID,
+			result.SourceTargetID,
 			result.ActivatedTargetID,
 			result.Target.ID,
 			result.Target.Type,
