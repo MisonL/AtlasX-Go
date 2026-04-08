@@ -32,6 +32,7 @@ type commandTabsClient interface {
 	OpenDevToolsInWindow(string, int) (tabs.WindowOpenResult, error)
 	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
 	OpenDevToolsPanelInWindow(string, string, int) (tabs.WindowOpenResult, error)
+	OpenDevToolsPanelWindowIntoWindow(int, string, int) (tabs.DevToolsPanelWindowOpenResult, error)
 	OpenDevToolsWindowIntoWindow(int, int) (tabs.DevToolsWindowOpenResult, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
@@ -48,7 +49,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-in-window, open-devtools-panel, open-devtools-panel-in-window, open-devtools-window-into-window, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, agent-execute, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-in-window, open-devtools-panel, open-devtools-panel-in-window, open-devtools-panel-window-into-window, open-devtools-window-into-window, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, agent-execute, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -270,6 +271,36 @@ func runTabs(args []string) error {
 			return err
 		}
 		fmt.Printf("source_window_id=%d target_window_id=%d returned=%d\n", result.SourceWindowID, result.TargetWindowID, result.Returned)
+		for index, opened := range result.OpenedTargets {
+			fmt.Printf(
+				"index=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+				index,
+				opened.SourceTargetID,
+				opened.ActivatedTargetID,
+				opened.Target.ID,
+				opened.Target.Type,
+				opened.Target.Title,
+				opened.Target.URL,
+			)
+		}
+		return nil
+	case "open-devtools-panel-window-into-window":
+		if len(args) < 4 {
+			return errors.New("missing source window id or panel or target window id for tabs open-devtools-panel-window-into-window")
+		}
+		sourceWindowID, err := strconv.Atoi(args[1])
+		if err != nil {
+			return fmt.Errorf("invalid source window id %q", args[1])
+		}
+		targetWindowID, err := strconv.Atoi(args[3])
+		if err != nil {
+			return fmt.Errorf("invalid target window id %q", args[3])
+		}
+		result, err := client.OpenDevToolsPanelWindowIntoWindow(sourceWindowID, args[2], targetWindowID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("source_window_id=%d panel=%s target_window_id=%d returned=%d\n", result.SourceWindowID, result.Panel, result.TargetWindowID, result.Returned)
 		for index, opened := range result.OpenedTargets {
 			fmt.Printf(
 				"index=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",

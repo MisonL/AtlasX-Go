@@ -16,30 +16,9 @@ type DevToolsWindowOpenResult struct {
 }
 
 func (c Client) OpenDevToolsWindowIntoWindow(sourceWindowID int, targetWindowID int) (DevToolsWindowOpenResult, error) {
-	if sourceWindowID == targetWindowID {
-		return DevToolsWindowOpenResult{}, fmt.Errorf("source and target window ids must differ")
-	}
-
-	windows, err := c.Windows()
+	sourceWindow, err := c.resolveWindowPair(sourceWindowID, targetWindowID)
 	if err != nil {
 		return DevToolsWindowOpenResult{}, err
-	}
-
-	var sourceWindow *WindowSummary
-	targetExists := false
-	for index := range windows {
-		switch windows[index].WindowID {
-		case sourceWindowID:
-			sourceWindow = &windows[index]
-		case targetWindowID:
-			targetExists = true
-		}
-	}
-	if sourceWindow == nil {
-		return DevToolsWindowOpenResult{}, fmt.Errorf("window %d not found", sourceWindowID)
-	}
-	if !targetExists {
-		return DevToolsWindowOpenResult{}, fmt.Errorf("window %d not found", targetWindowID)
 	}
 
 	result := DevToolsWindowOpenResult{
@@ -61,4 +40,33 @@ func (c Client) OpenDevToolsWindowIntoWindow(sourceWindowID int, targetWindowID 
 	}
 
 	return result, nil
+}
+
+func (c Client) resolveWindowPair(sourceWindowID int, targetWindowID int) (WindowSummary, error) {
+	if sourceWindowID == targetWindowID {
+		return WindowSummary{}, fmt.Errorf("source and target window ids must differ")
+	}
+
+	windows, err := c.Windows()
+	if err != nil {
+		return WindowSummary{}, err
+	}
+
+	var sourceWindow *WindowSummary
+	targetExists := false
+	for index := range windows {
+		switch windows[index].WindowID {
+		case sourceWindowID:
+			sourceWindow = &windows[index]
+		case targetWindowID:
+			targetExists = true
+		}
+	}
+	if sourceWindow == nil {
+		return WindowSummary{}, fmt.Errorf("window %d not found", sourceWindowID)
+	}
+	if !targetExists {
+		return WindowSummary{}, fmt.Errorf("window %d not found", targetWindowID)
+	}
+	return *sourceWindow, nil
 }

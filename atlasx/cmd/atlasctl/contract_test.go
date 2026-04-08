@@ -568,6 +568,48 @@ func TestTabsOpenDevToolsWindowIntoWindowContract(t *testing.T) {
 	)
 }
 
+func TestTabsOpenDevToolsPanelWindowIntoWindowContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		openDevToolsPanelWindowIntoWindow: tabs.DevToolsPanelWindowOpenResult{
+			SourceWindowID: 11,
+			Panel:          "network",
+			TargetWindowID: 21,
+			Returned:       1,
+			OpenedTargets: []tabs.DevToolsWindowOpenTarget{
+				{
+					SourceTargetID:    "src-1",
+					ActivatedTargetID: "dst-1",
+					Target: tabs.Target{
+						ID:    "devtools-open-1",
+						Type:  "page",
+						Title: "DevTools",
+						URL:   "http://127.0.0.1/devtools/inspector.html?panel=network&ws=127.0.0.1%3A9222%2Fdevtools%2Fpage%2Fsrc-1",
+					},
+				},
+			},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "open-devtools-panel-window-into-window", "11", "network", "21"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs open-devtools-panel-window-into-window failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"source_window_id=11",
+		"panel=network",
+		"target_window_id=21",
+		"returned=1",
+		"source_target_id=src-1",
+		"activated_target_id=dst-1",
+		"id=devtools-open-1",
+	)
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
