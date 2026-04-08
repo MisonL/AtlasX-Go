@@ -75,6 +75,7 @@ go run ./cmd/atlasctl tabs extract-context <target-id>
 go run ./cmd/atlasctl tabs selection <target-id>
 go run ./cmd/atlasctl tabs suggest <target-id>
 go run ./cmd/atlasctl tabs agent-plan <target-id>
+go run ./cmd/atlasctl tabs agent-execute --confirm <target-id> <step-id>
 go run ./cmd/atlasctl tabs memories <target-id>
 go run ./cmd/atlasctl tabs recommend-context <target-id>
 go run ./cmd/atlasctl tabs organize
@@ -140,6 +141,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs/selection`
 - `GET /v1/tabs/suggestions`
 - `GET /v1/tabs/agent-plan`
+- `POST /v1/tabs/agent-execute`
 - `GET /v1/tabs/memories`
 - `GET /v1/tabs/context-recommendations`
 - `GET /v1/tabs/organize`
@@ -241,6 +243,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs selection <id>`，可在 CLI 中抓取当前 page target 的浏览器原生选区文本与长度/截断元数据。
 - 当前已提供 `tabs suggest <id>`，可在 CLI 中基于当前 page context 和本地 memory retrieval 生成结构化页面建议。
 - 当前已提供 `tabs agent-plan <id>`，可在 CLI 中基于当前 page context、页面建议、上下文推荐与本地 memory retrieval 生成结构化只读多步预演计划，显式声明 `read_only=true`、`executed=false` 并要求逐步确认；当前不执行任何浏览器动作或 provider 调用。
+- 当前已提供 `tabs agent-execute --confirm <id> <step-id>`，可在 CLI 中基于当前 `agent-plan` 显式确认执行单个 sidebar 类型步骤；当前仅支持 `sidebar_summarize` 与 `sidebar_ask`，不写 memory、不隐式浏览器跳转，preview-only 步骤会显式拒绝。
 - 当前已提供 `tabs memories <id>`，可在 CLI 中按当前 page context 聚合输出相关 Browser memories snippets，作为浏览器内按页查看记忆的最小只读入口。
 - 当前已提供 `tabs recommend-context <id>`，可在 CLI 中基于当前 page context、同 host 标签页与本地 memory retrieval 生成结构化上下文推荐。
 - 当前已提供 `tabs organize`，可在 CLI 中基于当前 page targets 输出结构化分组建议，作为标签自动整理的最小只读入口。
@@ -250,6 +253,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/selection?id=<target-id>`，可抓取当前 page target 的浏览器原生选区文本与长度/截断元数据，用于调试和验证选区链路。
 - 当前已提供 `GET /v1/tabs/suggestions?id=<target-id>`，可基于当前页上下文和本地 memory retrieval 返回结构化页面建议，不依赖真实 provider。
 - 当前已提供 `GET /v1/tabs/agent-plan?id=<target-id>`，可基于当前页上下文、页面建议、上下文推荐与本地 memory retrieval 返回结构化只读 Agent 预演计划，不执行浏览器动作或 provider 调用。
+- 当前已提供 `POST /v1/tabs/agent-execute`，可基于当前 `agent-plan` 显式确认执行单个 sidebar 类型步骤；当前仅支持 `sidebar_summarize` 与 `sidebar_ask`，preview-only 步骤会显式拒绝，且不写 memory。
 - 当前已提供 `GET /v1/tabs/memories?id=<target-id>`，可基于当前页上下文返回相关 Browser memories snippets，不写 memory，也不引入第二套检索排序逻辑。
 - 当前已提供 `GET /v1/tabs/context-recommendations?id=<target-id>`，可基于当前页上下文、同 host 标签页与本地 memory retrieval 返回结构化上下文推荐，不直接改动浏览器状态或写 memory。
 - 当前已提供 `GET /v1/tabs/organize`，可基于当前 page targets 返回结构化分组建议，不直接改动浏览器状态。

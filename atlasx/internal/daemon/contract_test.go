@@ -202,6 +202,82 @@ func TestTabAgentPlanEndpointContract(t *testing.T) {
 	)
 }
 
+func TestTabAgentExecuteEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas summary"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T13:00:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	})
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/tabs/agent-execute",
+		bytes.NewBufferString(`{"id":"tab-1","step_id":"suggest-summarize_page","confirm":true}`),
+	)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"tab_id",
+		"step_id",
+		"step_kind",
+		"step_title",
+		"executed",
+		"confirmed",
+		"trace_id",
+		"provider",
+		"model",
+		"result",
+		"context_summary",
+		"memory_persisted",
+		"rollback",
+	)
+	if payload["step_id"] != "suggest-summarize_page" || payload["step_kind"] != "sidebar_summarize" {
+		t.Fatalf("unexpected payload: %+v", payload)
+	}
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

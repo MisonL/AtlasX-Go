@@ -299,6 +299,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/agent-plan", func(w http.ResponseWriter, r *http.Request) {
 		serveTabAgentPlan(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/agent-execute", func(w http.ResponseWriter, r *http.Request) {
+		serveTabAgentExecute(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/memories", func(w http.ResponseWriter, r *http.Request) {
 		serveTabMemories(w, r)
 	})

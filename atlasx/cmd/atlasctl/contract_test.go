@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -10,6 +12,7 @@ import (
 	"atlasx/internal/defaultbrowser"
 	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
 )
 
@@ -210,6 +213,69 @@ func TestTabsAgentPlanContract(t *testing.T) {
 		"recommendation_returned=",
 		"rollback=",
 		"step_id=",
+	)
+}
+
+func TestTabsAgentExecuteContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas summary"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T13:00:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "agent-execute", "--confirm", "tab-1", "suggest-summarize_page"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs agent-execute failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"tab_id=tab-1",
+		"step_id=suggest-summarize_page",
+		"step_kind=sidebar_summarize",
+		"executed=true",
+		"confirmed=true",
+		"trace_id=",
+		"provider=openai",
+		"model=gpt-5.4",
+		"memory_persisted=false",
+		"rollback=not_required_no_memory_persisted",
+		`result="Atlas summary"`,
+		`context_summary=`,
 	)
 }
 
