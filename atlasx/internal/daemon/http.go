@@ -30,6 +30,7 @@ type tabClient interface {
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
 	OpenInWindow(int, string) (tabs.WindowOpenResult, error)
 	MoveToWindow(string, int) (tabs.WindowMoveResult, error)
+	MoveToNewWindow(string) (tabs.WindowMoveToNewResult, error)
 	MergeWindow(int, int) (tabs.WindowMergeResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)
 	CloseWindow(int) (tabs.WindowCloseResult, error)
@@ -87,6 +88,10 @@ type windowOpenRequest struct {
 type windowMoveRequest struct {
 	ID       string `json:"id"`
 	WindowID int    `json:"window_id"`
+}
+
+type targetIDRequest struct {
+	ID string `json:"id"`
 }
 
 type windowMergeRequest struct {
