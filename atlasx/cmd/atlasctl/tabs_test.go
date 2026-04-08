@@ -51,6 +51,8 @@ type stubCommandTabsClient struct {
 	selectionErr         error
 	devTools             tabs.DevToolsTarget
 	devToolsErr          error
+	devToolsPanel        tabs.DevToolsTarget
+	devToolsPanelErr     error
 	deviceResult         tabs.DeviceEmulationResult
 	deviceErr            error
 }
@@ -187,6 +189,10 @@ func (s *stubCommandTabsClient) CaptureSelection(string) (tabs.SelectionContext,
 
 func (s *stubCommandTabsClient) DevTools(string) (tabs.DevToolsTarget, error) {
 	return s.devTools, s.devToolsErr
+}
+
+func (s *stubCommandTabsClient) DevToolsPanel(string, string) (tabs.DevToolsTarget, error) {
+	return s.devToolsPanel, s.devToolsPanelErr
 }
 
 func (s *stubCommandTabsClient) EmulateDevice(string, string) (tabs.DeviceEmulationResult, error) {

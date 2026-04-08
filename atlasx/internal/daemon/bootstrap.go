@@ -314,6 +314,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/devtools", func(w http.ResponseWriter, r *http.Request) {
 		serveTabDevTools(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/devtools-panel", func(w http.ResponseWriter, r *http.Request) {
+		serveTabDevToolsPanel(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/windows", func(w http.ResponseWriter, r *http.Request) {
 		serveTabWindows(w, r)
 	})

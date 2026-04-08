@@ -40,6 +40,20 @@ func (c Client) DevTools(targetID string) (DevToolsTarget, error) {
 	}, nil
 }
 
+func (c Client) DevToolsPanel(targetID string, panel string) (DevToolsTarget, error) {
+	target, err := c.DevTools(targetID)
+	if err != nil {
+		return DevToolsTarget{}, err
+	}
+
+	panelURL, err := resolveDevToolsPanelURL(target.DevToolsFrontendURL, panel)
+	if err != nil {
+		return DevToolsTarget{}, err
+	}
+	target.DevToolsFrontendURL = panelURL
+	return target, nil
+}
+
 func resolveDevToolsFrontendURL(baseURL string, devToolsURL string) (string, error) {
 	if devToolsURL == "" {
 		return "", fmt.Errorf("target does not expose a devtools frontend url")

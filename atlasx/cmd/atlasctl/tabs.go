@@ -39,12 +39,13 @@ type commandTabsClient interface {
 	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
+	DevToolsPanel(string, string) (tabs.DevToolsTarget, error)
 	EmulateDevice(string, string) (tabs.DeviceEmulationResult, error)
 }
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -333,6 +334,8 @@ func runTabs(args []string) error {
 		return runTabsSelection(client, args[1:])
 	case "devtools":
 		return runTabsDevTools(client, args[1:])
+	case "devtools-panel":
+		return runTabsDevToolsPanel(client, args[1:])
 	case "emulate-device":
 		return runTabsEmulateDevice(client, args[1:])
 	case "suggest":
@@ -487,6 +490,19 @@ func runTabsDevTools(client commandTabsClient, args []string) error {
 	}
 
 	target, err := client.DevTools(args[0])
+	if err != nil {
+		return err
+	}
+	printDevToolsTarget(target)
+	return nil
+}
+
+func runTabsDevToolsPanel(client commandTabsClient, args []string) error {
+	if len(args) < 2 {
+		return errors.New("missing target id or panel for tabs devtools-panel")
+	}
+
+	target, err := client.DevToolsPanel(args[0], args[1])
 	if err != nil {
 		return err
 	}

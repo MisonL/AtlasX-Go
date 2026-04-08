@@ -56,3 +56,23 @@ func TestResolveDevToolsPanelURLRejectsBlankPanel(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestDevToolsPanelTargetResolvesPanelFrontendURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/json/list" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`[{"id":"1","type":"page","title":"Atlas","url":"https://chatgpt.com/atlas","devtoolsFrontendUrl":"/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1"}]`))
+	}))
+	defer server.Close()
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	target, err := client.DevToolsPanel("1", "network")
+	if err != nil {
+		t.Fatalf("devtools panel lookup failed: %v", err)
+	}
+	expected := server.URL + "/devtools/inspector.html?panel=network&ws=127.0.0.1%3A9222%2Fdevtools%2Fpage%2F1"
+	if target.DevToolsFrontendURL != expected {
+		t.Fatalf("unexpected devtools panel url: %+v", target)
+	}
+}

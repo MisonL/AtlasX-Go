@@ -54,6 +54,7 @@ go run ./cmd/atlasctl tabs organize-window-group-into-window <source-window-id> 
 go run ./cmd/atlasctl tabs merge-window <source-window-id> <target-window-id>
 go run ./cmd/atlasctl tabs open-devtools <target-id>
 go run ./cmd/atlasctl tabs open-devtools-panel <target-id> <panel>
+go run ./cmd/atlasctl tabs devtools-panel <target-id> <panel>
 go run ./cmd/atlasctl tabs close-duplicates
 go run ./cmd/atlasctl tabs activate-window <window-id>
 go run ./cmd/atlasctl tabs close-window <window-id>
@@ -127,6 +128,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs/organize`
 - `GET /v1/tabs/organize-window`
 - `GET /v1/tabs/devtools`
+- `GET /v1/tabs/devtools-panel`
 - `POST /v1/tabs/emulate-device`
 - `POST /v1/tabs/open`
 - `POST /v1/tabs/open-window`
@@ -202,6 +204,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs merge-window <source-window-id> <target-window-id>`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `tabs open-devtools <target-id>`，可解析指定标签页的 `devtools_frontend_url` 并复用新窗口打开主链，把对应 DevTools 放到独立浏览器窗口。
 - 当前已提供 `tabs open-devtools-panel <target-id> <panel>`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后复用新窗口打开主链，把对应 DevTools 面板放到独立浏览器窗口。
+- 当前已提供 `tabs devtools-panel <target-id> <panel>`，可解析指定标签页的 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后返回结构化只读 DevTools 面板 URL，不直接打开新窗口。
 - 当前已提供 `tabs close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
 - 当前已提供 `tabs activate-window <window-id>`，可基于当前窗口分组结果选定目标窗口中的第一个 page target，并复用既有 `activate(target)` 主链完成窗口聚焦。
 - 当前已提供 `tabs close-window <window-id>`，可基于当前窗口分组结果逐个关闭指定窗口中的 page targets，返回结构化关闭结果。
@@ -226,6 +229,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/organize`，可基于当前 page targets 返回结构化分组建议，不直接改动浏览器状态。
 - 当前已提供 `GET /v1/tabs/organize-window?window_id=<id>`，可仅针对指定窗口中的 page targets 返回结构化分组建议，不直接改动浏览器状态。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
+- 当前已提供 `GET /v1/tabs/devtools-panel?id=<target-id>&panel=<panel>`，可按标签页解析 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后返回结构化只读 DevTools 面板 URL。
 - 当前已提供 `GET /v1/tabs/search?q=<query>`，可在当前 page target 列表上按 `title/url` 大小写不敏感匹配查询词，返回结构化命中结果。
 - 当前已提供 `GET /v1/tabs/windows`，可按当前 page targets 返回结构化浏览器窗口分组结果，不执行窗口移动或关闭。
 - 当前已提供 `POST /v1/tabs/open-in-window`，可先聚焦目标窗口，再复用既有 `open(url)` 主链在该窗口中打开新标签。

@@ -48,6 +48,7 @@ type tabClient interface {
 	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
+	DevToolsPanel(string, string) (tabs.DevToolsTarget, error)
 	EmulateDevice(string, string) (tabs.DeviceEmulationResult, error)
 }
 
