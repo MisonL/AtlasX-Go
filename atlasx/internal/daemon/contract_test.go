@@ -78,6 +78,30 @@ func TestSettingsEndpointContract(t *testing.T) {
 	)
 }
 
+func TestProfileEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/profile", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"profiles_root",
+		"default_profile",
+		"selected_mode",
+		"selected_user_data_dir",
+		"isolated_user_data_dir",
+		"isolated_present",
+		"shared_managed",
+	)
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

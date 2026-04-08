@@ -21,6 +21,8 @@
   - 当前已完成
 - `T108`
   - 当前已完成
+- `T109`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -34,6 +36,7 @@
   - 统一日志状态只读入口：`atlasctl logs status` 与 `/v1/logs`
   - 统一更新状态只读入口：`atlasctl updates status` 与 `/v1/updates`
   - 统一结构化 doctor 诊断入口：`atlasctl doctor --json` 与 `/v1/doctor`
+  - 统一 profile 状态只读入口：`atlasctl profile status` 与 `/v1/profile`
   - 统一 memory 只读入口：`atlasctl memory list` 与 `/v1/memory`
   - 统一 memory 检索入口：`atlasctl memory search` 与 `/v1/memory/search`
   - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
@@ -102,6 +105,8 @@
 - `updates_plan_pending=false`
 - `doctor_json_chrome_status=ok`
 - `doctor_json_chrome_source=system_auto`
+- `profile_default_profile=isolated`
+- `profile_selected_mode=isolated`
 
 当前解释：
 
@@ -110,6 +115,7 @@
 - 本机当前 `Application Support/AtlasX/logs` 尚不存在，日志状态入口返回 `present=false`
 - 本机当前没有 staged managed runtime，也没有 install plan，顶层更新状态入口返回 `manifest_present=false`、`plan_present=false`
 - 本机 `atlasctl doctor --json` 可返回结构化诊断结果，当前 `ChromeStatus=ok`、`Chrome.Source=system_auto`
+- 本机 `atlasctl profile status` 返回 `default_profile=isolated`、`selected_mode=isolated`，并确认 isolated profile 目录已存在
 - 当前没有受管浏览器会话
 - mirror/import 已有历史落盘
 - 当前没有 staged managed runtime

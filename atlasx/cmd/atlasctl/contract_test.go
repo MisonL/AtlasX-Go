@@ -111,6 +111,27 @@ func TestDoctorJSONContract(t *testing.T) {
 	}
 }
 
+func TestProfileStatusContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"profile", "status"})
+	})
+	if err != nil {
+		t.Fatalf("run profile status failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"profiles_root=",
+		"default_profile=",
+		"selected_mode=",
+		"selected_user_data_dir=",
+		"isolated_user_data_dir=",
+		"isolated_present=",
+		"shared_managed=",
+	)
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
