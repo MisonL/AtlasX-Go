@@ -68,6 +68,31 @@ func ApplyAllToNewWindows(client OrganizerClient) (ApplyAllResult, error) {
 	return result, nil
 }
 
+func ApplyAllToWindow(client OrganizerClient, windowID int) (ApplyAllResult, error) {
+	targets, err := client.List()
+	if err != nil {
+		return ApplyAllResult{}, err
+	}
+
+	if err := ensureWindowExists(client, windowID); err != nil {
+		return ApplyAllResult{}, err
+	}
+
+	groups := Suggest(targets)
+	result := ApplyAllResult{
+		Groups: make([]ApplyResult, 0, len(groups)),
+	}
+	for _, group := range groups {
+		applied, err := applyGroupToWindow(client, group, windowID)
+		if err != nil {
+			return ApplyAllResult{}, err
+		}
+		result.Groups = append(result.Groups, applied)
+	}
+	result.Returned = len(result.Groups)
+	return result, nil
+}
+
 func ApplyGroupToWindow(client OrganizerClient, groupID string, windowID int) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -131,12 +156,13 @@ func applyGroupToWindow(client OrganizerClient, group Group, windowID int) (Appl
 		return ApplyResult{}, fmt.Errorf("group %s has fewer than 2 page targets", group.ID)
 	}
 
+	if err := ensureWindowExists(client, windowID); err != nil {
+		return ApplyResult{}, err
+	}
+
 	windowTargets, err := sourceWindowIDs(client)
 	if err != nil {
 		return ApplyResult{}, err
-	}
-	if _, ok := windowTargets["window:"+fmt.Sprintf("%d", windowID)]; !ok {
-		return ApplyResult{}, fmt.Errorf("window %d not found", windowID)
 	}
 
 	result := ApplyResult{
@@ -211,4 +237,15 @@ func sourceWindowIDs(client OrganizerClient) (map[string]int, error) {
 		}
 	}
 	return lookup, nil
+}
+
+func ensureWindowExists(client OrganizerClient, windowID int) error {
+	windowTargets, err := sourceWindowIDs(client)
+	if err != nil {
+		return err
+	}
+	if _, ok := windowTargets["window:"+fmt.Sprintf("%d", windowID)]; !ok {
+		return fmt.Errorf("window %d not found", windowID)
+	}
+	return nil
 }

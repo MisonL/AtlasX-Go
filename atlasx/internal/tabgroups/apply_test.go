@@ -253,6 +253,138 @@ func TestApplyAllToNewWindowsReturnsEmptyWithoutGroups(t *testing.T) {
 	}
 }
 
+func TestApplyAllToWindowMovesAllSuggestedGroupsIntoTargetWindow(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+			{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+			{ID: "tab-3", Type: "page", Title: "Build Log - A", URL: "about:blank"},
+			{ID: "tab-4", Type: "page", Title: "Build Log - B", URL: "about:blank"},
+		},
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+				},
+			},
+			{
+				WindowID: 9,
+				Targets: []tabs.Target{
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+				},
+			},
+			{
+				WindowID: 7,
+				Targets: []tabs.Target{
+					{ID: "tab-3", Type: "page", Title: "Build Log - A", URL: "about:blank"},
+					{ID: "tab-4", Type: "page", Title: "Build Log - B", URL: "about:blank"},
+				},
+			},
+		},
+		moveToWindow: map[string]tabs.WindowMoveResult{
+			"tab-2": {
+				SourceWindowID:    9,
+				TargetWindowID:    11,
+				SourceTargetID:    "tab-2",
+				ActivatedTargetID: "tab-1",
+				Target: tabs.Target{
+					ID:    "new-2",
+					Type:  "page",
+					Title: "Atlas B",
+					URL:   "https://chatgpt.com/atlas/b",
+				},
+			},
+			"tab-3": {
+				SourceWindowID:    7,
+				TargetWindowID:    11,
+				SourceTargetID:    "tab-3",
+				ActivatedTargetID: "tab-1",
+				Target: tabs.Target{
+					ID:    "new-3",
+					Type:  "page",
+					Title: "Build Log - A",
+					URL:   "about:blank",
+				},
+			},
+			"tab-4": {
+				SourceWindowID:    7,
+				TargetWindowID:    11,
+				SourceTargetID:    "tab-4",
+				ActivatedTargetID: "tab-1",
+				Target: tabs.Target{
+					ID:    "new-4",
+					Type:  "page",
+					Title: "Build Log - B",
+					URL:   "about:blank",
+				},
+			},
+		},
+	}
+
+	result, err := ApplyAllToWindow(client, 11)
+	if err != nil {
+		t.Fatalf("apply all to window failed: %v", err)
+	}
+	if result.Returned != 2 || len(result.Groups) != 2 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if result.Groups[0].GroupID != "title:build log" || result.Groups[1].GroupID != "host:chatgpt.com" {
+		t.Fatalf("unexpected groups: %+v", result.Groups)
+	}
+	if len(result.Groups[1].AlignedTargets) != 1 || len(result.Groups[1].MovedTargets) != 1 {
+		t.Fatalf("unexpected host group targets: %+v", result.Groups[1])
+	}
+}
+
+func TestApplyAllToWindowReturnsEmptyWithoutGroups(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Solo", URL: "https://example.com"},
+		},
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Solo", URL: "https://example.com"},
+				},
+			},
+		},
+	}
+
+	result, err := ApplyAllToWindow(client, 11)
+	if err != nil {
+		t.Fatalf("apply all to window failed: %v", err)
+	}
+	if result.Returned != 0 || len(result.Groups) != 0 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+}
+
+func TestApplyAllToWindowRejectsUnknownWindow(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+			{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+		},
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 9,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+				},
+			},
+		},
+	}
+
+	if _, err := ApplyAllToWindow(client, 11); err == nil {
+		t.Fatal("expected apply all to window to fail")
+	} else if !strings.Contains(err.Error(), "window 11 not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestApplyGroupToWindowMovesTargetsAndKeepsAlignedOnes(t *testing.T) {
 	client := &stubOrganizerClient{
 		targets: []tabs.Target{
