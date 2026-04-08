@@ -279,6 +279,47 @@ func TestTabsAgentExecuteContract(t *testing.T) {
 	)
 }
 
+func TestTabsAgentExecuteRelatedTabContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	client := &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T13:05:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	}
+	restoreCommandTabsClient(t, client)
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "agent-execute", "--confirm", "tab-1", "recommend-related-tab-tab-2"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs agent-execute related_tab failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"tab_id=tab-1",
+		"step_id=recommend-related-tab-tab-2",
+		"step_kind=related_tab",
+		"activated_tab_id=tab-2",
+		"executed=true",
+		"confirmed=true",
+		"trace_id=",
+		"memory_persisted=false",
+		"rollback=manual_reactivate_previous_tab_if_needed",
+	)
+	if client.activatedTargetID != "tab-2" {
+		t.Fatalf("unexpected activated target id: %q", client.activatedTargetID)
+	}
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

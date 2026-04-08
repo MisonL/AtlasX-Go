@@ -170,7 +170,7 @@
   - 基于 page targets 的结构化标签整理建议
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
-  - 仍未引入向量数据库、外部检索服务或真正多轮代理执行器；当前 agent execute 仅支持 sidebar 类型步骤，preview-only recommendation 步骤仍不可执行
+  - 仍未引入向量数据库、外部检索服务或真正多轮代理执行器；当前 agent execute 已支持 sidebar 类型步骤与 `related_tab` 单步激活，`memory_snippet` 等 preview-only recommendation 步骤仍不可执行
   - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、DevTools 新窗口打开、按指定 panel 的 DevTools 新窗口打开、按指定 panel 生成只读 DevTools URL、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制和显式 bounds 控制，尚未覆盖完整 DevTools 面板壳层或更深层窗口编排
 
 ## 冻结边界

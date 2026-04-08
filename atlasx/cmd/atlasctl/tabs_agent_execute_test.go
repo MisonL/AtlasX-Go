@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"atlasx/internal/memory"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
 	"atlasx/internal/sidebar"
@@ -115,42 +116,92 @@ func TestTabsAgentExecuteRejectsMissingConfirm(t *testing.T) {
 	}
 }
 
-func TestTabsAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
+func TestTabsAgentExecuteRunsRelatedTabStep(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	t.Setenv("OPENAI_API_KEY", "test-key")
 
 	paths, err := macos.DiscoverPaths()
 	if err != nil {
 		t.Fatalf("discover paths failed: %v", err)
 	}
-	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
-		SidebarDefaultProvider: "primary",
-		SidebarProviders: []settings.SidebarProviderConfig{{
-			ID:        "primary",
-			Provider:  "openai",
-			Model:     "gpt-5.4",
-			BaseURL:   "https://example.com",
-			APIKeyEnv: "OPENAI_API_KEY",
-		}},
-	}); err != nil {
-		t.Fatalf("save config failed: %v", err)
-	}
 
-	restoreCommandTabsClient(t, &stubCommandTabsClient{
+	client := &stubCommandTabsClient{
 		context: tabs.PageContext{
-			ID:    "tab-1",
-			Title: "Atlas",
-			URL:   "https://chatgpt.com/atlas",
-			Text:  "Atlas context",
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T14:30:00Z",
 		},
 		targets: []tabs.Target{
 			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
 			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
 		},
+	}
+	restoreCommandTabsClient(t, client)
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "agent-execute", "--confirm", "tab-1", "recommend-related-tab-tab-2"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs agent-execute related_tab failed: %v", err)
+	}
+	for _, fragment := range []string{
+		"step_id=recommend-related-tab-tab-2",
+		"step_kind=related_tab",
+		"activated_tab_id=tab-2",
+		"executed=true",
+		"confirmed=true",
+		"memory_persisted=false",
+		"rollback=manual_reactivate_previous_tab_if_needed",
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Fatalf("expected output to contain %q, got %s", fragment, output)
+		}
+	}
+	if client.activatedTargetID != "tab-2" {
+		t.Fatalf("expected activated target id tab-2, got %q", client.activatedTargetID)
+	}
+
+	events, err := loadCommandMemoryEvents(paths)
+	if err != nil {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 0 {
+		t.Fatalf("expected no memory events, got %+v", events)
+	}
+}
+
+func TestTabsAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T14:31:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T14:31:10Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+		},
 	})
 
 	_, err = captureStdout(t, func() error {
-		return run([]string{"tabs", "agent-execute", "--confirm", "tab-1", "recommend-related-tab-tab-2"})
+		return run([]string{"tabs", "agent-execute", "--confirm", "tab-1", "recommend-memory-relevant-page-capture"})
 	})
 	if err == nil {
 		t.Fatal("expected tabs agent-execute to fail for preview-only step")

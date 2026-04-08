@@ -278,6 +278,71 @@ func TestTabAgentExecuteEndpointContract(t *testing.T) {
 	}
 }
 
+func TestTabAgentExecuteRelatedTabEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	client := &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T13:05:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	}
+	restoreDaemonHooks(t, client)
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/tabs/agent-execute",
+		bytes.NewBufferString(`{"id":"tab-1","step_id":"recommend-related-tab-tab-2","confirm":true}`),
+	)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"tab_id",
+		"step_id",
+		"step_kind",
+		"step_title",
+		"activated_tab_id",
+		"executed",
+		"confirmed",
+		"trace_id",
+		"result",
+		"context_summary",
+		"memory_persisted",
+		"rollback",
+	)
+	if payload["step_id"] != "recommend-related-tab-tab-2" || payload["step_kind"] != "related_tab" {
+		t.Fatalf("unexpected payload: %+v", payload)
+	}
+	if payload["activated_tab_id"] != "tab-2" {
+		t.Fatalf("unexpected activated_tab_id: %+v", payload)
+	}
+	if client.activatedTargetID != "tab-2" {
+		t.Fatalf("unexpected activated target id: %q", client.activatedTargetID)
+	}
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

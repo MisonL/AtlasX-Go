@@ -56,7 +56,9 @@ func runTabsAgentExecute(paths macos.Paths, client commandTabsClient, args []str
 	}
 
 	traceID := sidebar.NewTraceID()
-	result, err := agentplan.Execute(config, context, memorySnippets, plan, stepID, *confirm)
+	result, err := agentplan.Execute(config, context, memorySnippets, plan, stepID, *confirm, agentplan.ExecutionActions{
+		ActivateTab: client.Activate,
+	})
 	if err != nil {
 		return finishSidebarCommand(paths, traceID, err)
 	}
@@ -146,11 +148,12 @@ func printAgentPlan(plan agentplan.Plan) {
 
 func printAgentExecution(result agentplan.ExecutionResult) {
 	fmt.Printf(
-		"tab_id=%s step_id=%s step_kind=%s step_title=%q executed=%t confirmed=%t trace_id=%s provider=%s model=%s memory_persisted=%t rollback=%s\n",
+		"tab_id=%s step_id=%s step_kind=%s step_title=%q activated_tab_id=%s executed=%t confirmed=%t trace_id=%s provider=%s model=%s memory_persisted=%t rollback=%s\n",
 		result.TabID,
 		result.StepID,
 		result.StepKind,
 		result.StepTitle,
+		result.ActivatedTabID,
 		result.Executed,
 		result.Confirmed,
 		result.TraceID,

@@ -54,6 +54,8 @@ type stubTabsClient struct {
 	openDevToolsErr      error
 	openDevToolsPanel    tabs.Target
 	openDevToolsPanelErr error
+	activatedTargetID    string
+	activateErr          error
 	context              tabs.PageContext
 	captureErr           error
 	semanticContext      tabs.SemanticContext
@@ -176,7 +178,11 @@ func (s *stubTabsClient) OpenWindow(targetURL string) (tabs.Target, error) {
 	return tabs.Target{ID: "tab-window", Type: "page", Title: "OpenAI", URL: targetURL}, nil
 }
 
-func (s *stubTabsClient) Activate(string) error {
+func (s *stubTabsClient) Activate(targetID string) error {
+	if s.activateErr != nil {
+		return s.activateErr
+	}
+	s.activatedTargetID = targetID
 	return nil
 }
 

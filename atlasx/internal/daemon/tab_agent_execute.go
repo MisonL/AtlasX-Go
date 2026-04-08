@@ -61,7 +61,9 @@ func serveTabAgentExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := agentplan.Execute(config, context, memorySnippets, plan, request.StepID, request.Confirm)
+	result, err := agentplan.Execute(config, context, memorySnippets, plan, request.StepID, request.Confirm, agentplan.ExecutionActions{
+		ActivateTab: client.Activate,
+	})
 	if err != nil {
 		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
 		writeAgentExecuteError(w, traceID, err)
@@ -79,6 +81,8 @@ func writeAgentExecuteError(w http.ResponseWriter, traceID string, err error) {
 	switch {
 	case errors.Is(err, agentplan.ErrConfirmationRequired),
 		errors.Is(err, agentplan.ErrStepNotExecutable),
+		errors.Is(err, agentplan.ErrStepActionRequired),
+		errors.Is(err, agentplan.ErrStepTabIDRequired),
 		errors.Is(err, sidebar.ErrProviderNotFound),
 		errors.Is(err, sidebar.ErrTokenBudgetExceeded):
 		writeSidebarAskError(w, http.StatusBadRequest, traceID, err)
