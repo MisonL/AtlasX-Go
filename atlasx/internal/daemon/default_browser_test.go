@@ -57,3 +57,52 @@ func TestDefaultBrowserEndpointRejectsWrongMethod(t *testing.T) {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
 	}
 }
+
+func TestDefaultBrowserSetEndpointReturnsStatus(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previous := setDaemonDefaultBrowserBundleID
+	setDaemonDefaultBrowserBundleID = func(bundleID string) (defaultbrowser.Status, error) {
+		if bundleID != "com.openai.atlasx" {
+			t.Fatalf("unexpected bundle id: %s", bundleID)
+		}
+		return defaultbrowser.Status{
+			Source:        "launchservices",
+			HTTPBundleID:  bundleID,
+			HTTPRole:      "all",
+			HTTPKnown:     true,
+			HTTPSBundleID: bundleID,
+			HTTPSRole:     "all",
+			HTTPSKnown:    true,
+			Consistent:    true,
+		}, nil
+	}
+	t.Cleanup(func() {
+		setDaemonDefaultBrowserBundleID = previous
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/default-browser/set", bytes.NewBufferString(`{"bundle_id":"com.openai.atlasx"}`))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"http_bundle_id":"com.openai.atlasx"`)) {
+		t.Fatalf("unexpected response body: %s", recorder.Body.String())
+	}
+}
+
+func TestDefaultBrowserSetEndpointRejectsMissingBundleID(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodPost, "/v1/default-browser/set", bytes.NewBufferString(`{}`))
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}

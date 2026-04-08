@@ -11,6 +11,7 @@ import (
 const launchServicesDomain = "com.apple.LaunchServices/com.apple.launchservices.secure"
 
 var readLaunchServicesJSON = exportLaunchServicesJSON
+var writeLaunchServicesJSON = importLaunchServicesJSON
 
 type Status struct {
 	Source        string `json:"source"`
@@ -45,10 +46,39 @@ func ReadStatus() (Status, error) {
 	return parseStatus(payload)
 }
 
+func SetBundleID(bundleID string) (Status, error) {
+	trimmed := strings.TrimSpace(bundleID)
+	if trimmed == "" {
+		return Status{}, fmt.Errorf("bundle_id is required")
+	}
+
+	payload, err := readLaunchServicesJSON()
+	if err != nil {
+		return Status{}, err
+	}
+
+	updatedPayload, err := updateBundleID(payload, trimmed)
+	if err != nil {
+		return Status{}, err
+	}
+	if err := writeLaunchServicesJSON(updatedPayload); err != nil {
+		return Status{}, err
+	}
+
+	status, err := ReadStatus()
+	if err != nil {
+		return Status{}, err
+	}
+	if status.HTTPBundleID != trimmed || status.HTTPSBundleID != trimmed || !status.HTTPKnown || !status.HTTPSKnown {
+		return Status{}, fmt.Errorf("launchservices did not apply bundle_id %s to both http and https", trimmed)
+	}
+	return status, nil
+}
+
 func parseStatus(payload []byte) (Status, error) {
-	var handlers launchServicesHandlers
-	if err := json.Unmarshal(payload, &handlers); err != nil {
-		return Status{}, fmt.Errorf("decode launchservices handlers: %w", err)
+	handlers, err := parseHandlers(payload)
+	if err != nil {
+		return Status{}, err
 	}
 
 	status := Status{
@@ -81,6 +111,40 @@ func parseStatus(payload []byte) (Status, error) {
 	return status, nil
 }
 
+func parseHandlers(payload []byte) (launchServicesHandlers, error) {
+	var handlers launchServicesHandlers
+	if err := json.Unmarshal(payload, &handlers); err != nil {
+		return launchServicesHandlers{}, fmt.Errorf("decode launchservices handlers: %w", err)
+	}
+	return handlers, nil
+}
+
+func updateBundleID(payload []byte, bundleID string) ([]byte, error) {
+	handlers, err := parseHandlers(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := make([]launchServicesHandler, 0, len(handlers.LSHandlers)+2)
+	for _, handler := range handlers.LSHandlers {
+		scheme := strings.ToLower(strings.TrimSpace(handler.URLScheme))
+		if scheme == "http" || scheme == "https" {
+			continue
+		}
+		filtered = append(filtered, handler)
+	}
+	filtered = append(filtered,
+		launchServicesHandler{URLScheme: "http", RoleAll: bundleID},
+		launchServicesHandler{URLScheme: "https", RoleAll: bundleID},
+	)
+	handlers.LSHandlers = filtered
+	updatedPayload, err := json.Marshal(handlers)
+	if err != nil {
+		return nil, fmt.Errorf("encode launchservices handlers: %w", err)
+	}
+	return updatedPayload, nil
+}
+
 func resolveRole(handler launchServicesHandler) (string, string) {
 	switch {
 	case strings.TrimSpace(handler.RoleAll) != "":
@@ -109,6 +173,23 @@ func exportLaunchServicesJSON() ([]byte, error) {
 		return nil, commandError("convert launchservices plist to json", err, jsonPayload)
 	}
 	return jsonPayload, nil
+}
+
+func importLaunchServicesJSON(payload []byte) error {
+	cmd := exec.Command("/usr/bin/plutil", "-convert", "xml1", "-o", "-", "-")
+	cmd.Stdin = bytes.NewReader(payload)
+	plistPayload, err := cmd.CombinedOutput()
+	if err != nil {
+		return commandError("convert launchservices json to plist", err, plistPayload)
+	}
+
+	importCmd := exec.Command("/usr/bin/defaults", "import", launchServicesDomain, "-")
+	importCmd.Stdin = bytes.NewReader(plistPayload)
+	output, err := importCmd.CombinedOutput()
+	if err != nil {
+		return commandError("import launchservices defaults", err, output)
+	}
+	return nil
 }
 
 func commandOutput(name string, args ...string) ([]byte, error) {

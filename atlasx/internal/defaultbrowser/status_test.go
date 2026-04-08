@@ -97,3 +97,104 @@ func TestReadStatusRejectsMalformedJSON(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestSetBundleIDRewritesHTTPAndHTTPSHandlers(t *testing.T) {
+	var stored []byte
+
+	previousRead := readLaunchServicesJSON
+	previousWrite := writeLaunchServicesJSON
+	readLaunchServicesJSON = func() ([]byte, error) {
+		if stored != nil {
+			return stored, nil
+		}
+		return []byte(`{"LSHandlers":[{"LSHandlerURLScheme":"mailto","LSHandlerRoleAll":"com.apple.mail"},{"LSHandlerURLScheme":"http","LSHandlerRoleViewer":"org.mozilla.firefox"},{"LSHandlerURLScheme":"https","LSHandlerRoleAll":"org.mozilla.firefox"}]}`), nil
+	}
+	writeLaunchServicesJSON = func(payload []byte) error {
+		stored = append([]byte(nil), payload...)
+		return nil
+	}
+	t.Cleanup(func() {
+		readLaunchServicesJSON = previousRead
+		writeLaunchServicesJSON = previousWrite
+	})
+
+	status, err := SetBundleID("com.openai.atlasx")
+	if err != nil {
+		t.Fatalf("set bundle id failed: %v", err)
+	}
+	if status.HTTPBundleID != "com.openai.atlasx" || status.HTTPSBundleID != "com.openai.atlasx" || !status.Consistent {
+		t.Fatalf("unexpected status: %+v", status)
+	}
+
+	handlers, err := parseHandlers(stored)
+	if err != nil {
+		t.Fatalf("parse stored handlers failed: %v", err)
+	}
+	if len(handlers.LSHandlers) != 3 {
+		t.Fatalf("unexpected handlers: %+v", handlers.LSHandlers)
+	}
+	if handlers.LSHandlers[0].URLScheme != "mailto" {
+		t.Fatalf("expected unrelated scheme to be preserved: %+v", handlers.LSHandlers)
+	}
+}
+
+func TestSetBundleIDRejectsBlankBundleID(t *testing.T) {
+	_, err := SetBundleID("  ")
+	if err == nil {
+		t.Fatal("expected blank bundle id to fail")
+	}
+	if !strings.Contains(err.Error(), "bundle_id is required") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestSetBundleIDReturnsWriteError(t *testing.T) {
+	previousRead := readLaunchServicesJSON
+	previousWrite := writeLaunchServicesJSON
+	readLaunchServicesJSON = func() ([]byte, error) {
+		return []byte(`{"LSHandlers":[]}`), nil
+	}
+	writeLaunchServicesJSON = func(payload []byte) error {
+		return errors.New("import failed")
+	}
+	t.Cleanup(func() {
+		readLaunchServicesJSON = previousRead
+		writeLaunchServicesJSON = previousWrite
+	})
+
+	_, err := SetBundleID("com.openai.atlasx")
+	if err == nil {
+		t.Fatal("expected write error")
+	}
+	if !strings.Contains(err.Error(), "import failed") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestSetBundleIDReturnsVerificationError(t *testing.T) {
+	previousRead := readLaunchServicesJSON
+	previousWrite := writeLaunchServicesJSON
+	callCount := 0
+	readLaunchServicesJSON = func() ([]byte, error) {
+		callCount++
+		if callCount == 1 {
+			return []byte(`{"LSHandlers":[{"LSHandlerURLScheme":"http","LSHandlerRoleAll":"org.mozilla.firefox"}]}`), nil
+		}
+		return []byte(`{"LSHandlers":[{"LSHandlerURLScheme":"http","LSHandlerRoleAll":"org.mozilla.firefox"},{"LSHandlerURLScheme":"https","LSHandlerRoleAll":"org.mozilla.firefox"}]}`), nil
+	}
+	writeLaunchServicesJSON = func(payload []byte) error {
+		return nil
+	}
+	t.Cleanup(func() {
+		readLaunchServicesJSON = previousRead
+		writeLaunchServicesJSON = previousWrite
+	})
+
+	_, err := SetBundleID("com.openai.atlasx")
+	if err == nil {
+		t.Fatal("expected verification error")
+	}
+	if !strings.Contains(err.Error(), "did not apply bundle_id") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

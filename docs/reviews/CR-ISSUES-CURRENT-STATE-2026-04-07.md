@@ -55,6 +55,8 @@
   - 当前已完成
 - `T125`
   - 当前已完成
+- `T126`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -65,6 +67,7 @@
   - 统一 CLI 与 HTTP 控制面
   - 统一 settings 只读入口：`atlasctl settings` 与 `/v1/settings`
   - 统一默认浏览器只读入口：`atlasctl default-browser status` 与 `/v1/default-browser`
+  - 统一默认浏览器设置入口：`atlasctl default-browser set` 与 `/v1/default-browser/set`
   - 统一日志状态只读入口：`atlasctl logs status` 与 `/v1/logs`
   - 统一更新状态只读入口：`atlasctl updates status` 与 `/v1/updates`
   - 统一结构化 doctor 诊断入口：`atlasctl doctor --json` 与 `/v1/doctor`

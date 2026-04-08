@@ -22,6 +22,7 @@ go run ./cmd/atlasctl permissions status
 go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl settings
 go run ./cmd/atlasctl default-browser status
+go run ./cmd/atlasctl default-browser set <bundle-id>
 go run ./cmd/atlasctl logs status
 go run ./cmd/atlasctl updates status
 go run ./cmd/atlasctl memory list
@@ -126,6 +127,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/permissions`
 - `GET /v1/settings`
 - `GET /v1/default-browser`
+- `POST /v1/default-browser/set`
 - `GET /v1/logs`
 - `GET /v1/updates`
 - `GET /v1/history`
@@ -202,7 +204,8 @@ bash scripts/e2e_gate.sh
 - `launch-webapp` 只会启动 Atlas Web 入口，不等于官方原生 Atlas。
 - 当前控制面只覆盖离线诊断、配置、profile 和本地健康检查。
 - 当前已提供 `atlasctl settings` 与 `GET /v1/settings`，可通过统一只读视图读取当前有效配置与 sidebar provider registry。
-- 当前已提供 `atlasctl default-browser status` 与 `GET /v1/default-browser`，可读取 macOS LaunchServices 当前 `http/https` 默认 handler 的 bundle id 与角色信息，但不执行设置默认浏览器写操作。
+- 当前已提供 `atlasctl default-browser status` 与 `GET /v1/default-browser`，可读取 macOS LaunchServices 当前 `http/https` 默认 handler 的 bundle id 与角色信息。
+- 当前已提供 `atlasctl default-browser set <bundle-id>` 与 `POST /v1/default-browser/set`，可显式把 LaunchServices 中 `http/https` 的默认 handler 切到指定 bundle id，并在写后回读核验当前状态。
 - 当前已提供 `atlasctl logs status` 与 `GET /v1/logs`，可只读扫描 AtlasX support root 下的 logs 目录，返回目录存在性、文件数、总大小与最近文件列表，但不创建或写入日志文件。
 - 当前已提供 `atlasctl updates status` 与 `GET /v1/updates`，可在顶层更新视图中汇总 managed runtime staged 状态与 install plan 待执行状态，但不触发下载、安装或回滚。
 - 当前已提供 `atlasctl doctor --json` 与 `GET /v1/doctor`，可把现有 doctor 诊断主链以结构化 JSON 暴露出来；默认 `atlasctl doctor` 的文本输出保持不变。

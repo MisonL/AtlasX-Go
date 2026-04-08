@@ -54,6 +54,43 @@ func TestDefaultBrowserStatusContract(t *testing.T) {
 	)
 }
 
+func TestDefaultBrowserSetContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previous := setDefaultBrowserBundleID
+	setDefaultBrowserBundleID = func(bundleID string) (defaultbrowser.Status, error) {
+		return defaultbrowser.Status{
+			Source:        "launchservices",
+			HTTPBundleID:  bundleID,
+			HTTPRole:      "all",
+			HTTPKnown:     true,
+			HTTPSBundleID: bundleID,
+			HTTPSRole:     "all",
+			HTTPSKnown:    true,
+			Consistent:    true,
+		}, nil
+	}
+	t.Cleanup(func() {
+		setDefaultBrowserBundleID = previous
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"default-browser", "set", "com.openai.atlasx"})
+	})
+	if err != nil {
+		t.Fatalf("run default-browser set failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"source=",
+		"http_bundle_id=",
+		"http_role=",
+		"https_bundle_id=",
+		"https_role=",
+		"consistent=",
+	)
+}
+
 func TestLogsStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
