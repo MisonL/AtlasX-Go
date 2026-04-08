@@ -43,7 +43,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-group-to-window, organize-to-windows, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-group-to-window, organize-group-into-window, organize-to-windows, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -350,6 +350,45 @@ func runTabs(args []string) error {
 				moved.Target.Type,
 				moved.Target.Title,
 				moved.Target.URL,
+			)
+		}
+		return nil
+	case "organize-group-into-window":
+		if len(args) < 3 {
+			return errors.New("missing group id or window id for tabs organize-group-into-window")
+		}
+		windowID, err := strconv.Atoi(args[2])
+		if err != nil {
+			return fmt.Errorf("invalid window id %q", args[2])
+		}
+		result, err := tabgroups.ApplyGroupToWindow(client, args[1], windowID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("group_id=%s label=%q window_id=%d returned=%d\n", result.GroupID, result.Label, result.WindowID, result.Returned)
+		for index, moved := range result.MovedTargets {
+			fmt.Printf(
+				"moved_index=%d source_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+				index,
+				moved.SourceWindowID,
+				moved.SourceTargetID,
+				moved.ActivatedTargetID,
+				moved.Target.ID,
+				moved.Target.Type,
+				moved.Target.Title,
+				moved.Target.URL,
+			)
+		}
+		for index, aligned := range result.AlignedTargets {
+			fmt.Printf(
+				"aligned_index=%d source_window_id=%d source_target_id=%s id=%s type=%s title=%q url=%s\n",
+				index,
+				aligned.SourceWindowID,
+				aligned.SourceTargetID,
+				aligned.Target.ID,
+				aligned.Target.Type,
+				aligned.Target.Title,
+				aligned.Target.URL,
 			)
 		}
 		return nil

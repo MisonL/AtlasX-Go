@@ -23,7 +23,7 @@
 - `atlasctl runtime plan create|resolve|status|clear`
 - `atlasctl mirror-scan`
 - `atlasctl history|downloads|bookmarks list/open`
-- `atlasctl tabs list|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|memories|recommend-context|organize|organize-group-to-window|organize-to-windows|devtools|emulate-device`
+- `atlasctl tabs list|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|memories|recommend-context|organize|organize-group-to-window|organize-group-into-window|organize-to-windows|devtools|emulate-device`
 - `atlasctl tabs suggest <target-id>`
 - `atlasctl tabs memories <target-id>`
 - `atlasctl tabs recommend-context <target-id>`
@@ -33,6 +33,7 @@
 - `atlasctl tabs move-to-window <tab-id> <target-window-id>`
 - `atlasctl tabs move-to-new-window <tab-id>`
 - `atlasctl tabs organize-group-to-window <group-id>`
+- `atlasctl tabs organize-group-into-window <group-id> <window-id>`
 - `atlasctl tabs organize-to-windows`
 - `atlasctl tabs merge-window <source-window-id> <target-window-id>`
 - `atlasctl tabs open-devtools <target-id>`
@@ -47,7 +48,7 @@
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/settings`
 - `atlasd /v1/memory` 与 `/v1/memory/search`
-- `atlasd /v1/tabs|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|close-duplicates|activate-window|close-window|window-state|window-bounds|activate|close|navigate|context|semantic-context|selection|suggestions|memories|context-recommendations|organize|organize-group-to-window|organize-to-windows|devtools|emulate-device`
+- `atlasd /v1/tabs|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|close-duplicates|activate-window|close-window|window-state|window-bounds|activate|close|navigate|context|semantic-context|selection|suggestions|memories|context-recommendations|organize|organize-group-to-window|organize-group-into-window|organize-to-windows|devtools|emulate-device`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
 - `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
 - `atlasd /v1/sidebar/status`、`/v1/sidebar/ask`、`/v1/sidebar/selection/ask` 与 `/v1/sidebar/summarize`

@@ -21,11 +21,12 @@ type AppliedTarget struct {
 }
 
 type ApplyResult struct {
-	GroupID      string          `json:"group_id"`
-	Label        string          `json:"label"`
-	WindowID     int             `json:"window_id"`
-	Returned     int             `json:"returned"`
-	MovedTargets []AppliedTarget `json:"moved_targets"`
+	GroupID        string          `json:"group_id"`
+	Label          string          `json:"label"`
+	WindowID       int             `json:"window_id"`
+	Returned       int             `json:"returned"`
+	MovedTargets   []AppliedTarget `json:"moved_targets"`
+	AlignedTargets []AppliedTarget `json:"aligned_targets"`
 }
 
 type ApplyAllResult struct {
@@ -67,6 +68,19 @@ func ApplyAllToNewWindows(client OrganizerClient) (ApplyAllResult, error) {
 	return result, nil
 }
 
+func ApplyGroupToWindow(client OrganizerClient, groupID string, windowID int) (ApplyResult, error) {
+	targets, err := client.List()
+	if err != nil {
+		return ApplyResult{}, err
+	}
+
+	group, err := findGroup(Suggest(targets), groupID)
+	if err != nil {
+		return ApplyResult{}, err
+	}
+	return applyGroupToWindow(client, group, windowID)
+}
+
 func applyGroupToNewWindow(client OrganizerClient, group Group) (ApplyResult, error) {
 	if len(group.Targets) < 2 {
 		return ApplyResult{}, fmt.Errorf("group %s has fewer than 2 page targets", group.ID)
@@ -83,10 +97,11 @@ func applyGroupToNewWindow(client OrganizerClient, group Group) (ApplyResult, er
 	}
 
 	result := ApplyResult{
-		GroupID:      group.ID,
-		Label:        group.Label,
-		WindowID:     windowID,
-		MovedTargets: make([]AppliedTarget, 0, len(group.Targets)),
+		GroupID:        group.ID,
+		Label:          group.Label,
+		WindowID:       windowID,
+		MovedTargets:   make([]AppliedTarget, 0, len(group.Targets)),
+		AlignedTargets: []AppliedTarget{},
 	}
 	result.MovedTargets = append(result.MovedTargets, AppliedTarget{
 		SourceWindowID: firstMove.SourceWindowID,
@@ -111,6 +126,57 @@ func applyGroupToNewWindow(client OrganizerClient, group Group) (ApplyResult, er
 	return result, nil
 }
 
+func applyGroupToWindow(client OrganizerClient, group Group, windowID int) (ApplyResult, error) {
+	if len(group.Targets) < 2 {
+		return ApplyResult{}, fmt.Errorf("group %s has fewer than 2 page targets", group.ID)
+	}
+
+	windowTargets, err := sourceWindowIDs(client)
+	if err != nil {
+		return ApplyResult{}, err
+	}
+	if _, ok := windowTargets["window:"+fmt.Sprintf("%d", windowID)]; !ok {
+		return ApplyResult{}, fmt.Errorf("window %d not found", windowID)
+	}
+
+	result := ApplyResult{
+		GroupID:        group.ID,
+		Label:          group.Label,
+		WindowID:       windowID,
+		MovedTargets:   make([]AppliedTarget, 0, len(group.Targets)),
+		AlignedTargets: make([]AppliedTarget, 0, len(group.Targets)),
+	}
+
+	for _, target := range group.Targets {
+		sourceWindowID, ok := windowTargets[target.ID]
+		if !ok {
+			return ApplyResult{}, fmt.Errorf("window for target %s not found", target.ID)
+		}
+		if sourceWindowID == windowID {
+			result.AlignedTargets = append(result.AlignedTargets, AppliedTarget{
+				SourceWindowID: sourceWindowID,
+				SourceTargetID: target.ID,
+				Target:         target,
+			})
+			continue
+		}
+
+		moved, err := client.MoveToWindow(target.ID, windowID)
+		if err != nil {
+			return ApplyResult{}, err
+		}
+		result.MovedTargets = append(result.MovedTargets, AppliedTarget{
+			SourceWindowID:    moved.SourceWindowID,
+			SourceTargetID:    moved.SourceTargetID,
+			ActivatedTargetID: moved.ActivatedTargetID,
+			Target:            moved.Target,
+		})
+	}
+
+	result.Returned = len(result.MovedTargets) + len(result.AlignedTargets)
+	return result, nil
+}
+
 func findGroup(groups []Group, groupID string) (Group, error) {
 	for _, group := range groups {
 		if group.ID == groupID {
@@ -121,16 +187,28 @@ func findGroup(groups []Group, groupID string) (Group, error) {
 }
 
 func windowIDForTarget(client OrganizerClient, targetID string) (int, error) {
-	windows, err := client.Windows()
+	windowTargets, err := sourceWindowIDs(client)
 	if err != nil {
 		return 0, err
 	}
+	windowID, ok := windowTargets[targetID]
+	if !ok {
+		return 0, fmt.Errorf("window for target %s not found", targetID)
+	}
+	return windowID, nil
+}
+
+func sourceWindowIDs(client OrganizerClient) (map[string]int, error) {
+	windows, err := client.Windows()
+	if err != nil {
+		return nil, err
+	}
+	lookup := make(map[string]int, len(windows))
 	for _, window := range windows {
+		lookup["window:"+fmt.Sprintf("%d", window.WindowID)] = window.WindowID
 		for _, target := range window.Targets {
-			if target.ID == targetID {
-				return window.WindowID, nil
-			}
+			lookup[target.ID] = window.WindowID
 		}
 	}
-	return 0, fmt.Errorf("window for target %s not found", targetID)
+	return lookup, nil
 }

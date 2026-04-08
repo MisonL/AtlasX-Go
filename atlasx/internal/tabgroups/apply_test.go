@@ -253,6 +253,81 @@ func TestApplyAllToNewWindowsReturnsEmptyWithoutGroups(t *testing.T) {
 	}
 }
 
+func TestApplyGroupToWindowMovesTargetsAndKeepsAlignedOnes(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+			{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+		},
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+				},
+			},
+			{
+				WindowID: 9,
+				Targets: []tabs.Target{
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+				},
+			},
+		},
+		moveToWindow: map[string]tabs.WindowMoveResult{
+			"tab-2": {
+				SourceWindowID:    9,
+				TargetWindowID:    11,
+				SourceTargetID:    "tab-2",
+				ActivatedTargetID: "tab-1",
+				Target: tabs.Target{
+					ID:    "new-2",
+					Type:  "page",
+					Title: "Atlas B",
+					URL:   "https://chatgpt.com/atlas/b",
+				},
+			},
+		},
+	}
+
+	result, err := ApplyGroupToWindow(client, "host:chatgpt.com", 11)
+	if err != nil {
+		t.Fatalf("apply group to window failed: %v", err)
+	}
+	if result.WindowID != 11 || result.Returned != 2 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if len(result.AlignedTargets) != 1 || result.AlignedTargets[0].SourceTargetID != "tab-1" {
+		t.Fatalf("unexpected aligned targets: %+v", result.AlignedTargets)
+	}
+	if len(result.MovedTargets) != 1 || result.MovedTargets[0].SourceTargetID != "tab-2" {
+		t.Fatalf("unexpected moved targets: %+v", result.MovedTargets)
+	}
+}
+
+func TestApplyGroupToWindowRejectsUnknownWindow(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+			{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+		},
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 9,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+				},
+			},
+		},
+	}
+
+	if _, err := ApplyGroupToWindow(client, "host:chatgpt.com", 11); err == nil {
+		t.Fatal("expected apply group to window to fail")
+	} else if !strings.Contains(err.Error(), "window 11 not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 type errString string
 
 func (e errString) Error() string {
