@@ -41,6 +41,7 @@ type tabClient interface {
 	OpenDevToolsInWindow(string, int) (tabs.WindowOpenResult, error)
 	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
 	OpenDevToolsPanelInWindow(string, string, int) (tabs.WindowOpenResult, error)
+	OpenDevToolsWindowIntoWindow(int, int) (tabs.DevToolsWindowOpenResult, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error

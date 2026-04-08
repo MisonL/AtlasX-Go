@@ -23,55 +23,57 @@ import (
 )
 
 type stubTabsClient struct {
-	openedURL                    string
-	targets                      []tabs.Target
-	listErr                      error
-	searchTargets                []tabs.Target
-	searchErr                    error
-	windows                      []tabs.WindowSummary
-	windowsErr                   error
-	duplicateClose               tabs.CloseDuplicatesResult
-	duplicateCloseErr            error
-	windowOpen                   tabs.WindowOpenResult
-	windowOpenErr                error
-	windowMove                   tabs.WindowMoveResult
-	windowMoveErr                error
-	windowMoveByID               map[string]tabs.WindowMoveResult
-	windowMoveNew                tabs.WindowMoveToNewResult
-	windowMoveNewErr             error
-	windowMoveNewByID            map[string]tabs.WindowMoveToNewResult
-	windowMerge                  tabs.WindowMergeResult
-	windowMergeErr               error
-	windowActivate               tabs.WindowActivateResult
-	windowActivateErr            error
-	windowClose                  tabs.WindowCloseResult
-	windowCloseErr               error
-	windowState                  tabs.WindowBounds
-	windowStateErr               error
-	windowBounds                 tabs.WindowBounds
-	windowBoundsErr              error
-	openDevTools                 tabs.Target
-	openDevToolsErr              error
-	openDevToolsInWindow         tabs.WindowOpenResult
-	openDevToolsInWindowErr      error
-	openDevToolsPanel            tabs.Target
-	openDevToolsPanelErr         error
-	openDevToolsPanelInWindow    tabs.WindowOpenResult
-	openDevToolsPanelInWindowErr error
-	activatedTargetID            string
-	activateErr                  error
-	context                      tabs.PageContext
-	captureErr                   error
-	semanticContext              tabs.SemanticContext
-	semanticErr                  error
-	selection                    tabs.SelectionContext
-	selectionErr                 error
-	devTools                     tabs.DevToolsTarget
-	devToolsErr                  error
-	devToolsPanel                tabs.DevToolsTarget
-	devToolsPanelErr             error
-	deviceResult                 tabs.DeviceEmulationResult
-	deviceErr                    error
+	openedURL                       string
+	targets                         []tabs.Target
+	listErr                         error
+	searchTargets                   []tabs.Target
+	searchErr                       error
+	windows                         []tabs.WindowSummary
+	windowsErr                      error
+	duplicateClose                  tabs.CloseDuplicatesResult
+	duplicateCloseErr               error
+	windowOpen                      tabs.WindowOpenResult
+	windowOpenErr                   error
+	windowMove                      tabs.WindowMoveResult
+	windowMoveErr                   error
+	windowMoveByID                  map[string]tabs.WindowMoveResult
+	windowMoveNew                   tabs.WindowMoveToNewResult
+	windowMoveNewErr                error
+	windowMoveNewByID               map[string]tabs.WindowMoveToNewResult
+	windowMerge                     tabs.WindowMergeResult
+	windowMergeErr                  error
+	windowActivate                  tabs.WindowActivateResult
+	windowActivateErr               error
+	windowClose                     tabs.WindowCloseResult
+	windowCloseErr                  error
+	windowState                     tabs.WindowBounds
+	windowStateErr                  error
+	windowBounds                    tabs.WindowBounds
+	windowBoundsErr                 error
+	openDevTools                    tabs.Target
+	openDevToolsErr                 error
+	openDevToolsInWindow            tabs.WindowOpenResult
+	openDevToolsInWindowErr         error
+	openDevToolsPanel               tabs.Target
+	openDevToolsPanelErr            error
+	openDevToolsPanelInWindow       tabs.WindowOpenResult
+	openDevToolsPanelInWindowErr    error
+	openDevToolsWindowIntoWindow    tabs.DevToolsWindowOpenResult
+	openDevToolsWindowIntoWindowErr error
+	activatedTargetID               string
+	activateErr                     error
+	context                         tabs.PageContext
+	captureErr                      error
+	semanticContext                 tabs.SemanticContext
+	semanticErr                     error
+	selection                       tabs.SelectionContext
+	selectionErr                    error
+	devTools                        tabs.DevToolsTarget
+	devToolsErr                     error
+	devToolsPanel                   tabs.DevToolsTarget
+	devToolsPanelErr                error
+	deviceResult                    tabs.DeviceEmulationResult
+	deviceErr                       error
 }
 
 func (s *stubTabsClient) List() ([]tabs.Target, error) {
@@ -184,6 +186,13 @@ func (s *stubTabsClient) OpenDevToolsPanelInWindow(targetID string, panel string
 		return tabs.WindowOpenResult{}, s.openDevToolsPanelInWindowErr
 	}
 	return s.openDevToolsPanelInWindow, nil
+}
+
+func (s *stubTabsClient) OpenDevToolsWindowIntoWindow(sourceWindowID int, targetWindowID int) (tabs.DevToolsWindowOpenResult, error) {
+	if s.openDevToolsWindowIntoWindowErr != nil {
+		return tabs.DevToolsWindowOpenResult{}, s.openDevToolsWindowIntoWindowErr
+	}
+	return s.openDevToolsWindowIntoWindow, nil
 }
 
 func (s *stubTabsClient) Open(targetURL string) (tabs.Target, error) {
