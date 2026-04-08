@@ -34,6 +34,12 @@ type ApplyAllResult struct {
 	Groups   []ApplyResult `json:"groups"`
 }
 
+type ApplyWindowResult struct {
+	SourceWindowID int           `json:"source_window_id"`
+	Returned       int           `json:"returned"`
+	Groups         []ApplyResult `json:"groups"`
+}
+
 func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -61,6 +67,28 @@ func ApplyAllToNewWindows(client OrganizerClient) (ApplyAllResult, error) {
 		applied, err := applyGroupToNewWindow(client, group)
 		if err != nil {
 			return ApplyAllResult{}, err
+		}
+		result.Groups = append(result.Groups, applied)
+	}
+	result.Returned = len(result.Groups)
+	return result, nil
+}
+
+func ApplyWindowToNewWindows(client OrganizerClient, sourceWindowID int) (ApplyWindowResult, error) {
+	window, err := findWindow(client, sourceWindowID)
+	if err != nil {
+		return ApplyWindowResult{}, err
+	}
+
+	groups := Suggest(window.Targets)
+	result := ApplyWindowResult{
+		SourceWindowID: sourceWindowID,
+		Groups:         make([]ApplyResult, 0, len(groups)),
+	}
+	for _, group := range groups {
+		applied, err := applyGroupToNewWindow(client, group)
+		if err != nil {
+			return ApplyWindowResult{}, err
 		}
 		result.Groups = append(result.Groups, applied)
 	}
@@ -240,12 +268,19 @@ func sourceWindowIDs(client OrganizerClient) (map[string]int, error) {
 }
 
 func ensureWindowExists(client OrganizerClient, windowID int) error {
-	windowTargets, err := sourceWindowIDs(client)
+	_, err := findWindow(client, windowID)
+	return err
+}
+
+func findWindow(client OrganizerClient, windowID int) (tabs.WindowSummary, error) {
+	windows, err := client.Windows()
 	if err != nil {
-		return err
+		return tabs.WindowSummary{}, err
 	}
-	if _, ok := windowTargets["window:"+fmt.Sprintf("%d", windowID)]; !ok {
-		return fmt.Errorf("window %d not found", windowID)
+	for _, window := range windows {
+		if window.WindowID == windowID {
+			return window, nil
+		}
 	}
-	return nil
+	return tabs.WindowSummary{}, fmt.Errorf("window %d not found", windowID)
 }

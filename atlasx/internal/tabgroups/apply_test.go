@@ -385,6 +385,134 @@ func TestApplyAllToWindowRejectsUnknownWindow(t *testing.T) {
 	}
 }
 
+func TestApplyWindowToNewWindowsMovesSuggestedGroupsFromSourceWindow(t *testing.T) {
+	client := &stubOrganizerClient{
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+					{ID: "tab-3", Type: "page", Title: "Build Log - A", URL: "about:blank"},
+					{ID: "tab-4", Type: "page", Title: "Build Log - B", URL: "about:blank"},
+					{ID: "tab-5", Type: "page", Title: "Solo", URL: "https://example.com/solo"},
+				},
+			},
+			{
+				WindowID: 21,
+				Targets: []tabs.Target{
+					{ID: "new-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+				},
+			},
+			{
+				WindowID: 22,
+				Targets: []tabs.Target{
+					{ID: "new-3", Type: "page", Title: "Build Log - A", URL: "about:blank"},
+				},
+			},
+		},
+		moveToNewByID: map[string]tabs.WindowMoveToNewResult{
+			"tab-1": {
+				SourceWindowID: 11,
+				SourceTargetID: "tab-1",
+				Target: tabs.Target{
+					ID:    "new-1",
+					Type:  "page",
+					Title: "Atlas A",
+					URL:   "https://chatgpt.com/atlas/a",
+				},
+			},
+			"tab-3": {
+				SourceWindowID: 11,
+				SourceTargetID: "tab-3",
+				Target: tabs.Target{
+					ID:    "new-3",
+					Type:  "page",
+					Title: "Build Log - A",
+					URL:   "about:blank",
+				},
+			},
+		},
+		moveToWindow: map[string]tabs.WindowMoveResult{
+			"tab-2": {
+				SourceWindowID:    11,
+				TargetWindowID:    21,
+				SourceTargetID:    "tab-2",
+				ActivatedTargetID: "new-1",
+				Target: tabs.Target{
+					ID:    "new-2",
+					Type:  "page",
+					Title: "Atlas B",
+					URL:   "https://chatgpt.com/atlas/b",
+				},
+			},
+			"tab-4": {
+				SourceWindowID:    11,
+				TargetWindowID:    22,
+				SourceTargetID:    "tab-4",
+				ActivatedTargetID: "new-3",
+				Target: tabs.Target{
+					ID:    "new-4",
+					Type:  "page",
+					Title: "Build Log - B",
+					URL:   "about:blank",
+				},
+			},
+		},
+	}
+
+	result, err := ApplyWindowToNewWindows(client, 11)
+	if err != nil {
+		t.Fatalf("apply window to new windows failed: %v", err)
+	}
+	if result.SourceWindowID != 11 || result.Returned != 2 || len(result.Groups) != 2 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if result.Groups[0].GroupID != "title:build log" || result.Groups[1].GroupID != "host:chatgpt.com" {
+		t.Fatalf("unexpected groups: %+v", result.Groups)
+	}
+}
+
+func TestApplyWindowToNewWindowsReturnsEmptyWithoutGroups(t *testing.T) {
+	client := &stubOrganizerClient{
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Solo", URL: "https://example.com"},
+				},
+			},
+		},
+	}
+
+	result, err := ApplyWindowToNewWindows(client, 11)
+	if err != nil {
+		t.Fatalf("apply window to new windows failed: %v", err)
+	}
+	if result.SourceWindowID != 11 || result.Returned != 0 || len(result.Groups) != 0 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+}
+
+func TestApplyWindowToNewWindowsRejectsUnknownWindow(t *testing.T) {
+	client := &stubOrganizerClient{
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 9,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+				},
+			},
+		},
+	}
+
+	if _, err := ApplyWindowToNewWindows(client, 11); err == nil {
+		t.Fatal("expected apply window to new windows to fail")
+	} else if !strings.Contains(err.Error(), "window 11 not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestApplyGroupToWindowMovesTargetsAndKeepsAlignedOnes(t *testing.T) {
 	client := &stubOrganizerClient{
 		targets: []tabs.Target{
