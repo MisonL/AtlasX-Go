@@ -29,6 +29,7 @@ type commandTabsClient interface {
 	SetWindowState(int, string) (tabs.WindowBounds, error)
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
 	OpenDevToolsWindow(string) (tabs.Target, error)
+	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -43,7 +44,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -189,6 +190,16 @@ func runTabs(args []string) error {
 			return errors.New("missing target id for tabs open-devtools")
 		}
 		target, err := client.OpenDevToolsWindow(args[1])
+		if err != nil {
+			return err
+		}
+		fmt.Printf("id=%s type=%s title=%q url=%s\n", target.ID, target.Type, target.Title, target.URL)
+		return nil
+	case "open-devtools-panel":
+		if len(args) < 3 {
+			return errors.New("missing target id or panel for tabs open-devtools-panel")
+		}
+		target, err := client.OpenDevToolsPanelWindow(args[1], args[2])
 		if err != nil {
 			return err
 		}

@@ -37,3 +37,22 @@ func TestDevToolsTargetRejectsMissingFrontendURL(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestResolveDevToolsPanelURLAppendsPanelQuery(t *testing.T) {
+	panelURL, err := resolveDevToolsPanelURL("http://127.0.0.1:9222/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1", "network")
+	if err != nil {
+		t.Fatalf("resolve devtools panel url failed: %v", err)
+	}
+	expected := "http://127.0.0.1:9222/devtools/inspector.html?panel=network&ws=127.0.0.1%3A9222%2Fdevtools%2Fpage%2F1"
+	if panelURL != expected {
+		t.Fatalf("unexpected panel url: %s", panelURL)
+	}
+}
+
+func TestResolveDevToolsPanelURLRejectsBlankPanel(t *testing.T) {
+	if _, err := resolveDevToolsPanelURL("http://127.0.0.1:9222/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1", ""); err == nil {
+		t.Fatal("expected blank panel failure")
+	} else if err.Error() != "panel is required" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

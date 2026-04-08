@@ -3,7 +3,11 @@ package tabs
 import (
 	"fmt"
 	"net/url"
+	"regexp"
+	"strings"
 )
+
+var devToolsPanelPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
 
 type DevToolsTarget struct {
 	ID                  string `json:"id"`
@@ -54,4 +58,24 @@ func resolveDevToolsFrontendURL(baseURL string, devToolsURL string) (string, err
 		return "", err
 	}
 	return base.ResolveReference(parsedURL).String(), nil
+}
+
+func resolveDevToolsPanelURL(devToolsURL string, panel string) (string, error) {
+	panel = strings.TrimSpace(panel)
+	if panel == "" {
+		return "", fmt.Errorf("panel is required")
+	}
+	if !devToolsPanelPattern.MatchString(panel) {
+		return "", fmt.Errorf("invalid devtools panel %q", panel)
+	}
+
+	parsedURL, err := url.Parse(devToolsURL)
+	if err != nil {
+		return "", err
+	}
+
+	query := parsedURL.Query()
+	query.Set("panel", panel)
+	parsedURL.RawQuery = query.Encode()
+	return parsedURL.String(), nil
 }

@@ -38,6 +38,7 @@ type tabClient interface {
 	SetWindowState(int, string) (tabs.WindowBounds, error)
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
 	OpenDevToolsWindow(string) (tabs.Target, error)
+	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
 	Open(string) (tabs.Target, error)
 	OpenWindow(string) (tabs.Target, error)
 	Activate(string) error
@@ -55,8 +56,9 @@ type indexedURLResolver func(macos.Paths, int) (string, error)
 type tabAction func(client tabClient, request tabActionRequest) (any, error)
 
 type tabActionRequest struct {
-	ID  string `json:"id"`
-	URL string `json:"url"`
+	ID    string `json:"id"`
+	URL   string `json:"url"`
+	Panel string `json:"panel"`
 }
 
 type tabEmulationRequest struct {
