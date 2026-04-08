@@ -50,6 +50,8 @@ type stubTabsClient struct {
 	windowStateErr                       error
 	windowBounds                         tabs.WindowBounds
 	windowBoundsErr                      error
+	titleUpdate                          tabs.TitleUpdateResult
+	titleUpdateErr                       error
 	openDevTools                         tabs.Target
 	openDevToolsErr                      error
 	openDevToolsInWindow                 tabs.WindowOpenResult
@@ -164,6 +166,13 @@ func (s *stubTabsClient) SetWindowBounds(windowID int, left int, top int, width 
 		return tabs.WindowBounds{}, s.windowBoundsErr
 	}
 	return s.windowBounds, nil
+}
+
+func (s *stubTabsClient) SetTitle(targetID string, title string) (tabs.TitleUpdateResult, error) {
+	if s.titleUpdateErr != nil {
+		return tabs.TitleUpdateResult{}, s.titleUpdateErr
+	}
+	return s.titleUpdate, nil
 }
 
 func (s *stubTabsClient) OpenDevToolsWindow(targetID string) (tabs.Target, error) {

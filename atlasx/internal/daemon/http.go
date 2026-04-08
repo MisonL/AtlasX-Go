@@ -37,6 +37,7 @@ type tabClient interface {
 	CloseWindow(int) (tabs.WindowCloseResult, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
 	SetWindowBounds(int, int, int, int, int) (tabs.WindowBounds, error)
+	SetTitle(string, string) (tabs.TitleUpdateResult, error)
 	OpenDevToolsWindow(string) (tabs.Target, error)
 	OpenDevToolsInWindow(string, int) (tabs.WindowOpenResult, error)
 	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
@@ -66,6 +67,7 @@ type tabActionRequest struct {
 	ID    string `json:"id"`
 	URL   string `json:"url"`
 	Panel string `json:"panel"`
+	Title string `json:"title"`
 }
 
 type tabOpenDevToolsPanelInWindowRequest struct {

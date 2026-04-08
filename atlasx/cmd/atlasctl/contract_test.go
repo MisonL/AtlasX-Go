@@ -642,6 +642,31 @@ func TestTabsOpenDevToolsPanelWindowToWindowsContract(t *testing.T) {
 	)
 }
 
+func TestTabsSetTitleContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		titleUpdate: tabs.TitleUpdateResult{
+			ID:    "tab-1",
+			Title: "Atlas Workbench",
+			URL:   "https://openai.com/work",
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "set-title", "tab-1", "Atlas Workbench"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs set-title failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"id=tab-1",
+		`title="Atlas Workbench"`,
+		"url=https://openai.com/work",
+	)
+}
+
 func TestTabsOpenDevToolsPanelWindowIntoWindowContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

@@ -73,6 +73,7 @@ go run ./cmd/atlasctl tabs activate-window <window-id>
 go run ./cmd/atlasctl tabs close-window <window-id>
 go run ./cmd/atlasctl tabs set-window-state <window-id> <state>
 go run ./cmd/atlasctl tabs set-window-bounds <window-id> <left> <top> <width> <height>
+go run ./cmd/atlasctl tabs set-title <target-id> <title>
 go run ./cmd/atlasctl tabs navigate <target-id> https://openai.com
 go run ./cmd/atlasctl tabs activate <target-id>
 go run ./cmd/atlasctl tabs close <target-id>
@@ -183,6 +184,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/tabs/close-window`
 - `POST /v1/tabs/window-state`
 - `POST /v1/tabs/window-bounds`
+- `POST /v1/tabs/set-title`
 - `POST /v1/tabs/activate`
 - `POST /v1/tabs/close`
 - `POST /v1/tabs/navigate`
@@ -255,6 +257,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs close-window <window-id>`，可基于当前窗口分组结果逐个关闭指定窗口中的 page targets，返回结构化关闭结果。
 - 当前已提供 `tabs set-window-state <window-id> <state>`，可对指定浏览器窗口应用显式 `windowState` 并返回更新后的结构化窗口 bounds。
 - 当前已提供 `tabs set-window-bounds <window-id> <left> <top> <width> <height>`，可对指定浏览器窗口应用显式位置和尺寸，并返回更新后的结构化窗口 bounds。
+- 当前已提供 `tabs set-title <target-id> <title>`，可通过 page target websocket 显式设置 `document.title`，返回结构化 `id/title/url` 结果，作为标签页重命名的最小控制入口。
 - 当前已提供标签页控制增强：`tabs activate <id>` 和 `tabs close <id>` 可操作已存在的页面级标签。
 - 当前已提供 `tabs navigate <id> <url>`，通过 DevTools websocket 在现有 page target 内导航。
 - 当前已提供 `tabs capture <id>`，可抓取受管 page target 的标题、URL、正文文本以及 `captured_at`、`text_length`、`text_limit`、`text_truncated`、`capture_error` 等结构化上下文字段。
@@ -306,6 +309,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `POST /v1/tabs/close-window`，可基于当前窗口分组结果逐个关闭指定窗口中的 page targets，返回结构化关闭结果。
 - 当前已提供 `POST /v1/tabs/window-state`，可对指定浏览器窗口应用显式 `windowState` 并返回更新后的 bounds，不执行窗口移动或关闭。
 - 当前已提供 `POST /v1/tabs/window-bounds`，可对指定浏览器窗口应用显式位置和尺寸并返回更新后的 bounds，不混入 `windowState` 控制。
+- 当前已提供 `POST /v1/tabs/set-title`，可通过 page target websocket 显式设置 `document.title`，返回结构化 `id/title/url` 结果，不引入第二套浏览器控制通道。
 - 当前已提供 `POST /v1/tabs/emulate-device`，可对指定标签页应用固定设备预设或清除模拟，返回结构化 `preset/viewport/mobile/touch` 结果。
 - 当前已提供 `POST /v1/tabs/open-window`，可通过 browser websocket 创建新浏览器窗口并返回结构化 target JSON，不复用现有 tab。
 - 当前已提供 Chrome 默认 profile 导入基线：`import-chrome` 会复制书签与 Preferences，并记录 History source metadata。
