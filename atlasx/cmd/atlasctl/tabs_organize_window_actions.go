@@ -43,6 +43,29 @@ func runTabsOrganizeWindowToWindows(client commandTabsClient, args []string) err
 	return nil
 }
 
+func runTabsOrganizeWindowIntoWindow(client commandTabsClient, args []string) error {
+	if len(args) < 2 {
+		return errors.New("missing source window id or target window id for tabs organize-window-into-window")
+	}
+	sourceWindowID, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid source window id %q", args[0])
+	}
+	targetWindowID, err := strconv.Atoi(args[1])
+	if err != nil {
+		return fmt.Errorf("invalid target window id %q", args[1])
+	}
+	result, err := tabgroups.ApplyWindowToWindow(client, sourceWindowID, targetWindowID)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("source_window_id=%d target_window_id=%d returned=%d\n", result.SourceWindowID, result.TargetWindowID, result.Returned)
+	for groupIndex, group := range result.Groups {
+		printApplyGroupResult(groupIndex, group)
+	}
+	return nil
+}
+
 func printApplyAllResult(result tabgroups.ApplyAllResult) {
 	fmt.Printf("returned=%d\n", result.Returned)
 	for groupIndex, group := range result.Groups {

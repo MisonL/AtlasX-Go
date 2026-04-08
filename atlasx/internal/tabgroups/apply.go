@@ -40,6 +40,13 @@ type ApplyWindowResult struct {
 	Groups         []ApplyResult `json:"groups"`
 }
 
+type ApplyWindowIntoWindowResult struct {
+	SourceWindowID int           `json:"source_window_id"`
+	TargetWindowID int           `json:"target_window_id"`
+	Returned       int           `json:"returned"`
+	Groups         []ApplyResult `json:"groups"`
+}
+
 func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -89,6 +96,36 @@ func ApplyWindowToNewWindows(client OrganizerClient, sourceWindowID int) (ApplyW
 		applied, err := applyGroupToNewWindow(client, group)
 		if err != nil {
 			return ApplyWindowResult{}, err
+		}
+		result.Groups = append(result.Groups, applied)
+	}
+	result.Returned = len(result.Groups)
+	return result, nil
+}
+
+func ApplyWindowToWindow(client OrganizerClient, sourceWindowID int, targetWindowID int) (ApplyWindowIntoWindowResult, error) {
+	if sourceWindowID == targetWindowID {
+		return ApplyWindowIntoWindowResult{}, fmt.Errorf("source and target window ids must differ")
+	}
+
+	window, err := findWindow(client, sourceWindowID)
+	if err != nil {
+		return ApplyWindowIntoWindowResult{}, err
+	}
+	if err := ensureWindowExists(client, targetWindowID); err != nil {
+		return ApplyWindowIntoWindowResult{}, err
+	}
+
+	groups := Suggest(window.Targets)
+	result := ApplyWindowIntoWindowResult{
+		SourceWindowID: sourceWindowID,
+		TargetWindowID: targetWindowID,
+		Groups:         make([]ApplyResult, 0, len(groups)),
+	}
+	for _, group := range groups {
+		applied, err := applyGroupToWindow(client, group, targetWindowID)
+		if err != nil {
+			return ApplyWindowIntoWindowResult{}, err
 		}
 		result.Groups = append(result.Groups, applied)
 	}
