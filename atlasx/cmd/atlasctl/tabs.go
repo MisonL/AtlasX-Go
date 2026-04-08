@@ -7,6 +7,7 @@ import (
 
 	"atlasx/internal/memory"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/tabgroups"
 	"atlasx/internal/tabs"
 )
 
@@ -42,7 +43,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-group-to-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -329,6 +330,29 @@ func runTabs(args []string) error {
 		return runTabsMemories(paths, client, args[1:])
 	case "organize":
 		return runTabsOrganize(paths, client)
+	case "organize-group-to-window":
+		if len(args) < 2 {
+			return errors.New("missing group id for tabs organize-group-to-window")
+		}
+		result, err := tabgroups.ApplyToNewWindow(client, args[1])
+		if err != nil {
+			return err
+		}
+		fmt.Printf("group_id=%s label=%q window_id=%d returned=%d\n", result.GroupID, result.Label, result.WindowID, result.Returned)
+		for index, moved := range result.MovedTargets {
+			fmt.Printf(
+				"index=%d source_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+				index,
+				moved.SourceWindowID,
+				moved.SourceTargetID,
+				moved.ActivatedTargetID,
+				moved.Target.ID,
+				moved.Target.Type,
+				moved.Target.Title,
+				moved.Target.URL,
+			)
+		}
+		return nil
 	case "recommend-context":
 		return runTabsContextRecommend(paths, client, args[1:])
 	default:
