@@ -45,6 +45,7 @@ go run ./cmd/atlasctl mirror-scan
 go run ./cmd/atlasctl tabs list
 go run ./cmd/atlasctl tabs search <query>
 go run ./cmd/atlasctl tabs windows
+go run ./cmd/atlasctl tabs groups
 go run ./cmd/atlasctl tabs open https://openai.com
 go run ./cmd/atlasctl tabs open-window https://openai.com
 go run ./cmd/atlasctl tabs open-in-window <window-id> https://openai.com
@@ -144,6 +145,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs`
 - `GET /v1/tabs/search`
 - `GET /v1/tabs/windows`
+- `GET /v1/tabs/groups`
 - `GET /v1/tabs/context`
 - `GET /v1/tabs/semantic-context`
 - `GET /v1/tabs/selection`
@@ -229,6 +231,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供最小标签页链路：`tabs list` 读取页面级 targets，`tabs open <url>` 可通过 CDP HTTP 入口创建新标签页。
 - 当前已提供 `tabs search <query>`，可在当前 page target 列表上按 `title/url` 大小写不敏感匹配查询词，返回结构化命中结果。
 - 当前已提供 `tabs windows`，可通过 browser websocket 对当前 page targets 按浏览器窗口分组，输出 `window_id/state/targets` 等只读结构化窗口视图。
+- 当前已提供 `tabs groups`，可复用既有 `tabs windows` 与 `tabgroups.Suggest` 规则生成结构化只读 group 视图，显式返回 `inferred=true`、`window_returned` 与 `window_ids`，用于观测推导分组而非原生浏览器 tab group。
 - 当前已提供 `tabs open-window <url>`，可通过 browser websocket 调用 `Target.createTarget(newWindow=true)` 显式创建新浏览器窗口中的 page target。
 - 当前已提供 `tabs open-in-window <window-id> <url>`，可先聚焦目标窗口，再复用既有 `open(url)` 主链在该窗口中打开新标签。
 - 当前已提供 `tabs move-to-window <tab-id> <target-window-id>`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
@@ -284,6 +287,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/devtools-panel?id=<target-id>&panel=<panel>`，可按标签页解析 `devtools_frontend_url`，在 URL 边界显式编码 `panel` 参数后返回结构化只读 DevTools 面板 URL。
 - 当前已提供 `GET /v1/tabs/search?q=<query>`，可在当前 page target 列表上按 `title/url` 大小写不敏感匹配查询词，返回结构化命中结果。
 - 当前已提供 `GET /v1/tabs/windows`，可按当前 page targets 返回结构化浏览器窗口分组结果，不执行窗口移动或关闭。
+- 当前已提供 `GET /v1/tabs/groups`，可复用既有窗口分组结果与 organize 规则返回结构化只读推导分组视图，显式标注 `inferred=true`，不执行分组写操作。
 - 当前已提供 `POST /v1/tabs/open-in-window`，可先聚焦目标窗口，再复用既有 `open(url)` 主链在该窗口中打开新标签。
 - 当前已提供 `POST /v1/tabs/move-to-window`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
 - 当前已提供 `POST /v1/tabs/move-to-new-window`，可定位指定 page target 所属源窗口，再复用既有 `open-window` 与 `close(target)` 主链把该标签拆到新窗口。

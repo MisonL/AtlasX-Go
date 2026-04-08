@@ -220,6 +220,38 @@ func TestTabsAgentPlanContract(t *testing.T) {
 	)
 }
 
+func TestTabsGroupsContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+				},
+			},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "groups"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs groups failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"inferred=",
+		"returned=",
+		"group_id=",
+		"label=",
+		"window_returned=",
+		"window_id=",
+	)
+}
+
 func TestTabsAgentExecuteContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("OPENAI_API_KEY", "test-key")

@@ -53,6 +53,8 @@
   - 当前已完成
 - `T124`
   - 当前已完成
+- `T125`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -82,6 +84,7 @@
   - `atlasctl tabs recommend-context` 与 `/v1/tabs/context-recommendations`
   - `atlasctl tabs extract-context` 与 `/v1/tabs/semantic-context`
   - `atlasctl tabs windows` 与 `/v1/tabs/windows`
+  - `atlasctl tabs groups` 与 `/v1/tabs/groups`
   - `atlasctl tabs search` 与 `/v1/tabs/search`
   - `atlasctl tabs open-in-window` 与 `/v1/tabs/open-in-window`
   - `atlasctl tabs move-to-window` 与 `/v1/tabs/move-to-window`
@@ -117,7 +120,7 @@
   - policy 只读视图统一汇总回环监听默认限制、危险远程控制开关、shared profile 非受管、sidebar `api_key_env` 名称与镜像/导入白名单
   - permissions 只读视图统一汇总当前未实现真实 TCC 探测、未实现权限提示、未实现授权写路径，以及 OS 权限失败显式冒泡的代码事实
   - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
-  - 标签页搜索、structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获、按标签页 DevTools URL 解析、按指定 panel 的只读 DevTools URL 解析、固定设备预设模拟、browser websocket 新窗口打开、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、标签页标题重命名、DevTools 新窗口打开、DevTools 定向打开到指定现有窗口、按指定 panel 的 DevTools 新窗口打开、按指定 panel 定向打开到指定现有窗口、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制与显式窗口 bounds 控制
+  - 标签页搜索、structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获、按标签页 DevTools URL 解析、按指定 panel 的只读 DevTools URL 解析、固定设备预设模拟、browser websocket 新窗口打开、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、推导式标签页分组视图、窗口合并、标签页标题重命名、DevTools 新窗口打开、DevTools 定向打开到指定现有窗口、按指定 panel 的 DevTools 新窗口打开、按指定 panel 定向打开到指定现有窗口、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制与显式窗口 bounds 控制
   - browser-data open
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
