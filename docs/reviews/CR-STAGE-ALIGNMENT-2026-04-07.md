@@ -164,13 +164,13 @@
   - 按标签页聚合的 Browser memories 只读入口
   - 基于 page context + memory 的结构化页面建议
   - 基于 page context + suggestions + context recommendations + memory 的结构化 Agent 只读预演计划（含 step 级 `executable/execution_path/requires_provider` 元数据）
-  - 基于 agent plan 的显式确认单步执行入口
+  - 基于 agent plan 的显式确认执行入口（支持单步与显式有界链式执行：`step_ids + max_steps`）
   - 基于 page context + 同 host 标签页 + memory 的结构化上下文推荐
   - 基于 DOM 的结构化上下文提取
   - 基于 page targets 的结构化标签整理建议
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
-  - 仍未引入向量数据库、外部检索服务或真正多轮代理执行器；当前 agent execute 已支持 sidebar 类型步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，未支持的步骤类型会显式拒绝
+  - 仍未引入向量数据库、外部检索服务或真正多轮代理执行器；当前 agent execute 已支持 sidebar 类型步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，并支持用户显式提供 `step_ids` + `max_steps` 的有界链式执行，未支持的步骤类型会显式拒绝
   - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、DevTools 新窗口打开、按指定 panel 的 DevTools 新窗口打开、按指定 panel 生成只读 DevTools URL、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制和显式 bounds 控制，尚未覆盖完整 DevTools 面板壳层或更深层窗口编排
 
 ## 冻结边界

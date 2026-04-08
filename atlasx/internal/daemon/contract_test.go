@@ -446,6 +446,91 @@ func TestTabAgentExecuteMemorySnippetEndpointContract(t *testing.T) {
 	}
 }
 
+func TestTabAgentExecuteBatchEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T17:00:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	client := &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T17:01:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	}
+	restoreDaemonHooks(t, client)
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/tabs/agent-execute",
+		bytes.NewBufferString(`{"id":"tab-1","step_ids":["recommend-related-tab-tab-2","recommend-memory-relevant-page-capture"],"max_steps":2,"confirm":true}`),
+	)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"tab_id",
+		"requested",
+		"executed",
+		"stopped",
+		"max_steps",
+		"trace_id",
+		"memory_persisted",
+		"rollback",
+		"results",
+	)
+	if payload["requested"] != float64(2) || payload["executed"] != float64(2) {
+		t.Fatalf("unexpected batch payload: %+v", payload)
+	}
+	results, ok := payload["results"].([]any)
+	if !ok || len(results) != 2 {
+		t.Fatalf("unexpected results payload: %+v", payload)
+	}
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

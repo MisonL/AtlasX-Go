@@ -286,3 +286,115 @@ func TestTabsAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestTabsAgentExecuteRunsBoundedBatchSteps(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T16:10:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	client := &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T16:11:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	}
+	restoreCommandTabsClient(t, client)
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{
+			"tabs", "agent-execute", "--confirm", "--max-steps", "2",
+			"tab-1",
+			"recommend-related-tab-tab-2",
+			"recommend-memory-relevant-page-capture",
+		})
+	})
+	if err != nil {
+		t.Fatalf("run tabs agent-execute batch failed: %v", err)
+	}
+	for _, fragment := range []string{
+		"requested=2",
+		"executed=2",
+		"stopped=false",
+		"max_steps=2",
+		"batch_index=0",
+		"step_kind=related_tab",
+		"batch_index=1",
+		"step_kind=memory_snippet",
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Fatalf("expected output to contain %q, got %s", fragment, output)
+		}
+	}
+	if client.activatedTargetID != "tab-2" {
+		t.Fatalf("expected activated target id tab-2, got %q", client.activatedTargetID)
+	}
+}
+
+func TestTabsAgentExecuteRejectsBatchBeyondMaxSteps(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T16:20:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	})
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{
+			"tabs", "agent-execute", "--confirm", "--max-steps", "1",
+			"tab-1",
+			"recommend-related-tab-tab-2",
+			"recommend-step-not-present",
+		})
+	})
+	if err == nil {
+		t.Fatal("expected tabs agent-execute to fail when requested steps exceed max_steps")
+	}
+	if !strings.Contains(err.Error(), "exceeds max_steps") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

@@ -32,19 +32,20 @@ func runTabsAgentExecute(paths macos.Paths, client commandTabsClient, args []str
 	fs := flag.NewFlagSet("tabs agent-execute", flag.ContinueOnError)
 	fs.SetOutput(discardCommandOutput{})
 
-	confirm := fs.Bool("confirm", false, "confirm executing a single agent plan step")
+	confirm := fs.Bool("confirm", false, "confirm executing one or more agent plan steps")
+	maxSteps := fs.Int("max-steps", 1, "maximum number of agent plan steps allowed in this request")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	if fs.NArg() < 2 {
-		return errors.New("missing target id or step id for tabs agent-execute")
+		return errors.New("missing target id or step id list for tabs agent-execute")
 	}
 	if !*confirm {
 		return agentplan.ErrConfirmationRequired
 	}
 
 	tabID := fs.Arg(0)
-	stepID := fs.Arg(1)
+	stepIDs := fs.Args()[1:]
 	context, memorySnippets, plan, err := loadCommandAgentPlan(paths, client, tabID)
 	if err != nil {
 		return err
@@ -56,17 +57,38 @@ func runTabsAgentExecute(paths macos.Paths, client commandTabsClient, args []str
 	}
 
 	traceID := sidebar.NewTraceID()
-	result, err := agentplan.Execute(config, context, memorySnippets, plan, stepID, *confirm, agentplan.ExecutionActions{
-		ActivateTab: client.Activate,
-	})
-	if err != nil {
-		return finishSidebarCommand(paths, traceID, err)
+	if len(stepIDs) == 1 {
+		result, err := agentplan.Execute(config, context, memorySnippets, plan, stepIDs[0], *confirm, agentplan.ExecutionActions{
+			ActivateTab: client.Activate,
+		})
+		if err != nil {
+			return finishSidebarCommand(paths, traceID, err)
+		}
+		result.TraceID = traceID
+		if err := finishSidebarCommand(paths, traceID, nil); err != nil {
+			return err
+		}
+		printAgentExecution(result)
+		return nil
 	}
-	result.TraceID = traceID
+
+	batch, err := agentplan.ExecuteBatch(config, context, memorySnippets, plan, stepIDs, *confirm, agentplan.ExecutionActions{
+		ActivateTab: client.Activate,
+	}, *maxSteps)
+	batch.TraceID = traceID
+	for index := range batch.Results {
+		batch.Results[index].TraceID = traceID
+	}
+	if err != nil {
+		_ = finishSidebarCommand(paths, traceID, err)
+		printAgentBatchExecution(batch)
+		return err
+	}
+
 	if err := finishSidebarCommand(paths, traceID, nil); err != nil {
 		return err
 	}
-	printAgentExecution(result)
+	printAgentBatchExecution(batch)
 	return nil
 }
 
@@ -167,4 +189,26 @@ func printAgentExecution(result agentplan.ExecutionResult) {
 	)
 	fmt.Printf("result=%q\n", result.Result)
 	fmt.Printf("context_summary=%q\n", result.ContextSummary)
+}
+
+func printAgentBatchExecution(batch agentplan.BatchExecutionResult) {
+	fmt.Printf(
+		"tab_id=%s requested=%d executed=%d stopped=%t failed_step_id=%s max_steps=%d trace_id=%s memory_persisted=%t rollback=%s\n",
+		batch.TabID,
+		batch.Requested,
+		batch.Executed,
+		batch.Stopped,
+		batch.FailedStepID,
+		batch.MaxSteps,
+		batch.TraceID,
+		batch.MemoryPersisted,
+		batch.Rollback,
+	)
+	if batch.Failure != "" {
+		fmt.Printf("failure=%q\n", batch.Failure)
+	}
+	for index, result := range batch.Results {
+		fmt.Printf("batch_index=%d ", index)
+		printAgentExecution(result)
+	}
 }

@@ -216,3 +216,100 @@ func TestExecuteRejectsPreviewOnlyStep(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestExecuteBatchRunsOrderedSteps(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	config := sidebar.FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	})
+
+	activatedTabID := ""
+	result, err := ExecuteBatch(
+		config,
+		tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T16:00:00Z",
+		},
+		[]string{"page_capture occurred_at=2026-04-08T15:00:00Z title=\"Atlas\" url=https://chatgpt.com/atlas"},
+		Plan{
+			Steps: []Step{
+				{
+					ID:                   "recommend-related-tab-tab-2",
+					Kind:                 "related_tab",
+					Title:                "Atlas docs",
+					TabID:                "tab-2",
+					URL:                  "https://chatgpt.com/docs",
+					RequiresConfirmation: true,
+				},
+				{
+					ID:                   "recommend-memory-relevant-page-capture",
+					Kind:                 "memory_snippet",
+					Title:                "Relevant page capture",
+					Snippet:              "page_capture occurred_at=2026-04-08T15:00:00Z title=\"Atlas\" url=https://chatgpt.com/atlas",
+					RequiresConfirmation: true,
+				},
+			},
+		},
+		[]string{"recommend-related-tab-tab-2", "recommend-memory-relevant-page-capture"},
+		true,
+		ExecutionActions{
+			ActivateTab: func(tabID string) error {
+				activatedTabID = tabID
+				return nil
+			},
+		},
+		2,
+	)
+	if err != nil {
+		t.Fatalf("execute batch failed: %v", err)
+	}
+	if activatedTabID != "tab-2" {
+		t.Fatalf("expected activated tab id tab-2, got %q", activatedTabID)
+	}
+	if result.Requested != 2 || result.Executed != 2 || result.Stopped {
+		t.Fatalf("unexpected batch result flags: %+v", result)
+	}
+	if len(result.Results) != 2 || result.Results[0].StepKind != "related_tab" || result.Results[1].StepKind != "memory_snippet" {
+		t.Fatalf("unexpected batch results: %+v", result.Results)
+	}
+	if result.Rollback == "" {
+		t.Fatalf("expected rollback summary, got empty: %+v", result)
+	}
+}
+
+func TestExecuteBatchRejectsStepCountBeyondMaxSteps(t *testing.T) {
+	_, err := ExecuteBatch(
+		sidebar.Config{},
+		tabs.PageContext{ID: "tab-1"},
+		nil,
+		Plan{
+			Steps: []Step{
+				{ID: "step-1", Kind: "related_tab", TabID: "tab-2"},
+				{ID: "step-2", Kind: "related_tab", TabID: "tab-3"},
+			},
+		},
+		[]string{"step-1", "step-2"},
+		true,
+		ExecutionActions{ActivateTab: func(string) error { return nil }},
+		1,
+	)
+	if !errors.Is(err, ErrStepBatchExceeded) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

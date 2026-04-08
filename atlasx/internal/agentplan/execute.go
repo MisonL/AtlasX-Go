@@ -11,6 +11,8 @@ import (
 
 var (
 	ErrConfirmationRequired = errors.New("agent execute requires explicit confirmation")
+	ErrStepSequenceRequired = errors.New("agent execute requires at least one step")
+	ErrStepBatchExceeded    = errors.New("agent execute requested step count exceeds max_steps")
 	ErrStepNotFound         = errors.New("agent plan step was not found")
 	ErrStepNotExecutable    = errors.New("agent plan step is preview-only and cannot be executed")
 	ErrStepActionRequired   = errors.New("agent execute action is required for this step kind")
@@ -37,6 +39,20 @@ type ExecutionResult struct {
 	ContextSummary  string `json:"context_summary,omitempty"`
 	MemoryPersisted bool   `json:"memory_persisted"`
 	Rollback        string `json:"rollback"`
+}
+
+type BatchExecutionResult struct {
+	TabID           string            `json:"tab_id"`
+	Requested       int               `json:"requested"`
+	Executed        int               `json:"executed"`
+	Stopped         bool              `json:"stopped"`
+	FailedStepID    string            `json:"failed_step_id,omitempty"`
+	Failure         string            `json:"failure,omitempty"`
+	MaxSteps        int               `json:"max_steps"`
+	TraceID         string            `json:"trace_id"`
+	MemoryPersisted bool              `json:"memory_persisted"`
+	Rollback        string            `json:"rollback"`
+	Results         []ExecutionResult `json:"results"`
 }
 
 func Execute(config sidebar.Config, context tabs.PageContext, memorySnippets []string, plan Plan, stepID string, confirmed bool, actions ExecutionActions) (ExecutionResult, error) {
@@ -71,6 +87,63 @@ func Execute(config sidebar.Config, context tabs.PageContext, memorySnippets []s
 	default:
 		return ExecutionResult{}, fmt.Errorf("%w: %s (%s)", ErrStepNotExecutable, step.ID, step.Kind)
 	}
+}
+
+func ExecuteBatch(config sidebar.Config, context tabs.PageContext, memorySnippets []string, plan Plan, stepIDs []string, confirmed bool, actions ExecutionActions, maxSteps int) (BatchExecutionResult, error) {
+	if !confirmed {
+		return BatchExecutionResult{}, ErrConfirmationRequired
+	}
+	if len(stepIDs) == 0 {
+		return BatchExecutionResult{}, ErrStepSequenceRequired
+	}
+	if maxSteps <= 0 {
+		maxSteps = 1
+	}
+	if len(stepIDs) > maxSteps {
+		err := fmt.Errorf("%w: requested=%d max_steps=%d", ErrStepBatchExceeded, len(stepIDs), maxSteps)
+		return BatchExecutionResult{
+			TabID:           context.ID,
+			Requested:       len(stepIDs),
+			Executed:        0,
+			Stopped:         true,
+			Failure:         err.Error(),
+			MaxSteps:        maxSteps,
+			MemoryPersisted: false,
+			Rollback:        "not_required_no_steps_executed",
+			Results:         nil,
+		}, err
+	}
+
+	results := make([]ExecutionResult, 0, len(stepIDs))
+	for _, stepID := range stepIDs {
+		result, err := Execute(config, context, memorySnippets, plan, stepID, confirmed, actions)
+		if err != nil {
+			return BatchExecutionResult{
+				TabID:           context.ID,
+				Requested:       len(stepIDs),
+				Executed:        len(results),
+				Stopped:         true,
+				FailedStepID:    stepID,
+				Failure:         err.Error(),
+				MaxSteps:        maxSteps,
+				MemoryPersisted: false,
+				Rollback:        deriveBatchRollback(results),
+				Results:         results,
+			}, err
+		}
+		results = append(results, result)
+	}
+
+	return BatchExecutionResult{
+		TabID:           context.ID,
+		Requested:       len(stepIDs),
+		Executed:        len(results),
+		Stopped:         false,
+		MaxSteps:        maxSteps,
+		MemoryPersisted: false,
+		Rollback:        deriveBatchRollback(results),
+		Results:         results,
+	}, nil
 }
 
 func executeSummarize(config sidebar.Config, context tabs.PageContext, memorySnippets []string, result ExecutionResult) (ExecutionResult, error) {
@@ -168,4 +241,31 @@ func findStep(plan Plan, stepID string) (Step, error) {
 		}
 	}
 	return Step{}, fmt.Errorf("%w: %s", ErrStepNotFound, stepID)
+}
+
+func deriveBatchRollback(results []ExecutionResult) string {
+	if len(results) == 0 {
+		return "not_required_no_steps_executed"
+	}
+	if len(results) == 1 {
+		return results[0].Rollback
+	}
+
+	rollbacks := make([]string, 0, len(results))
+	seen := make(map[string]struct{}, len(results))
+	for _, result := range results {
+		key := strings.TrimSpace(result.Rollback)
+		if key == "" {
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		rollbacks = append(rollbacks, key)
+	}
+	if len(rollbacks) == 0 {
+		return "not_required_no_memory_persisted"
+	}
+	return strings.Join(rollbacks, ";")
 }

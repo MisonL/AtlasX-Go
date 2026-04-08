@@ -305,3 +305,117 @@ func TestTabAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
 		t.Fatalf("unexpected body: %s", recorder.Body.String())
 	}
 }
+
+func TestTabAgentExecuteRunsBoundedBatchSteps(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T16:30:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	client := &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T16:31:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	}
+	restoreDaemonHooks(t, client)
+
+	body := bytes.NewBufferString(`{"id":"tab-1","step_ids":["recommend-related-tab-tab-2","recommend-memory-relevant-page-capture"],"max_steps":2,"confirm":true}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/tabs/agent-execute", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	for _, fragment := range []string{
+		`"requested":2`,
+		`"executed":2`,
+		`"stopped":false`,
+		`"max_steps":2`,
+		`"step_kind":"related_tab"`,
+		`"step_kind":"memory_snippet"`,
+	} {
+		if !strings.Contains(recorder.Body.String(), fragment) {
+			t.Fatalf("expected body to contain %q, got %s", fragment, recorder.Body.String())
+		}
+	}
+	if client.activatedTargetID != "tab-2" {
+		t.Fatalf("expected activated target id tab-2, got %q", client.activatedTargetID)
+	}
+}
+
+func TestTabAgentExecuteRejectsBatchBeyondMaxSteps(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	if paths, err := macos.DiscoverPaths(); err == nil {
+		if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{}); err != nil {
+			t.Fatalf("save config failed: %v", err)
+		}
+	} else {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T16:40:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+			{ID: "tab-2", Type: "page", Title: "Atlas docs", URL: "https://chatgpt.com/docs"},
+		},
+	})
+
+	body := bytes.NewBufferString(`{"id":"tab-1","step_ids":["recommend-related-tab-tab-2","recommend-step-not-present"],"max_steps":1,"confirm":true}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/tabs/agent-execute", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !strings.Contains(recorder.Body.String(), "exceeds max_steps") {
+		t.Fatalf("unexpected body: %s", recorder.Body.String())
+	}
+}
