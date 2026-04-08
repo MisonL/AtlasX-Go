@@ -13,6 +13,8 @@
   - 当前已完成
 - `T104`
   - 当前已完成
+- `T105`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -22,6 +24,7 @@
 - 当前项目已经具备：
   - 统一 CLI 与 HTTP 控制面
   - 统一 settings 只读入口：`atlasctl settings` 与 `/v1/settings`
+  - 统一默认浏览器只读入口：`atlasctl default-browser status` 与 `/v1/default-browser`
   - 统一 memory 只读入口：`atlasctl memory list` 与 `/v1/memory`
   - 统一 memory 检索入口：`atlasctl memory search` 与 `/v1/memory/search`
   - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
@@ -80,10 +83,14 @@
 - `memory_present=false`
 - `runtime_manifest_present=false`
 - `sidebar_qa_ready=false`
+- `default_browser_http_bundle_id=org.mozilla.firefox`
+- `default_browser_https_bundle_id=org.mozilla.firefox`
+- `default_browser_consistent=true`
 
 当前解释：
 
 - 本机系统 Chrome 可发现
+- 本机 LaunchServices 当前 `http/https` 默认浏览器一致，均指向 `org.mozilla.firefox`
 - 当前没有受管浏览器会话
 - mirror/import 已有历史落盘
 - 当前没有 staged managed runtime

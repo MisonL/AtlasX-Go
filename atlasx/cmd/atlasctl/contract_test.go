@@ -6,9 +6,47 @@ import (
 	"strings"
 	"testing"
 
+	"atlasx/internal/defaultbrowser"
 	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/macos"
 )
+
+func TestDefaultBrowserStatusContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previous := readDefaultBrowserStatus
+	readDefaultBrowserStatus = func() (defaultbrowser.Status, error) {
+		return defaultbrowser.Status{
+			Source:        "launchservices",
+			HTTPBundleID:  "org.mozilla.firefox",
+			HTTPRole:      "all",
+			HTTPKnown:     true,
+			HTTPSBundleID: "org.mozilla.firefox",
+			HTTPSRole:     "all",
+			HTTPSKnown:    true,
+			Consistent:    true,
+		}, nil
+	}
+	t.Cleanup(func() {
+		readDefaultBrowserStatus = previous
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"default-browser", "status"})
+	})
+	if err != nil {
+		t.Fatalf("run default-browser status failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"source=launchservices",
+		"http_bundle_id=org.mozilla.firefox",
+		"http_role=all",
+		"https_bundle_id=org.mozilla.firefox",
+		"https_role=all",
+		"consistent=true",
+	)
+}
 
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())

@@ -12,6 +12,7 @@
 - `atlasctl blueprint`
 - `atlasctl doctor`
 - `atlasctl settings`
+- `atlasctl default-browser status`
 - `atlasctl memory list`
 - `atlasctl memory search <question>`
 - `atlasctl sidebar status`
@@ -55,6 +56,7 @@
 - `atlasctl tabs extract-context <target-id>`
 - `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
 - `atlasd /v1/settings`
+- `atlasd /v1/default-browser`
 - `atlasd /v1/memory` 与 `/v1/memory/search`
 - `atlasd /v1/tabs|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|open-devtools-panel|close-duplicates|activate-window|close-window|window-state|window-bounds|activate|close|navigate|context|semantic-context|selection|suggestions|memories|context-recommendations|organize|organize-window|organize-group-to-window|organize-group-into-window|organize-to-windows|organize-into-window|organize-window-to-windows|organize-window-into-window|organize-window-group-to-window|organize-window-group-into-window|devtools|devtools-panel|emulate-device`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
