@@ -17,6 +17,8 @@
   - 当前已完成
 - `T106`
   - 当前已完成
+- `T107`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -28,6 +30,7 @@
   - 统一 settings 只读入口：`atlasctl settings` 与 `/v1/settings`
   - 统一默认浏览器只读入口：`atlasctl default-browser status` 与 `/v1/default-browser`
   - 统一日志状态只读入口：`atlasctl logs status` 与 `/v1/logs`
+  - 统一更新状态只读入口：`atlasctl updates status` 与 `/v1/updates`
   - 统一 memory 只读入口：`atlasctl memory list` 与 `/v1/memory`
   - 统一 memory 检索入口：`atlasctl memory search` 与 `/v1/memory/search`
   - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
@@ -91,12 +94,16 @@
 - `default_browser_consistent=true`
 - `logs_present=false`
 - `logs_file_count=0`
+- `updates_manifest_present=false`
+- `updates_plan_present=false`
+- `updates_plan_pending=false`
 
 当前解释：
 
 - 本机系统 Chrome 可发现
 - 本机 LaunchServices 当前 `http/https` 默认浏览器一致，均指向 `org.mozilla.firefox`
 - 本机当前 `Application Support/AtlasX/logs` 尚不存在，日志状态入口返回 `present=false`
+- 本机当前没有 staged managed runtime，也没有 install plan，顶层更新状态入口返回 `manifest_present=false`、`plan_present=false`
 - 当前没有受管浏览器会话
 - mirror/import 已有历史落盘
 - 当前没有 staged managed runtime

@@ -67,6 +67,28 @@ func TestLogsStatusContract(t *testing.T) {
 	)
 }
 
+func TestUpdatesStatusContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"updates", "status"})
+	})
+	if err != nil {
+		t.Fatalf("run updates status failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"runtime_root=",
+		"manifest_present=",
+		"staged_version=",
+		"staged_ready=",
+		"plan_present=",
+		"plan_phase=",
+		"plan_pending=",
+		"plan_in_flight=",
+	)
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
