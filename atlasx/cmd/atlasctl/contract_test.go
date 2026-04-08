@@ -10,6 +10,7 @@ import (
 	"atlasx/internal/defaultbrowser"
 	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/tabs"
 )
 
 func TestDefaultBrowserStatusContract(t *testing.T) {
@@ -174,6 +175,41 @@ func TestPermissionsStatusContract(t *testing.T) {
 		"permission_prompt_supported=",
 		"permission_write_supported=",
 		"os_policy_failures_surface=",
+	)
+}
+
+func TestTabsAgentPlanContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T13:00:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "agent-plan", "tab-1"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs agent-plan failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"goal=",
+		"returned=",
+		"read_only=",
+		"executed=",
+		"suggestion_returned=",
+		"recommendation_returned=",
+		"rollback=",
+		"step_id=",
 	)
 }
 

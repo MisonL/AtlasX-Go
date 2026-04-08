@@ -158,6 +158,50 @@ func TestPermissionsEndpointContract(t *testing.T) {
 	)
 }
 
+func TestTabAgentPlanEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T13:00:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+		},
+	})
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/tabs/agent-plan?id=tab-1", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"id",
+		"title",
+		"url",
+		"captured_at",
+		"goal",
+		"read_only",
+		"executed",
+		"returned",
+		"memory_returned",
+		"suggestion_returned",
+		"recommendation_returned",
+		"rollback",
+		"guardrails",
+		"steps",
+	)
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

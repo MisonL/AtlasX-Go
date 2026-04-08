@@ -45,7 +45,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-panel, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -340,6 +340,8 @@ func runTabs(args []string) error {
 		return runTabsEmulateDevice(client, args[1:])
 	case "suggest":
 		return runTabsSuggest(paths, client, args[1:])
+	case "agent-plan":
+		return runTabsAgentPlan(paths, client, args[1:])
 	case "memories":
 		return runTabsMemories(paths, client, args[1:])
 	case "organize":
