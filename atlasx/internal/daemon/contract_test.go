@@ -131,6 +131,33 @@ func TestPolicyEndpointContract(t *testing.T) {
 	)
 }
 
+func TestPermissionsEndpointContract(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/v1/permissions", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"source",
+		"native_bridge_present",
+		"granted_state_observable",
+		"accessibility_probe_supported",
+		"screen_recording_probe_supported",
+		"automation_probe_supported",
+		"full_disk_access_probe_supported",
+		"permission_prompt_supported",
+		"permission_write_supported",
+		"permission_state_persisted",
+		"os_policy_failures_surface",
+		"notes",
+	)
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

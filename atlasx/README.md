@@ -18,6 +18,7 @@ go run ./cmd/atlasctl doctor
 go run ./cmd/atlasctl doctor --json
 go run ./cmd/atlasctl profile status
 go run ./cmd/atlasctl policy status
+go run ./cmd/atlasctl permissions status
 go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl settings
 go run ./cmd/atlasctl default-browser status
@@ -102,6 +103,7 @@ bash scripts/e2e_gate.sh
 - `atlasd` 默认只允许回环监听地址
 - 若必须监听非回环地址，需显式传 `--allow-remote-control`
 - 该危险开关会扩大无鉴权控制面的暴露面，只适合受控内网或本机调试环境
+- 当前未实现真实 macOS TCC 探测、权限提示或授权写路径；OS 权限拒绝会按原始错误显式暴露
 
 ## 主要 HTTP API
 
@@ -110,6 +112,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/doctor`
 - `GET /v1/profile`
 - `GET /v1/policy`
+- `GET /v1/permissions`
 - `GET /v1/settings`
 - `GET /v1/default-browser`
 - `GET /v1/logs`
@@ -184,6 +187,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `atlasctl doctor --json` 与 `GET /v1/doctor`，可把现有 doctor 诊断主链以结构化 JSON 暴露出来；默认 `atlasctl doctor` 的文本输出保持不变。
 - 当前已提供 `atlasctl profile status` 与 `GET /v1/profile`，可读取 profiles root、默认 profile、当前选中模式和 isolated profile 目录状态；shared profile 仍显式标记为非受管。
 - 当前已提供 `atlasctl policy status` 与 `GET /v1/policy`，可统一汇总回环监听默认限制、危险远程控制开关、shared profile 非受管、sidebar 仅暴露 `api_key_env` 名称与镜像/导入路径白名单；当前不提供策略写入或动态执行态审计。
+- 当前已提供 `atlasctl permissions status` 与 `GET /v1/permissions`，可统一导出当前代码库的权限能力边界，包括未实现真实 TCC 探测、未实现权限提示、未实现授权写路径，以及 OS 权限拒绝会显式冒泡；当前不伪造系统已授权或未授权状态。
 - 受管 launcher management 当前只覆盖隔离 profile 模式；共享 profile 模式明确视为非受管。
 - 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
 - 当前 Chrome runtime 探测已区分 `system_auto` 与 `managed_auto` 来源；若 `Application Support/AtlasX/runtime/Chromium.app` 下存在可执行 bundle，诊断口径会优先识别为 managed runtime。

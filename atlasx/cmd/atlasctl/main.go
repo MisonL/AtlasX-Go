@@ -25,7 +25,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing command: blueprint, doctor, launch-webapp, status, profile, policy, settings, default-browser, logs, updates, sidebar, stop-webapp, runtime, mirror-scan, tabs, memory, import-chrome, import-safari, history, downloads, bookmarks")
+		return errors.New("missing command: blueprint, doctor, launch-webapp, status, profile, policy, permissions, settings, default-browser, logs, updates, sidebar, stop-webapp, runtime, mirror-scan, tabs, memory, import-chrome, import-safari, history, downloads, bookmarks")
 	}
 
 	switch args[0] {
@@ -42,6 +42,8 @@ func run(args []string) error {
 		return runProfile(args[1:])
 	case "policy":
 		return runPolicy(args[1:])
+	case "permissions":
+		return runPermissions(args[1:])
 	case "settings":
 		return runSettings(args[1:])
 	case "default-browser":

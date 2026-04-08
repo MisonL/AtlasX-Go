@@ -156,6 +156,27 @@ func TestPolicyStatusContract(t *testing.T) {
 	)
 }
 
+func TestPermissionsStatusContract(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return run([]string{"permissions", "status"})
+	})
+	if err != nil {
+		t.Fatalf("run permissions status failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"source=",
+		"granted_state_observable=",
+		"accessibility_probe_supported=",
+		"screen_recording_probe_supported=",
+		"automation_probe_supported=",
+		"full_disk_access_probe_supported=",
+		"permission_prompt_supported=",
+		"permission_write_supported=",
+		"os_policy_failures_surface=",
+	)
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-08
-- 目标: 将 `T001-T110` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T110` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、默认浏览器、日志、更新和结构化 doctor 诊断入口与统一 gate/runbook 入口
+- 目标: 将 `T001-T111` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T111` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -26,9 +26,11 @@
   - `/v1/doctor`
   - `/v1/profile`
   - `/v1/policy`
+  - `/v1/permissions`
   - `atlasctl settings`
   - `atlasctl profile status`
   - `atlasctl policy status`
+  - `atlasctl permissions status`
   - `atlasctl default-browser status`
   - `atlasctl logs status`
   - `atlasctl updates status`
@@ -45,6 +47,7 @@
   - config/profile/support root 基础状态面
   - profile 只读状态面
   - 企业策略只读状态面
+  - 权限能力边界只读状态面
   - 默认浏览器 LaunchServices 只读状态面
   - logs 目录只读状态面
   - 顶层更新状态只读视图
@@ -60,6 +63,7 @@
   - doctor JSON 当前直接复用现有 diagnostics 主链，JSON 键名保持 Go 结构体默认命名，不额外引入第二套诊断口径
   - profile 状态当前只输出默认 profile、选中模式和 isolated 目录事实，不处理 profile 迁移或共享 profile 写路径
   - policy 状态当前只汇总本地治理护栏事实，不提供策略写入、动态执行态审计或新策略文件
+  - permissions 状态当前只导出代码级权限边界事实，不探测真实 TCC 授权状态、不触发权限提示、也不提供授权写路径
   - 没有长期后台作业编排或多节点协调
 
 ### Phase 2 Browser Capability Takeover
@@ -175,6 +179,7 @@
   - `/v1/doctor`
   - `/v1/profile`
   - `/v1/policy`
+  - `/v1/permissions`
   - `/v1/runtime/*`
   - `/v1/history*`
   - `/v1/downloads*`

@@ -25,6 +25,8 @@
   - 当前已完成
 - `T110`
   - 当前已完成
+- `T111`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -40,6 +42,7 @@
   - 统一结构化 doctor 诊断入口：`atlasctl doctor --json` 与 `/v1/doctor`
   - 统一 profile 状态只读入口：`atlasctl profile status` 与 `/v1/profile`
   - 统一企业策略只读入口：`atlasctl policy status` 与 `/v1/policy`
+  - 统一权限边界只读入口：`atlasctl permissions status` 与 `/v1/permissions`
   - 统一 memory 只读入口：`atlasctl memory list` 与 `/v1/memory`
   - 统一 memory 检索入口：`atlasctl memory search` 与 `/v1/memory/search`
   - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
@@ -78,6 +81,7 @@
   - `atlasctl tabs organize` 与 `/v1/tabs/organize`
   - `atlasd` 默认仅回环监听，非回环监听需显式危险开关
   - policy 只读视图统一汇总回环监听默认限制、危险远程控制开关、shared profile 非受管、sidebar `api_key_env` 名称与镜像/导入白名单
+  - permissions 只读视图统一汇总当前未实现真实 TCC 探测、未实现权限提示、未实现授权写路径，以及 OS 权限失败显式冒泡的代码事实
   - `atlasctl tabs selection|devtools` 与 `/v1/tabs/selection|devtools`
   - 标签页搜索、structured tabs capture、DOM 结构化上下文提取、原生文本选区捕获、按标签页 DevTools URL 解析、按指定 panel 的只读 DevTools URL 解析、固定设备预设模拟、browser websocket 新窗口打开、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、DevTools 新窗口打开、按指定 panel 的 DevTools 新窗口打开、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制与显式窗口 bounds 控制
   - browser-data open
@@ -120,6 +124,15 @@
 - `policy_shared_profile_managed=false`
 - `policy_sidebar_secrets_persisted=false`
 
+以下事实来自 `cd atlasx && go run ./cmd/atlasctl permissions status`:
+
+- `permissions_source=codebase_boundary`
+- `permissions_granted_state_observable=false`
+- `permissions_accessibility_probe_supported=false`
+- `permissions_permission_prompt_supported=false`
+- `permissions_permission_write_supported=false`
+- `permissions_os_policy_failures_surface=true`
+
 当前解释：
 
 - 本机系统 Chrome 可发现
@@ -129,6 +142,7 @@
 - 本机 `atlasctl doctor --json` 可返回结构化诊断结果，当前 `ChromeStatus=ok`、`Chrome.Source=system_auto`
 - 本机 `atlasctl profile status` 返回 `default_profile=isolated`、`selected_mode=isolated`，并确认 isolated profile 目录已存在
 - 本机 `atlasctl policy status` 返回当前治理护栏视图，默认仅允许回环监听，远程控制危险开关名称为 `--allow-remote-control`，shared profile 当前显式视为非受管
+- 本机 `atlasctl permissions status` 返回的是代码边界事实而不是真实 TCC 授权态；当前代码库未实现权限探测、权限提示或授权写路径
 - 当前没有受管浏览器会话
 - mirror/import 已有历史落盘
 - 当前没有 staged managed runtime

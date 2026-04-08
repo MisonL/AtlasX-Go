@@ -14,6 +14,7 @@
 - `atlasctl doctor --json`
 - `atlasctl profile status`
 - `atlasctl policy status`
+- `atlasctl permissions status`
 - `atlasctl settings`
 - `atlasctl default-browser status`
 - `atlasctl logs status`
@@ -67,6 +68,7 @@
 - `atlasd /v1/doctor`
 - `atlasd /v1/profile`
 - `atlasd /v1/policy`
+- `atlasd /v1/permissions`
 - `atlasd /v1/memory` 与 `/v1/memory/search`
 - `atlasd /v1/tabs|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|open-devtools-panel|close-duplicates|activate-window|close-window|window-state|window-bounds|activate|close|navigate|context|semantic-context|selection|suggestions|memories|context-recommendations|organize|organize-window|organize-group-to-window|organize-group-into-window|organize-to-windows|organize-into-window|organize-window-to-windows|organize-window-into-window|organize-window-group-to-window|organize-window-group-into-window|devtools|devtools-panel|emulate-device`
 - `atlasd /v1/runtime/status|stage|verify|clear|install`
@@ -82,6 +84,7 @@
 
 - `atlasd` 默认只允许回环监听地址
 - 若要显式监听非回环地址，必须传 `--allow-remote-control`
+- 当前未实现真实 macOS 权限探测、权限提示或授权写路径
 
 当前阶段对齐与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 和 [`docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md`](docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md) 为入口。
 运行手册与发布检查单见 [`atlasx/docs/RUNBOOK.md`](atlasx/docs/RUNBOOK.md)，真实 gate 入口见 [`atlasx/docs/E2E-GATE.md`](atlasx/docs/E2E-GATE.md)。
