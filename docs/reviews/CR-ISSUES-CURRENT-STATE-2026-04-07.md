@@ -35,6 +35,8 @@
   - 当前已完成
 - `T115`
   - 当前已完成
+- `T116`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -98,7 +100,7 @@
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
   - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐、标签整理建议与固定设备预设模拟
-  - 只读 Agent 预演计划，可基于当前页上下文、页面建议、上下文推荐与 memory 生成多步计划，不执行动作
+  - 只读 Agent 预演计划，可基于当前页上下文、页面建议、上下文推荐与 memory 生成多步计划，不执行动作，并导出 step 级 `executable/execution_path/requires_provider` 元数据
   - 显式确认的 Agent 单步执行入口，当前支持执行 sidebar 类型计划步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，不写 memory
   - 项目级 gate 与发布/恢复手册
 

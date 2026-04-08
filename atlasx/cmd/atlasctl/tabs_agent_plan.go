@@ -130,12 +130,15 @@ func printAgentPlan(plan agentplan.Plan) {
 	}
 	for index, step := range plan.Steps {
 		fmt.Printf(
-			"index=%d step_id=%s kind=%s title=%q source=%s requires_confirmation=%t tab_id=%s url=%s\n",
+			"index=%d step_id=%s kind=%s title=%q source=%s executable=%t execution_path=%s requires_provider=%t requires_confirmation=%t tab_id=%s url=%s\n",
 			index,
 			step.ID,
 			step.Kind,
 			step.Title,
 			step.Source,
+			step.Executable,
+			step.ExecutionPath,
+			step.RequiresProvider,
 			step.RequiresConfirmation,
 			step.TabID,
 			step.URL,

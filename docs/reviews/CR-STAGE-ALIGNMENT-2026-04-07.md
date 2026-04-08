@@ -163,7 +163,7 @@
   - 基于 memory 的轻量检索增强
   - 按标签页聚合的 Browser memories 只读入口
   - 基于 page context + memory 的结构化页面建议
-  - 基于 page context + suggestions + context recommendations + memory 的结构化 Agent 只读预演计划
+  - 基于 page context + suggestions + context recommendations + memory 的结构化 Agent 只读预演计划（含 step 级 `executable/execution_path/requires_provider` 元数据）
   - 基于 agent plan 的显式确认单步执行入口
   - 基于 page context + 同 host 标签页 + memory 的结构化上下文推荐
   - 基于 DOM 的结构化上下文提取

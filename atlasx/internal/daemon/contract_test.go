@@ -201,6 +201,25 @@ func TestTabAgentPlanEndpointContract(t *testing.T) {
 		"guardrails",
 		"steps",
 	)
+	steps, ok := payload["steps"].([]any)
+	if !ok || len(steps) == 0 {
+		t.Fatalf("unexpected steps payload: %+v", payload)
+	}
+	firstStep, ok := steps[0].(map[string]any)
+	if !ok {
+		t.Fatalf("unexpected first step payload: %+v", steps[0])
+	}
+	assertMapKeys(t, firstStep,
+		"id",
+		"kind",
+		"title",
+		"source",
+		"reason",
+		"executable",
+		"execution_path",
+		"requires_provider",
+		"requires_confirmation",
+	)
 }
 
 func TestTabAgentExecuteEndpointContract(t *testing.T) {

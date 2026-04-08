@@ -50,4 +50,32 @@ func TestBuildReturnsReadOnlyPlan(t *testing.T) {
 	if !plan.Steps[0].RequiresConfirmation || !plan.Steps[1].RequiresConfirmation {
 		t.Fatalf("unexpected step confirmation flags: %+v", plan)
 	}
+	if !plan.Steps[0].Executable || plan.Steps[0].ExecutionPath != "sidebar_summarize" || !plan.Steps[0].RequiresProvider {
+		t.Fatalf("unexpected suggestion step execution meta: %+v", plan.Steps[0])
+	}
+	if !plan.Steps[1].Executable || plan.Steps[1].ExecutionPath != "tabs_activate" || plan.Steps[1].RequiresProvider {
+		t.Fatalf("unexpected recommendation step execution meta: %+v", plan.Steps[1])
+	}
+}
+
+func TestDeriveStepExecutionMeta(t *testing.T) {
+	cases := []struct {
+		kind           string
+		wantExecutable bool
+		wantExecution  string
+		wantProvider   bool
+	}{
+		{kind: "sidebar_summarize", wantExecutable: true, wantExecution: "sidebar_summarize", wantProvider: true},
+		{kind: "sidebar_ask", wantExecutable: true, wantExecution: "sidebar_ask", wantProvider: true},
+		{kind: "related_tab", wantExecutable: true, wantExecution: "tabs_activate", wantProvider: false},
+		{kind: "memory_snippet", wantExecutable: true, wantExecution: "sidebar_memory_ask", wantProvider: true},
+		{kind: "custom_preview", wantExecutable: false, wantExecution: "preview_only", wantProvider: false},
+	}
+
+	for _, tc := range cases {
+		gotExecutable, gotExecution, gotProvider := deriveStepExecutionMeta(tc.kind)
+		if gotExecutable != tc.wantExecutable || gotExecution != tc.wantExecution || gotProvider != tc.wantProvider {
+			t.Fatalf("kind=%s unexpected meta executable=%t execution=%s provider=%t", tc.kind, gotExecutable, gotExecution, gotProvider)
+		}
+	}
 }

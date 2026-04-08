@@ -214,6 +214,9 @@ func TestTabsAgentPlanContract(t *testing.T) {
 		"recommendation_returned=",
 		"rollback=",
 		"step_id=",
+		"executable=",
+		"execution_path=",
+		"requires_provider=",
 	)
 }
 

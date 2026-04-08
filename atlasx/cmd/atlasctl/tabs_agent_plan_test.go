@@ -57,6 +57,11 @@ func TestTabsAgentPlanOutputsReadOnlyPlan(t *testing.T) {
 		"guardrail[0]=preview_only",
 		"step_id=suggest-summarize_page",
 		"step_id=recommend-related-tab-tab-2",
+		"executable=true",
+		"execution_path=sidebar_summarize",
+		"execution_path=tabs_activate",
+		"requires_provider=true",
+		"requires_provider=false",
 		"requires_confirmation=true",
 		"rollback=read_only_preview_no_actions_executed",
 	} {

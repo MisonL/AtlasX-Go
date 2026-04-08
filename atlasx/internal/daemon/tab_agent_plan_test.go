@@ -58,6 +58,9 @@ func TestTabAgentPlanReturnsStructuredPreview(t *testing.T) {
 		`"read_only":true`,
 		`"executed":false`,
 		`"rollback":"read_only_preview_no_actions_executed"`,
+		`"executable":true`,
+		`"execution_path":"sidebar_summarize"`,
+		`"requires_provider":true`,
 		`"requires_confirmation":true`,
 		`"id":"suggest-summarize_page"`,
 	} {

@@ -19,6 +19,9 @@ type Step struct {
 	TabID                string `json:"tab_id,omitempty"`
 	URL                  string `json:"url,omitempty"`
 	Snippet              string `json:"snippet,omitempty"`
+	Executable           bool   `json:"executable"`
+	ExecutionPath        string `json:"execution_path"`
+	RequiresProvider     bool   `json:"requires_provider"`
 	RequiresConfirmation bool   `json:"requires_confirmation"`
 }
 
@@ -42,6 +45,7 @@ type Plan struct {
 func Build(context tabs.PageContext, pageSuggestions []suggestions.PageSuggestion, recommendations []contextrec.Recommendation, memoryReturned int) Plan {
 	steps := make([]Step, 0, len(pageSuggestions)+len(recommendations))
 	for _, suggestion := range pageSuggestions {
+		executable, executionPath, requiresProvider := deriveStepExecutionMeta(suggestion.Kind)
 		steps = append(steps, Step{
 			ID:                   "suggest-" + suggestion.ID,
 			Kind:                 suggestion.Kind,
@@ -49,10 +53,14 @@ func Build(context tabs.PageContext, pageSuggestions []suggestions.PageSuggestio
 			Source:               "suggestions",
 			Reason:               suggestion.Reason,
 			Prompt:               suggestion.Prompt,
+			Executable:           executable,
+			ExecutionPath:        executionPath,
+			RequiresProvider:     requiresProvider,
 			RequiresConfirmation: true,
 		})
 	}
 	for _, recommendation := range recommendations {
+		executable, executionPath, requiresProvider := deriveStepExecutionMeta(recommendation.Kind)
 		steps = append(steps, Step{
 			ID:                   "recommend-" + recommendation.ID,
 			Kind:                 recommendation.Kind,
@@ -62,6 +70,9 @@ func Build(context tabs.PageContext, pageSuggestions []suggestions.PageSuggestio
 			TabID:                recommendation.TabID,
 			URL:                  recommendation.URL,
 			Snippet:              recommendation.Snippet,
+			Executable:           executable,
+			ExecutionPath:        executionPath,
+			RequiresProvider:     requiresProvider,
 			RequiresConfirmation: true,
 		})
 	}
@@ -94,4 +105,19 @@ func buildGoal(context tabs.PageContext) string {
 		return "inspect the current page and propose the next safe actions"
 	}
 	return fmt.Sprintf("inspect %q and propose the next safe actions", title)
+}
+
+func deriveStepExecutionMeta(kind string) (bool, string, bool) {
+	switch kind {
+	case "sidebar_summarize":
+		return true, "sidebar_summarize", true
+	case "sidebar_ask":
+		return true, "sidebar_ask", true
+	case "related_tab":
+		return true, "tabs_activate", false
+	case "memory_snippet":
+		return true, "sidebar_memory_ask", true
+	default:
+		return false, "preview_only", false
+	}
 }
