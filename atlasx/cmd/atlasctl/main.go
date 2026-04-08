@@ -33,12 +33,7 @@ func run(args []string) error {
 		fmt.Print(blueprint.Render())
 		return nil
 	case "doctor":
-		report, err := diagnostics.Generate()
-		if err != nil {
-			return err
-		}
-		fmt.Print(report.Render())
-		return nil
+		return runDoctor(args[1:])
 	case "launch-webapp":
 		return runLaunch(args[1:])
 	case "status":
@@ -76,6 +71,30 @@ func run(args []string) error {
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
+}
+
+func runDoctor(args []string) error {
+	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+
+	jsonOutput := fs.Bool("json", false, "render doctor output as structured json")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return errors.New("doctor accepts no positional arguments")
+	}
+
+	report, err := diagnostics.Generate()
+	if err != nil {
+		return err
+	}
+	if *jsonOutput {
+		fmt.Print(report.RenderJSON())
+		return nil
+	}
+	fmt.Print(report.Render())
+	return nil
 }
 
 func runLaunch(args []string) error {

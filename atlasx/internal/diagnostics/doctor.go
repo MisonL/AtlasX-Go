@@ -1,6 +1,7 @@
 package diagnostics
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"runtime"
@@ -100,6 +101,11 @@ func (r Report) Render() string {
 		lines = append(lines, "chrome_candidates="+strings.Join(r.Chrome.Candidates, ","))
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+func (r Report) RenderJSON() string {
+	payload, _ := json.MarshalIndent(r, "", "  ")
+	return string(payload) + "\n"
 }
 
 func sessionReport(paths macos.Paths) launcher.StatusReport {

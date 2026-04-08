@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-08
-- 目标: 将 `T001-T107` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T107` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及默认浏览器、日志和更新状态的只读观测入口和统一 gate/runbook 入口
+- 目标: 将 `T001-T108` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T108` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及默认浏览器、日志、更新和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -23,10 +23,12 @@
   - `atlasd --once`
   - `/healthz`
   - `/v1/status`
+  - `/v1/doctor`
   - `atlasctl settings`
   - `atlasctl default-browser status`
   - `atlasctl logs status`
   - `atlasctl updates status`
+  - `atlasctl doctor --json`
   - `atlasctl memory list`
   - `atlasctl memory search`
   - `atlasctl sidebar status`
@@ -40,6 +42,7 @@
   - 默认浏览器 LaunchServices 只读状态面
   - logs 目录只读状态面
   - 顶层更新状态只读视图
+  - 结构化 doctor 诊断视图
   - runtime、mirror/import、memory、sidebar 的统一状态导出
   - `atlasd` 默认仅允许回环监听
 - 当前边界:
@@ -48,6 +51,7 @@
   - 默认浏览器当前只提供 `http/https` handler 的只读观测，不提供写操作
   - logs 当前只提供目录扫描与最近文件只读观测，不负责日志生产或轮转治理
   - updates 当前只复用 managed runtime 与 install plan 状态做只读汇总，不触发下载、安装或 catalog 解析
+  - doctor JSON 当前直接复用现有 diagnostics 主链，JSON 键名保持 Go 结构体默认命名，不额外引入第二套诊断口径
   - 没有长期后台作业编排或多节点协调
 
 ### Phase 2 Browser Capability Takeover
@@ -160,6 +164,7 @@
   - `/v1/default-browser`
   - `/v1/logs`
   - `/v1/updates`
+  - `/v1/doctor`
   - `/v1/runtime/*`
   - `/v1/history*`
   - `/v1/downloads*`

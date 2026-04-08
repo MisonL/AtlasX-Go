@@ -15,6 +15,7 @@
 ```bash
 cd atlasx
 go run ./cmd/atlasctl doctor
+go run ./cmd/atlasctl doctor --json
 go run ./cmd/atlasctl blueprint
 go run ./cmd/atlasctl settings
 go run ./cmd/atlasctl default-browser status
@@ -104,6 +105,7 @@ bash scripts/e2e_gate.sh
 
 - `GET /healthz`
 - `GET /v1/status`
+- `GET /v1/doctor`
 - `GET /v1/settings`
 - `GET /v1/default-browser`
 - `GET /v1/logs`
@@ -175,6 +177,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `atlasctl default-browser status` 与 `GET /v1/default-browser`，可读取 macOS LaunchServices 当前 `http/https` 默认 handler 的 bundle id 与角色信息，但不执行设置默认浏览器写操作。
 - 当前已提供 `atlasctl logs status` 与 `GET /v1/logs`，可只读扫描 AtlasX support root 下的 logs 目录，返回目录存在性、文件数、总大小与最近文件列表，但不创建或写入日志文件。
 - 当前已提供 `atlasctl updates status` 与 `GET /v1/updates`，可在顶层更新视图中汇总 managed runtime staged 状态与 install plan 待执行状态，但不触发下载、安装或回滚。
+- 当前已提供 `atlasctl doctor --json` 与 `GET /v1/doctor`，可把现有 doctor 诊断主链以结构化 JSON 暴露出来；默认 `atlasctl doctor` 的文本输出保持不变。
 - 受管 launcher management 当前只覆盖隔离 profile 模式；共享 profile 模式明确视为非受管。
 - 当前已提供受管隔离 profile 的 CDP 入口探测，可从 `status` / `doctor` / `atlasd --once` 读取 DevTools endpoint。
 - 当前 Chrome runtime 探测已区分 `system_auto` 与 `managed_auto` 来源；若 `Application Support/AtlasX/runtime/Chromium.app` 下存在可执行 bundle，诊断口径会优先识别为 managed runtime。

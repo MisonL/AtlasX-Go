@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"strings"
@@ -87,6 +88,27 @@ func TestUpdatesStatusContract(t *testing.T) {
 		"plan_pending=",
 		"plan_in_flight=",
 	)
+}
+
+func TestDoctorJSONContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"doctor", "--json"})
+	})
+	if err != nil {
+		t.Fatalf("run doctor --json failed: %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(output), &payload); err != nil {
+		t.Fatalf("decode doctor json failed: %v output=%s", err, output)
+	}
+	for _, key := range []string{"Paths", "Config", "Chrome", "ChromeStatus", "RuntimeManifest", "Session"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("expected key %q in payload: %+v", key, payload)
+		}
+	}
 }
 
 func TestRuntimeStatusContract(t *testing.T) {
