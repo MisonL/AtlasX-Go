@@ -132,6 +132,22 @@ func TestUpdatesStatusContract(t *testing.T) {
 	)
 }
 
+func TestMemoryControlsContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "controls"})
+	})
+	if err != nil {
+		t.Fatalf("run memory controls failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"config_file=",
+		"persist_enabled=",
+	)
+}
+
 func TestDoctorJSONContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

@@ -122,7 +122,7 @@ func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.TraceID = traceID
-	if err := memory.AppendQATurn(paths, memory.QATurnInput{
+	if _, err := memory.AppendQATurnControlled(paths, memory.QATurnInput{
 		OccurredAt: time.Now().UTC().Format(time.RFC3339Nano),
 		TabID:      context.ID,
 		Title:      context.Title,

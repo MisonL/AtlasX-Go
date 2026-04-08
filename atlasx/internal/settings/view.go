@@ -13,6 +13,7 @@ type View struct {
 	DefaultProfile         string                  `json:"default_profile"`
 	ListenAddr             string                  `json:"listen_addr"`
 	WebAppURL              string                  `json:"web_app_url"`
+	MemoryPersistEnabled   bool                    `json:"memory_persist_enabled"`
 	SidebarProvider        string                  `json:"sidebar_provider"`
 	SidebarModel           string                  `json:"sidebar_model"`
 	SidebarBaseURL         string                  `json:"sidebar_base_url"`
@@ -32,6 +33,7 @@ func LoadView(paths macos.Paths) (View, error) {
 		DefaultProfile:         config.DefaultProfile,
 		ListenAddr:             config.ListenAddr,
 		WebAppURL:              config.WebAppURL,
+		MemoryPersistEnabled:   config.MemoryPersistEnabledValue(),
 		SidebarProvider:        config.SidebarProvider,
 		SidebarModel:           config.SidebarModel,
 		SidebarBaseURL:         config.SidebarBaseURL,
@@ -48,6 +50,7 @@ func (v View) Render() string {
 		fmt.Sprintf("default_profile=%s", v.DefaultProfile),
 		fmt.Sprintf("listen_addr=%s", v.ListenAddr),
 		fmt.Sprintf("web_app_url=%s", v.WebAppURL),
+		fmt.Sprintf("memory_persist_enabled=%t", v.MemoryPersistEnabled),
 		fmt.Sprintf("sidebar_provider=%s", v.SidebarProvider),
 		fmt.Sprintf("sidebar_model=%s", v.SidebarModel),
 		fmt.Sprintf("sidebar_base_url=%s", v.SidebarBaseURL),

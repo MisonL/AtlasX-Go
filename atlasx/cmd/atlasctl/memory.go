@@ -12,7 +12,7 @@ import (
 
 func runMemory(args []string) error {
 	if len(args) == 0 {
-		return errors.New("memory supports subcommands: list, search")
+		return errors.New("memory supports subcommands: list, search, controls, set-persist")
 	}
 
 	switch args[0] {
@@ -20,6 +20,10 @@ func runMemory(args []string) error {
 		return runMemoryList(args[1:])
 	case "search":
 		return runMemorySearch(args[1:])
+	case "controls":
+		return runMemoryControls(args[1:])
+	case "set-persist":
+		return runMemorySetPersist(args[1:])
 	default:
 		return fmt.Errorf("unknown memory subcommand %q", args[0])
 	}
@@ -113,5 +117,48 @@ func runMemorySearch(args []string) error {
 	for index, snippet := range snippets {
 		fmt.Printf("index=%d snippet=%q\n", index, snippet)
 	}
+	return nil
+}
+
+func runMemoryControls(args []string) error {
+	if len(args) != 0 {
+		return errors.New("memory controls does not accept extra arguments")
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	controls, err := memory.LoadControls(paths)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("config_file=%s persist_enabled=%t\n", controls.ConfigFile, controls.PersistEnabled)
+	return nil
+}
+
+func runMemorySetPersist(args []string) error {
+	if len(args) != 1 {
+		return errors.New("memory set-persist requires enabled or disabled")
+	}
+
+	enabled, err := memory.ParsePersistValue(strings.ToLower(strings.TrimSpace(args[0])))
+	if err != nil {
+		return err
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	controls, err := memory.SetPersistEnabled(paths, enabled)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("config_file=%s persist_enabled=%t\n", controls.ConfigFile, controls.PersistEnabled)
 	return nil
 }

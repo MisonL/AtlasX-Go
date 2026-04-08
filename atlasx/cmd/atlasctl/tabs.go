@@ -635,7 +635,7 @@ func runTabsCapture(paths macos.Paths, client commandTabsClient, args []string) 
 		printPageContext(context)
 		return err
 	}
-	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+	if _, err := memory.AppendPageCaptureControlled(paths, memory.PageCaptureInput{
 		OccurredAt: context.CapturedAt,
 		TabID:      context.ID,
 		Title:      context.Title,

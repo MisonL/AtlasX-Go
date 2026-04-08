@@ -208,7 +208,7 @@ func loadSidebarCommandContext(paths macos.Paths, command sidebarCommand, traceI
 }
 
 func appendSidebarCommandTurn(paths macos.Paths, traceID string, context tabs.PageContext, question string, answer string) error {
-	return memory.AppendQATurn(paths, memory.QATurnInput{
+	_, err := memory.AppendQATurnControlled(paths, memory.QATurnInput{
 		OccurredAt: time.Now().UTC().Format(time.RFC3339Nano),
 		TabID:      context.ID,
 		Title:      context.Title,
@@ -218,6 +218,7 @@ func appendSidebarCommandTurn(paths macos.Paths, traceID string, context tabs.Pa
 		CitedURLs:  nonEmptyCommandURLs(context.URL),
 		TraceID:    traceID,
 	})
+	return err
 }
 
 func finishSidebarCommand(paths macos.Paths, traceID string, commandErr error) error {

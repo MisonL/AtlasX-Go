@@ -9,6 +9,7 @@ import (
 
 	"atlasx/internal/memory"
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
 )
 
@@ -346,6 +347,48 @@ func TestTabsCaptureFailureDoesNotWriteMemoryEvent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("discover paths failed: %v", err)
 	}
+	events, err := loadCommandMemoryEvents(paths)
+	if err != nil {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 0 {
+		t.Fatalf("expected no memory events, got %+v", events)
+	}
+}
+
+func TestTabsCaptureSkipsMemoryEventWhenPersistenceDisabled(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		MemoryPersistEnabled: settings.Bool(false),
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-07T08:00:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
+		},
+	})
+
+	_, err = captureStdout(t, func() error {
+		return run([]string{"tabs", "capture", "tab-1"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs capture failed: %v", err)
+	}
+
 	events, err := loadCommandMemoryEvents(paths)
 	if err != nil {
 		t.Fatalf("load memory failed: %v", err)

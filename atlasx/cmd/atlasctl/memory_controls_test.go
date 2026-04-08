@@ -1,0 +1,48 @@
+package main
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestMemoryControlsOutputsPersistFlag(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "controls"})
+	})
+	if err != nil {
+		t.Fatalf("run memory controls failed: %v", err)
+	}
+	if !strings.Contains(output, "persist_enabled=true") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestMemorySetPersistUpdatesControls(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-persist", "disabled"})
+	})
+	if err != nil {
+		t.Fatalf("run memory set-persist failed: %v", err)
+	}
+	if !strings.Contains(output, "persist_enabled=false") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestMemorySetPersistRejectsInvalidValue(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-persist", "maybe"})
+	})
+	if err == nil {
+		t.Fatal("expected memory set-persist to fail")
+	}
+	if !strings.Contains(err.Error(), `invalid persist value "maybe"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

@@ -223,6 +223,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/memory", func(w http.ResponseWriter, r *http.Request) {
 		serveMemoryList(w, r)
 	})
+	mux.HandleFunc("/v1/memory/controls", func(w http.ResponseWriter, r *http.Request) {
+		serveMemoryControls(w, r)
+	})
 	mux.HandleFunc("/v1/memory/search", func(w http.ResponseWriter, r *http.Request) {
 		serveMemorySearch(w, r)
 	})

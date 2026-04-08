@@ -265,7 +265,7 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.TraceID = traceID
-	if err := memory.AppendQATurn(paths, memory.QATurnInput{
+	if _, err := memory.AppendQATurnControlled(paths, memory.QATurnInput{
 		OccurredAt: time.Now().UTC().Format(time.RFC3339Nano),
 		TabID:      context.ID,
 		Title:      context.Title,
@@ -373,7 +373,7 @@ func serveSidebarSummarize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.TraceID = traceID
-	if err := memory.AppendQATurn(paths, memory.QATurnInput{
+	if _, err := memory.AppendQATurnControlled(paths, memory.QATurnInput{
 		OccurredAt: time.Now().UTC().Format(time.RFC3339Nano),
 		TabID:      context.ID,
 		Title:      context.Title,
@@ -529,7 +529,7 @@ func serveTabContext(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, err)
 		return
 	}
-	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+	if _, err := memory.AppendPageCaptureControlled(paths, memory.PageCaptureInput{
 		OccurredAt: context.CapturedAt,
 		TabID:      context.ID,
 		Title:      context.Title,

@@ -18,6 +18,7 @@ type Config struct {
 	DefaultProfile         string                  `json:"default_profile"`
 	ListenAddr             string                  `json:"listen_addr"`
 	WebAppURL              string                  `json:"web_app_url"`
+	MemoryPersistEnabled   *bool                   `json:"memory_persist_enabled,omitempty"`
 	SidebarProvider        string                  `json:"sidebar_provider"`
 	SidebarModel           string                  `json:"sidebar_model"`
 	SidebarBaseURL         string                  `json:"sidebar_base_url"`
@@ -84,9 +85,10 @@ func (s Store) Save(cfg Config) error {
 
 func DefaultConfig() Config {
 	return Config{
-		DefaultProfile: DefaultProfile,
-		ListenAddr:     DefaultListenAddr,
-		WebAppURL:      DefaultWebAppURL,
+		DefaultProfile:       DefaultProfile,
+		ListenAddr:           DefaultListenAddr,
+		WebAppURL:            DefaultWebAppURL,
+		MemoryPersistEnabled: Bool(true),
 	}
 }
 
@@ -100,8 +102,22 @@ func (c Config) withDefaults() Config {
 	if c.WebAppURL == "" {
 		c.WebAppURL = DefaultWebAppURL
 	}
+	if c.MemoryPersistEnabled == nil {
+		c.MemoryPersistEnabled = Bool(true)
+	}
 	if len(c.SidebarProviders) > 0 && c.SidebarDefaultProvider == "" {
 		c.SidebarDefaultProvider = c.SidebarProviders[0].ID
 	}
 	return c
+}
+
+func (c Config) MemoryPersistEnabledValue() bool {
+	if c.MemoryPersistEnabled == nil {
+		return true
+	}
+	return *c.MemoryPersistEnabled
+}
+
+func Bool(value bool) *bool {
+	return &value
 }

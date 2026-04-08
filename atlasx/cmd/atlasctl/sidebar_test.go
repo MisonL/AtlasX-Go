@@ -353,3 +353,61 @@ func TestSidebarAskWritesRuntimeErrorOnProviderFailure(t *testing.T) {
 		t.Fatalf("unexpected runtime state: %+v", runtimeState)
 	}
 }
+
+func TestSidebarAskSkipsMemoryEventWhenPersistenceDisabled(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		MemoryPersistEnabled:   settings.Bool(false),
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-07T11:05:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
+		},
+	})
+
+	_, err = captureStdout(t, func() error {
+		return run([]string{"sidebar", "ask", "tab-1", "What", "is", "this", "page", "about?"})
+	})
+	if err != nil {
+		t.Fatalf("run sidebar ask failed: %v", err)
+	}
+
+	events, err := loadCommandMemoryEvents(paths)
+	if err != nil {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 0 {
+		t.Fatalf("expected no memory events, got %+v", events)
+	}
+}

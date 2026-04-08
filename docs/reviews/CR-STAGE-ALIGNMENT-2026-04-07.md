@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-08
-- 目标: 将 `T001-T126` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T126` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新和结构化 doctor 诊断入口与统一 gate/runbook 入口
+- 目标: 将 `T001-T127` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T127` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -38,8 +38,11 @@
   - `atlasctl doctor --json`
   - `atlasctl memory list`
   - `atlasctl memory search`
+  - `atlasctl memory controls`
+  - `atlasctl memory set-persist`
   - `atlasctl sidebar status`
   - `/v1/memory`
+  - `/v1/memory/controls`
   - `/v1/memory/search`
   - `/v1/settings`
   - `/v1/default-browser`
@@ -53,6 +56,7 @@
   - 默认浏览器 LaunchServices 只读状态面
   - logs 目录只读状态面
   - 顶层更新状态只读视图
+  - memory 持久化数据控制入口
   - 结构化 doctor 诊断视图
   - runtime、mirror/import、memory、sidebar 的统一状态导出
   - `atlasd` 默认仅允许回环监听
@@ -67,6 +71,7 @@
   - policy 状态当前只汇总本地治理护栏事实，不提供策略写入、动态执行态审计或新策略文件
   - permissions 状态当前只导出代码级权限边界事实，不探测真实 TCC 授权状态、不触发权限提示、也不提供授权写路径
   - 没有长期后台作业编排或多节点协调
+  - memory 数据控制当前只覆盖全局持久化开关，未实现逐页可见性规则
 
 ### Phase 2 Browser Capability Takeover
 

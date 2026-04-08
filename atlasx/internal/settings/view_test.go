@@ -70,6 +70,7 @@ func TestViewRenderIncludesSidebarProviders(t *testing.T) {
 	expectedConfigFile := filepath.Join(os.Getenv("HOME"), "Library", "Application Support", "AtlasX", "config.json")
 	for _, fragment := range []string{
 		"config_file=" + expectedConfigFile,
+		"memory_persist_enabled=true",
 		"sidebar_default_provider=primary",
 		"sidebar_provider_count=1",
 		"sidebar_provider[0].id=primary",

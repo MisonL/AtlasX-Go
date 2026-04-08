@@ -28,6 +28,10 @@ type memorySearchResponse struct {
 	Snippets []string `json:"snippets"`
 }
 
+type memoryControlsRequest struct {
+	PersistEnabled *bool `json:"persist_enabled"`
+}
+
 func serveMemoryList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
@@ -109,6 +113,46 @@ func serveMemorySearch(w http.ResponseWriter, r *http.Request) {
 		Returned: len(snippets),
 		Snippets: snippets,
 	})
+}
+
+func serveMemoryControls(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		paths, err := discoverPaths()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		controls, err := memory.LoadControls(paths)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, controls)
+	case http.MethodPost:
+		var request memoryControlsRequest
+		if err := decodeRequiredJSON(r, &request); err != nil {
+			writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		if request.PersistEnabled == nil {
+			writeError(w, http.StatusBadRequest, fmt.Errorf("persist_enabled is required"))
+			return
+		}
+		paths, err := discoverPaths()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		controls, err := memory.SetPersistEnabled(paths, *request.PersistEnabled)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, controls)
+	default:
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+	}
 }
 
 func parseOptionalLimit(raw string) (int, error) {
