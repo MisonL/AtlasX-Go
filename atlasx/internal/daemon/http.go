@@ -42,6 +42,7 @@ type tabClient interface {
 	OpenDevToolsPanelWindow(string, string) (tabs.Target, error)
 	OpenDevToolsPanelInWindow(string, string, int) (tabs.WindowOpenResult, error)
 	OpenDevToolsWindowToWindows(int) (tabs.DevToolsWindowToWindowsResult, error)
+	OpenDevToolsPanelWindowToWindows(int, string) (tabs.DevToolsPanelWindowToWindowsResult, error)
 	OpenDevToolsPanelWindowIntoWindow(int, string, int) (tabs.DevToolsPanelWindowOpenResult, error)
 	OpenDevToolsWindowIntoWindow(int, int) (tabs.DevToolsWindowOpenResult, error)
 	Open(string) (tabs.Target, error)
@@ -86,6 +87,11 @@ type tabOpenDevToolsPanelWindowIntoWindowRequest struct {
 
 type tabOpenDevToolsWindowToWindowsRequest struct {
 	SourceWindowID int `json:"source_window_id"`
+}
+
+type tabOpenDevToolsPanelWindowToWindowsRequest struct {
+	SourceWindowID int    `json:"source_window_id"`
+	Panel          string `json:"panel"`
 }
 
 type tabEmulationRequest struct {

@@ -60,6 +60,8 @@ type stubTabsClient struct {
 	openDevToolsPanelInWindowErr         error
 	openDevToolsWindowToWindows          tabs.DevToolsWindowToWindowsResult
 	openDevToolsWindowToWindowsErr       error
+	openDevToolsPanelWindowToWindows     tabs.DevToolsPanelWindowToWindowsResult
+	openDevToolsPanelWindowToWindowsErr  error
 	openDevToolsPanelWindowIntoWindow    tabs.DevToolsPanelWindowOpenResult
 	openDevToolsPanelWindowIntoWindowErr error
 	openDevToolsWindowIntoWindow         tabs.DevToolsWindowOpenResult
@@ -197,6 +199,13 @@ func (s *stubTabsClient) OpenDevToolsWindowToWindows(sourceWindowID int) (tabs.D
 		return tabs.DevToolsWindowToWindowsResult{}, s.openDevToolsWindowToWindowsErr
 	}
 	return s.openDevToolsWindowToWindows, nil
+}
+
+func (s *stubTabsClient) OpenDevToolsPanelWindowToWindows(sourceWindowID int, panel string) (tabs.DevToolsPanelWindowToWindowsResult, error) {
+	if s.openDevToolsPanelWindowToWindowsErr != nil {
+		return tabs.DevToolsPanelWindowToWindowsResult{}, s.openDevToolsPanelWindowToWindowsErr
+	}
+	return s.openDevToolsPanelWindowToWindows, nil
 }
 
 func (s *stubTabsClient) OpenDevToolsPanelWindowIntoWindow(sourceWindowID int, panel string, targetWindowID int) (tabs.DevToolsPanelWindowOpenResult, error) {

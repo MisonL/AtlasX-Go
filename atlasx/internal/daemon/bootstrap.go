@@ -395,6 +395,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/open-devtools-window-to-windows", func(w http.ResponseWriter, r *http.Request) {
 		serveTabOpenDevToolsWindowToWindows(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/open-devtools-panel-window-to-windows", func(w http.ResponseWriter, r *http.Request) {
+		serveTabOpenDevToolsPanelWindowToWindows(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/open-devtools-window-into-window", func(w http.ResponseWriter, r *http.Request) {
 		serveTabOpenDevToolsWindowIntoWindow(w, r)
 	})

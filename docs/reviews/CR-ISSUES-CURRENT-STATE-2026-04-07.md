@@ -49,6 +49,8 @@
   - 当前已完成
 - `T122`
   - 当前已完成
+- `T123`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -97,6 +99,7 @@
   - `atlasctl tabs open-devtools-panel` 与 `/v1/tabs/open-devtools-panel`
   - `atlasctl tabs open-devtools-panel-in-window` 与 `/v1/tabs/open-devtools-panel-in-window`
   - `atlasctl tabs open-devtools-panel-window-into-window` 与 `/v1/tabs/open-devtools-panel-window-into-window`
+  - `atlasctl tabs open-devtools-panel-window-to-windows` 与 `/v1/tabs/open-devtools-panel-window-to-windows`
   - `atlasctl tabs open-devtools-window-into-window` 与 `/v1/tabs/open-devtools-window-into-window`
   - `atlasctl tabs devtools-panel` 与 `/v1/tabs/devtools-panel`
   - `atlasctl tabs close-duplicates` 与 `/v1/tabs/close-duplicates`
