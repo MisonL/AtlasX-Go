@@ -15,6 +15,7 @@ var (
 	ErrStepNotExecutable    = errors.New("agent plan step is preview-only and cannot be executed")
 	ErrStepActionRequired   = errors.New("agent execute action is required for this step kind")
 	ErrStepTabIDRequired    = errors.New("agent execute related_tab step is missing tab_id")
+	ErrStepSnippetRequired  = errors.New("agent execute memory_snippet step is missing snippet")
 )
 
 type ExecutionActions struct {
@@ -63,6 +64,8 @@ func Execute(config sidebar.Config, context tabs.PageContext, memorySnippets []s
 		return executeSummarize(config, context, memorySnippets, result)
 	case "sidebar_ask":
 		return executeAsk(config, context, memorySnippets, step, result)
+	case "memory_snippet":
+		return executeMemorySnippet(config, context, memorySnippets, step, result)
 	case "related_tab":
 		return executeRelatedTab(actions, step, result)
 	default:
@@ -100,6 +103,33 @@ func executeAsk(config sidebar.Config, context tabs.PageContext, memorySnippets 
 	response, err := config.AskWithMemory(sidebar.AskRequest{
 		TabID:    context.ID,
 		Question: step.Prompt,
+	}, context, memorySnippets)
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	result.Executed = true
+	result.Provider = response.Provider
+	result.Model = response.Model
+	result.Result = response.Answer
+	result.ContextSummary = response.ContextSummary
+	return result, nil
+}
+
+func executeMemorySnippet(config sidebar.Config, context tabs.PageContext, memorySnippets []string, step Step, result ExecutionResult) (ExecutionResult, error) {
+	if err := config.Validate(""); err != nil {
+		return ExecutionResult{}, err
+	}
+	if strings.TrimSpace(step.Snippet) == "" {
+		return ExecutionResult{}, fmt.Errorf("%w: %s", ErrStepSnippetRequired, step.ID)
+	}
+
+	question := fmt.Sprintf(
+		"Using this memory snippet, explain how it relates to the current page and suggest the next safe action.\n\nMemory snippet:\n%s",
+		step.Snippet,
+	)
+	response, err := config.AskWithMemory(sidebar.AskRequest{
+		TabID:    context.ID,
+		Question: question,
 	}, context, memorySnippets)
 	if err != nil {
 		return ExecutionResult{}, err

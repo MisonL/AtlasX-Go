@@ -33,6 +33,8 @@
   - 当前已完成
 - `T114`
   - 当前已完成
+- `T115`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -97,7 +99,7 @@
   - managed runtime stage/verify/install/rollback
   - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐、标签整理建议与固定设备预设模拟
   - 只读 Agent 预演计划，可基于当前页上下文、页面建议、上下文推荐与 memory 生成多步计划，不执行动作
-  - 显式确认的 Agent 单步执行入口，当前支持执行 sidebar 类型计划步骤与 `related_tab` 单步激活，不写 memory
+  - 显式确认的 Agent 单步执行入口，当前支持执行 sidebar 类型计划步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，不写 memory
   - 项目级 gate 与发布/恢复手册
 
 ## 当前开发机观测事实
@@ -154,7 +156,7 @@
 - 本机 `atlasctl policy status` 返回当前治理护栏视图，默认仅允许回环监听，远程控制危险开关名称为 `--allow-remote-control`，shared profile 当前显式视为非受管
 - 本机 `atlasctl permissions status` 返回的是代码边界事实而不是真实 TCC 授权态；当前代码库未实现权限探测、权限提示或授权写路径
 - 本机直接运行 `atlasctl tabs agent-plan <target-id>` 仍依赖受管浏览器会话；当前无 managed session 时会显式失败 `no managed browser session`
-- 本机 `atlasctl tabs agent-execute --confirm <target-id> <step-id>` 同样依赖受管浏览器会话；执行 `sidebar_*` 步骤时还依赖 sidebar provider readiness，执行 `related_tab` 步骤不依赖 provider；当前无 managed session 时会显式失败
+- 本机 `atlasctl tabs agent-execute --confirm <target-id> <step-id>` 同样依赖受管浏览器会话；执行 `sidebar_*` 与 `memory_snippet` 步骤时还依赖 sidebar provider readiness，执行 `related_tab` 步骤不依赖 provider；当前无 managed session 时会显式失败
 - 当前没有受管浏览器会话
 - mirror/import 已有历史落盘
 - 当前没有 staged managed runtime

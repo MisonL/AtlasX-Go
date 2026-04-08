@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"atlasx/internal/managedruntime"
+	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
@@ -340,6 +341,89 @@ func TestTabAgentExecuteRelatedTabEndpointContract(t *testing.T) {
 	}
 	if client.activatedTargetID != "tab-2" {
 		t.Fatalf("unexpected activated target id: %q", client.activatedTargetID)
+	}
+}
+
+func TestTabAgentExecuteMemorySnippetEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T15:50:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T15:51:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+		},
+	})
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/tabs/agent-execute",
+		bytes.NewBufferString(`{"id":"tab-1","step_id":"recommend-memory-relevant-page-capture","confirm":true}`),
+	)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"tab_id",
+		"step_id",
+		"step_kind",
+		"step_title",
+		"executed",
+		"confirmed",
+		"trace_id",
+		"provider",
+		"model",
+		"result",
+		"context_summary",
+		"memory_persisted",
+		"rollback",
+	)
+	if payload["step_id"] != "recommend-memory-relevant-page-capture" || payload["step_kind"] != "memory_snippet" {
+		t.Fatalf("unexpected payload: %+v", payload)
 	}
 }
 

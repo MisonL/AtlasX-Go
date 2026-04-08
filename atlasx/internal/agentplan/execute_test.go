@@ -128,8 +128,69 @@ func TestExecuteRejectsRelatedTabStepWhenActionIsMissing(t *testing.T) {
 	}
 }
 
-func TestExecuteRejectsPreviewOnlyStep(t *testing.T) {
-	_, err := Execute(sidebar.Config{}, tabs.PageContext{ID: "tab-1"}, nil, Plan{
+func TestExecuteRunsMemorySnippetStep(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	config := sidebar.FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	})
+
+	result, err := Execute(config, tabs.PageContext{
+		ID:         "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+		Text:       "Atlas context",
+		CapturedAt: "2026-04-08T15:10:00Z",
+	}, []string{"page_capture occurred_at=2026-04-08T15:00:00Z title=\"Atlas\" url=https://chatgpt.com/atlas"}, Plan{
+		Steps: []Step{{
+			ID:                   "recommend-memory-relevant-page-capture",
+			Kind:                 "memory_snippet",
+			Title:                "Relevant page capture",
+			Snippet:              "page_capture occurred_at=2026-04-08T15:00:00Z title=\"Atlas\" url=https://chatgpt.com/atlas",
+			RequiresConfirmation: true,
+		}},
+	}, "recommend-memory-relevant-page-capture", true, ExecutionActions{})
+	if err != nil {
+		t.Fatalf("execute memory_snippet failed: %v", err)
+	}
+	if !result.Executed || result.StepKind != "memory_snippet" {
+		t.Fatalf("unexpected result flags: %+v", result)
+	}
+	if result.Provider != "openai" || result.Result != "Memory relevance answer" {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if result.MemoryPersisted {
+		t.Fatalf("unexpected memory persisted: %+v", result)
+	}
+}
+
+func TestExecuteRejectsMemorySnippetStepWhenSnippetIsMissing(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	config := sidebar.FromSettings(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   "https://example.com",
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	})
+
+	_, err := Execute(config, tabs.PageContext{ID: "tab-1"}, nil, Plan{
 		Steps: []Step{{
 			ID:                   "recommend-memory-relevant-page-capture",
 			Kind:                 "memory_snippet",
@@ -137,6 +198,20 @@ func TestExecuteRejectsPreviewOnlyStep(t *testing.T) {
 			RequiresConfirmation: true,
 		}},
 	}, "recommend-memory-relevant-page-capture", true, ExecutionActions{})
+	if !errors.Is(err, ErrStepSnippetRequired) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecuteRejectsPreviewOnlyStep(t *testing.T) {
+	_, err := Execute(sidebar.Config{}, tabs.PageContext{ID: "tab-1"}, nil, Plan{
+		Steps: []Step{{
+			ID:                   "recommend-preview-custom",
+			Kind:                 "custom_preview_step",
+			Title:                "Custom preview step",
+			RequiresConfirmation: true,
+		}},
+	}, "recommend-preview-custom", true, ExecutionActions{})
 	if !errors.Is(err, ErrStepNotExecutable) {
 		t.Fatalf("unexpected error: %v", err)
 	}

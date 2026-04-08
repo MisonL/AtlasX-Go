@@ -11,6 +11,7 @@ import (
 
 	"atlasx/internal/defaultbrowser"
 	"atlasx/internal/managedruntime"
+	"atlasx/internal/memory"
 	"atlasx/internal/platform/macos"
 	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
@@ -318,6 +319,75 @@ func TestTabsAgentExecuteRelatedTabContract(t *testing.T) {
 	if client.activatedTargetID != "tab-2" {
 		t.Fatalf("unexpected activated target id: %q", client.activatedTargetID)
 	}
+}
+
+func TestTabsAgentExecuteMemorySnippetContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T15:40:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas task page",
+			CapturedAt: "2026-04-08T15:41:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "agent-execute", "--confirm", "tab-1", "recommend-memory-relevant-page-capture"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs agent-execute memory_snippet failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"tab_id=tab-1",
+		"step_id=recommend-memory-relevant-page-capture",
+		"step_kind=memory_snippet",
+		"executed=true",
+		"confirmed=true",
+		"trace_id=",
+		"provider=openai",
+		"model=gpt-5.4",
+		"memory_persisted=false",
+		"rollback=not_required_no_memory_persisted",
+		`result="Memory relevance answer"`,
+	)
 }
 
 func TestRuntimeStatusContract(t *testing.T) {

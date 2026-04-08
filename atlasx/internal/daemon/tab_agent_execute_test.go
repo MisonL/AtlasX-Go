@@ -183,6 +183,83 @@ func TestTabAgentExecuteRunsRelatedTabStep(t *testing.T) {
 	}
 }
 
+func TestTabAgentExecuteRunsMemorySnippetStep(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Memory relevance answer"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{{
+			ID:        "primary",
+			Provider:  "openai",
+			Model:     "gpt-5.4",
+			BaseURL:   server.URL,
+			APIKeyEnv: "OPENAI_API_KEY",
+		}},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+	if err := memory.AppendPageCapture(paths, memory.PageCaptureInput{
+		OccurredAt: "2026-04-08T15:30:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+	}); err != nil {
+		t.Fatalf("append page capture failed: %v", err)
+	}
+
+	restoreDaemonHooks(t, &stubTabsClient{
+		context: tabs.PageContext{
+			ID:         "tab-1",
+			Title:      "Atlas",
+			URL:        "https://chatgpt.com/atlas",
+			Text:       "Atlas context",
+			CapturedAt: "2026-04-08T15:31:00Z",
+		},
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas", URL: "https://chatgpt.com/atlas"},
+		},
+	})
+
+	body := bytes.NewBufferString(`{"id":"tab-1","step_id":"recommend-memory-relevant-page-capture","confirm":true}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/tabs/agent-execute", body)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	for _, fragment := range []string{
+		`"step_id":"recommend-memory-relevant-page-capture"`,
+		`"step_kind":"memory_snippet"`,
+		`"executed":true`,
+		`"memory_persisted":false`,
+		`"result":"Memory relevance answer"`,
+	} {
+		if !strings.Contains(recorder.Body.String(), fragment) {
+			t.Fatalf("expected body to contain %q, got %s", fragment, recorder.Body.String())
+		}
+	}
+
+	events, err := memory.Load(paths)
+	if err != nil && !os.IsNotExist(err) {
+		t.Fatalf("load memory failed: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected one existing memory event without new writes, got %+v", events)
+	}
+}
+
 func TestTabAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
@@ -215,16 +292,16 @@ func TestTabAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
 		},
 	})
 
-	body := bytes.NewBufferString(`{"id":"tab-1","step_id":"recommend-memory-relevant-page-capture","confirm":true}`)
+	body := bytes.NewBufferString(`{"id":"tab-1","step_id":"recommend-step-not-present","confirm":true}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/tabs/agent-execute", body)
 	recorder := httptest.NewRecorder()
 
 	NewMux(Status{}).ServeHTTP(recorder, request)
 
-	if recorder.Code != http.StatusBadRequest {
+	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
 	}
-	if !strings.Contains(recorder.Body.String(), "preview-only") {
+	if !strings.Contains(recorder.Body.String(), "step was not found") {
 		t.Fatalf("unexpected body: %s", recorder.Body.String())
 	}
 }
