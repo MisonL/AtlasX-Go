@@ -95,6 +95,59 @@ func runTabsOrganizeWindowGroupToWindow(client commandTabsClient, args []string)
 	return nil
 }
 
+func runTabsOrganizeWindowGroupIntoWindow(client commandTabsClient, args []string) error {
+	if len(args) < 3 {
+		return errors.New("missing source window id, group id, or target window id for tabs organize-window-group-into-window")
+	}
+	sourceWindowID, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid source window id %q", args[0])
+	}
+	targetWindowID, err := strconv.Atoi(args[2])
+	if err != nil {
+		return fmt.Errorf("invalid target window id %q", args[2])
+	}
+	result, err := tabgroups.ApplyWindowGroupToWindow(client, sourceWindowID, args[1], targetWindowID)
+	if err != nil {
+		return err
+	}
+	fmt.Printf(
+		"source_window_id=%d target_window_id=%d group_id=%s label=%q window_id=%d returned=%d\n",
+		result.SourceWindowID,
+		result.TargetWindowID,
+		result.GroupID,
+		result.Label,
+		result.WindowID,
+		result.Returned,
+	)
+	for index, moved := range result.MovedTargets {
+		fmt.Printf(
+			"moved_index=%d source_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+			index,
+			moved.SourceWindowID,
+			moved.SourceTargetID,
+			moved.ActivatedTargetID,
+			moved.Target.ID,
+			moved.Target.Type,
+			moved.Target.Title,
+			moved.Target.URL,
+		)
+	}
+	for index, aligned := range result.AlignedTargets {
+		fmt.Printf(
+			"aligned_index=%d source_window_id=%d source_target_id=%s id=%s type=%s title=%q url=%s\n",
+			index,
+			aligned.SourceWindowID,
+			aligned.SourceTargetID,
+			aligned.Target.ID,
+			aligned.Target.Type,
+			aligned.Target.Title,
+			aligned.Target.URL,
+		)
+	}
+	return nil
+}
+
 func printApplyAllResult(result tabgroups.ApplyAllResult) {
 	fmt.Printf("returned=%d\n", result.Returned)
 	for groupIndex, group := range result.Groups {

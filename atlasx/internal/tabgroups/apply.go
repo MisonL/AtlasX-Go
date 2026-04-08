@@ -63,6 +63,17 @@ type ApplyWindowGroupResult struct {
 	AlignedTargets []AppliedTarget `json:"aligned_targets"`
 }
 
+type ApplyWindowGroupIntoWindowResult struct {
+	SourceWindowID int             `json:"source_window_id"`
+	TargetWindowID int             `json:"target_window_id"`
+	GroupID        string          `json:"group_id"`
+	Label          string          `json:"label"`
+	WindowID       int             `json:"window_id"`
+	Returned       int             `json:"returned"`
+	MovedTargets   []AppliedTarget `json:"moved_targets"`
+	AlignedTargets []AppliedTarget `json:"aligned_targets"`
+}
+
 func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -122,6 +133,26 @@ func ApplyWindowGroupToNewWindow(client OrganizerClient, sourceWindowID int, gro
 		return ApplyWindowGroupResult{}, err
 	}
 	return wrapApplyWindowGroupResult(sourceWindowID, applied), nil
+}
+
+func ApplyWindowGroupToWindow(client OrganizerClient, sourceWindowID int, groupID string, targetWindowID int) (ApplyWindowGroupIntoWindowResult, error) {
+	if sourceWindowID == targetWindowID {
+		return ApplyWindowGroupIntoWindowResult{}, fmt.Errorf("source and target window ids must differ")
+	}
+
+	group, err := findGroupInWindow(client, sourceWindowID, groupID)
+	if err != nil {
+		return ApplyWindowGroupIntoWindowResult{}, err
+	}
+	if err := ensureWindowExists(client, targetWindowID); err != nil {
+		return ApplyWindowGroupIntoWindowResult{}, err
+	}
+
+	applied, err := applyGroupToWindow(client, group, targetWindowID)
+	if err != nil {
+		return ApplyWindowGroupIntoWindowResult{}, err
+	}
+	return wrapApplyWindowGroupIntoWindowResult(sourceWindowID, targetWindowID, applied), nil
 }
 
 func ApplyWindowToNewWindows(client OrganizerClient, sourceWindowID int) (ApplyWindowResult, error) {
@@ -376,6 +407,19 @@ func findGroupInWindow(client OrganizerClient, sourceWindowID int, groupID strin
 func wrapApplyWindowGroupResult(sourceWindowID int, applied ApplyResult) ApplyWindowGroupResult {
 	return ApplyWindowGroupResult{
 		SourceWindowID: sourceWindowID,
+		GroupID:        applied.GroupID,
+		Label:          applied.Label,
+		WindowID:       applied.WindowID,
+		Returned:       applied.Returned,
+		MovedTargets:   applied.MovedTargets,
+		AlignedTargets: applied.AlignedTargets,
+	}
+}
+
+func wrapApplyWindowGroupIntoWindowResult(sourceWindowID int, targetWindowID int, applied ApplyResult) ApplyWindowGroupIntoWindowResult {
+	return ApplyWindowGroupIntoWindowResult{
+		SourceWindowID: sourceWindowID,
+		TargetWindowID: targetWindowID,
 		GroupID:        applied.GroupID,
 		Label:          applied.Label,
 		WindowID:       applied.WindowID,

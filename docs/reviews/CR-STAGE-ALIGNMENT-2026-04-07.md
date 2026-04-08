@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-08
-- 目标: 将 `T001-T101` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T101` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
+- 目标: 将 `T001-T102` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T102` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -45,7 +45,7 @@
   - `import-chrome`
   - `import-safari`
   - `history|downloads|bookmarks list/open`
-  - `tabs list|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|organize|organize-window|organize-group-to-window|organize-group-into-window|organize-to-windows|organize-into-window|organize-window-to-windows|organize-window-into-window|organize-window-group-to-window|devtools|emulate-device`
+  - `tabs list|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|organize|organize-window|organize-group-to-window|organize-group-into-window|organize-to-windows|organize-into-window|organize-window-to-windows|organize-window-into-window|organize-window-group-to-window|organize-window-group-into-window|devtools|emulate-device`
   - `/v1/tabs/search`
   - `/v1/tabs/windows`
   - `/v1/tabs/open-in-window`
@@ -59,6 +59,7 @@
   - `/v1/tabs/organize-window-to-windows`
   - `/v1/tabs/organize-window-into-window`
   - `/v1/tabs/organize-window-group-to-window`
+  - `/v1/tabs/organize-window-group-into-window`
   - `/v1/tabs/open-devtools`
   - `/v1/tabs/close-duplicates`
   - `/v1/tabs/activate-window`
@@ -78,7 +79,7 @@
   - `/v1/mirror/scan` `/v1/import/chrome` `/v1/import/safari`
 - 当前边界:
   - 页面上下文已支持标签页搜索、纯文本抓取、DOM 结构化语义提取与原生文本选区抓取，但仍不包含更深的 DOM 动作自动化
-  - DevTools 当前已提供按标签页解析 frontend URL、独立新窗口打开、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、窗口级只读整理建议、窗口合并、固定设备预设模拟，以及最小多窗口打开、窗口分组、重复页清理、窗口激活、窗口关闭、窗口状态控制和窗口 bounds 控制入口，尚未提供内置面板壳层或更深层窗口编排动作
+  - DevTools 当前已提供按标签页解析 frontend URL、独立新窗口打开、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、固定设备预设模拟，以及最小多窗口打开、窗口分组、重复页清理、窗口激活、窗口关闭、窗口状态控制和窗口 bounds 控制入口，尚未提供内置面板壳层或更深层窗口编排动作
   - mirror-scan 与 import-chrome 当前只接受受信 profile 根目录，不再支持任意本地目录输入
   - browser-data open 依赖已落盘 mirror/import 数据
 
@@ -134,7 +135,7 @@
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或多轮代理编排
-  - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、窗口级只读整理建议、窗口合并、DevTools 新窗口打开、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制和显式 bounds 控制，尚未覆盖更深层 DevTools 面板壳层或窗口编排
+  - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、DevTools 新窗口打开、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制和显式 bounds 控制，尚未覆盖更深层 DevTools 面板壳层或窗口编排
 
 ## 冻结边界
 
