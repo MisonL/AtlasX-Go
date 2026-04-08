@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"atlasx/internal/platform/macos"
+	"atlasx/internal/settings"
 )
 
 func TestFindRelevantSnippetsReturnsRankedMatches(t *testing.T) {
@@ -161,5 +162,52 @@ func TestFindRelevantSnippetsRespectsCustomLimit(t *testing.T) {
 	}
 	if len(snippets) != 1 {
 		t.Fatalf("unexpected snippets: %+v", snippets)
+	}
+}
+
+func TestFindRelevantSnippetsForPageRespectsVisibilityControl(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := AppendQATurn(paths, QATurnInput{
+		OccurredAt: "2026-04-07T00:01:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+		Question:   "memory",
+		Answer:     "Atlas memory answer",
+		TraceID:    "trace-1",
+	}); err != nil {
+		t.Fatalf("append qa turn failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		MemoryPageVisibility: settings.Bool(false),
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	pageSnippets, err := FindRelevantSnippetsForPage(paths, RetrievalInput{
+		URL:      "https://chatgpt.com/atlas",
+		Question: "memory",
+	})
+	if err != nil {
+		t.Fatalf("find relevant snippets for page failed: %v", err)
+	}
+	if len(pageSnippets) != 0 {
+		t.Fatalf("expected hidden page snippets, got %+v", pageSnippets)
+	}
+
+	searchSnippets, err := FindRelevantSnippets(paths, RetrievalInput{
+		URL:      "https://chatgpt.com/atlas",
+		Question: "memory",
+	})
+	if err != nil {
+		t.Fatalf("find relevant snippets failed: %v", err)
+	}
+	if len(searchSnippets) != 1 {
+		t.Fatalf("expected direct memory search to remain available, got %+v", searchSnippets)
 	}
 }

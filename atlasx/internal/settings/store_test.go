@@ -22,6 +22,9 @@ func TestBootstrapCreatesDefaultConfig(t *testing.T) {
 	if !cfg.MemoryPersistEnabledValue() {
 		t.Fatalf("expected memory persistence enabled by default: %+v", cfg)
 	}
+	if !cfg.MemoryPageVisibilityEnabledValue() {
+		t.Fatalf("expected memory page visibility enabled by default: %+v", cfg)
+	}
 
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("config file not created: %v", err)

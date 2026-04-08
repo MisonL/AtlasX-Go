@@ -195,7 +195,7 @@ func loadSidebarCommandContext(paths macos.Paths, command sidebarCommand, traceI
 		return tabs.PageContext{}, nil, finishSidebarCommand(paths, traceID, err)
 	}
 
-	memorySnippets, err := memory.FindRelevantSnippets(paths, memory.RetrievalInput{
+	memorySnippets, err := memory.FindRelevantSnippetsForPage(paths, memory.RetrievalInput{
 		TabID:    context.ID,
 		Title:    context.Title,
 		URL:      context.URL,

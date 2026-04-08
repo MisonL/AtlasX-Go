@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-08
-- 目标: 将 `T001-T127` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T127` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制和结构化 doctor 诊断入口与统一 gate/runbook 入口
+- 目标: 将 `T001-T128` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T128` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -40,6 +40,7 @@
   - `atlasctl memory search`
   - `atlasctl memory controls`
   - `atlasctl memory set-persist`
+  - `atlasctl memory set-page-visibility`
   - `atlasctl sidebar status`
   - `/v1/memory`
   - `/v1/memory/controls`
@@ -57,6 +58,7 @@
   - logs 目录只读状态面
   - 顶层更新状态只读视图
   - memory 持久化数据控制入口
+  - memory 页面可见性控制入口
   - 结构化 doctor 诊断视图
   - runtime、mirror/import、memory、sidebar 的统一状态导出
   - `atlasd` 默认仅允许回环监听
@@ -71,7 +73,7 @@
   - policy 状态当前只汇总本地治理护栏事实，不提供策略写入、动态执行态审计或新策略文件
   - permissions 状态当前只导出代码级权限边界事实，不探测真实 TCC 授权状态、不触发权限提示、也不提供授权写路径
   - 没有长期后台作业编排或多节点协调
-  - memory 数据控制当前只覆盖全局持久化开关，未实现逐页可见性规则
+  - memory 数据控制当前已覆盖全局持久化开关与全局页面可见性开关，但仍未实现按站点、按标签页或更细粒度的 memory 可见性规则
 
 ### Phase 2 Browser Capability Takeover
 
@@ -176,6 +178,7 @@
   - capture/ask 写 memory
   - selection ask/summarize 写 memory
   - 基于 memory 的轻量检索增强
+  - page-scoped memory snippets 全局可见性控制
   - 按标签页聚合的 Browser memories 只读入口
   - 基于 page context + memory 的结构化页面建议
   - 基于 page context + suggestions + context recommendations + memory 的结构化 Agent 只读预演计划（含 step 级 `executable/execution_path/requires_provider` 元数据）
@@ -186,6 +189,7 @@
 - 当前边界:
   - 真实 provider smoke 依赖本机 `sidebar_qa_ready=true`
   - 仍未引入向量数据库、外部检索服务或真正多轮代理执行器；当前 agent execute 已支持 sidebar 类型步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，并支持用户显式提供 `step_ids` + `max_steps` 的有界链式执行，未支持的步骤类型会显式拒绝
+  - Browser memories 当前已支持全局 page visibility 开关，可统一隐藏页面级 snippets 注入，但尚未实现按站点、按窗口或按单页的细粒度控制
   - DOM 结构化上下文当前只覆盖 headings、links、forms 摘要；设备模拟当前只覆盖固定预设与显式清除；多窗口当前覆盖显式新开窗口、窗口内打开、单标签跨窗口迁移、单标签拆到新窗口、按建议组整理到新窗口、按建议组整理到指定窗口、批量按建议组整理到多窗口、批量按建议组整理到指定现有窗口、按指定窗口建议组拆到多新窗口、按指定窗口建议组整理到指定现有窗口、按指定窗口单建议组整理到新窗口、按指定窗口单建议组整理到指定现有目标窗口、窗口级只读整理建议、窗口合并、DevTools 新窗口打开、DevTools 定向打开到指定现有窗口、按指定 panel 的 DevTools 新窗口打开、按指定 panel 定向打开到指定现有窗口、窗口级批量 DevTools 新窗口打开、窗口级批量 DevTools panel 新窗口打开、窗口级批量 DevTools panel 定向打开、窗口级批量 DevTools 定向打开、按指定 panel 生成只读 DevTools URL、标签页标题重命名、只读窗口分组、重复页清理、显式窗口激活、显式窗口关闭、显式窗口状态控制和显式 bounds 控制，尚未覆盖完整 DevTools 面板壳层或更深层自动化窗口编排
 
 ## 冻结边界

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -215,6 +216,79 @@ func TestSidebarSummarizeWritesRuntimeErrorOnProviderFailure(t *testing.T) {
 	}
 	if runtimeState.LastTraceID == "" || runtimeState.LastError == "" {
 		t.Fatalf("unexpected runtime state: %+v", runtimeState)
+	}
+}
+
+func TestSidebarSummarizeHidesMemoryWhenPageVisibilityDisabled(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	var capturedRequestBody string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read request body failed: %v", err)
+		}
+		capturedRequestBody = string(body)
+		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas summary"}}]}`))
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := memory.AppendQATurn(paths, memory.QATurnInput{
+		OccurredAt: "2026-04-07T11:59:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+		Question:   "what was asked before",
+		Answer:     "Hidden memory answer",
+		TraceID:    "trace-1",
+	}); err != nil {
+		t.Fatalf("append qa turn failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		MemoryPageVisibility:   settings.Bool(false),
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:            "tab-1",
+			Title:         "Atlas",
+			URL:           "https://chatgpt.com/atlas",
+			Text:          "Atlas context",
+			CapturedAt:    "2026-04-07T11:00:00Z",
+			TextLength:    13,
+			TextLimit:     4096,
+			TextTruncated: false,
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"sidebar", "summarize", "tab-1"})
+	})
+	if err != nil {
+		t.Fatalf("run sidebar summarize failed: %v", err)
+	}
+	if !strings.Contains(output, `summary="Atlas summary"`) {
+		t.Fatalf("unexpected output: %s", output)
+	}
+	if strings.Contains(capturedRequestBody, "Hidden memory answer") {
+		t.Fatalf("expected page visibility control to hide memory, got %s", capturedRequestBody)
 	}
 }
 

@@ -59,6 +59,8 @@
   - 当前已完成
 - `T127`
   - 当前已完成
+- `T128`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -78,7 +80,7 @@
   - 统一权限边界只读入口：`atlasctl permissions status` 与 `/v1/permissions`
   - 统一 memory 只读入口：`atlasctl memory list` 与 `/v1/memory`
   - 统一 memory 检索入口：`atlasctl memory search` 与 `/v1/memory/search`
-  - 统一 memory 数据控制入口：`atlasctl memory controls`、`atlasctl memory set-persist` 与 `/v1/memory/controls`
+  - 统一 memory 数据控制入口：`atlasctl memory controls`、`atlasctl memory set-persist`、`atlasctl memory set-page-visibility` 与 `/v1/memory/controls`
   - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
   - `atlasctl sidebar ask` 与 `/v1/sidebar/ask`
   - `atlasctl sidebar selection-ask` 与 `/v1/sidebar/selection/ask`
@@ -130,7 +132,7 @@
   - browser-data open
   - mirror/chrome import 来源目录白名单校验
   - managed runtime stage/verify/install/rollback
-  - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐、标签整理建议与固定设备预设模拟
+  - sidebar 多 provider、页内总结、DOM 结构化上下文提取、原生选区提问、本地 memory 轻量增强、page-scoped memory snippets 全局可见性控制、按标签页聚合的 Browser memories、结构化页面建议、结构化上下文推荐、标签整理建议与固定设备预设模拟
   - 只读 Agent 预演计划，可基于当前页上下文、页面建议、上下文推荐与 memory 生成多步计划，不执行动作，并导出 step 级 `executable/execution_path/requires_provider` 元数据
   - 显式确认的 Agent 执行入口，当前支持单步执行与显式有界链式执行（`step_ids + max_steps`）；支持执行 sidebar 类型计划步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，不写 memory
   - 项目级 gate 与发布/恢复手册

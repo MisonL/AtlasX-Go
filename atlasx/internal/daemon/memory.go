@@ -28,10 +28,6 @@ type memorySearchResponse struct {
 	Snippets []string `json:"snippets"`
 }
 
-type memoryControlsRequest struct {
-	PersistEnabled *bool `json:"persist_enabled"`
-}
-
 func serveMemoryList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
@@ -130,13 +126,13 @@ func serveMemoryControls(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, http.StatusOK, controls)
 	case http.MethodPost:
-		var request memoryControlsRequest
+		var request memory.ControlsUpdate
 		if err := decodeRequiredJSON(r, &request); err != nil {
 			writeError(w, http.StatusBadRequest, err)
 			return
 		}
-		if request.PersistEnabled == nil {
-			writeError(w, http.StatusBadRequest, fmt.Errorf("persist_enabled is required"))
+		if request.PersistEnabled == nil && request.PageVisibilityEnabled == nil {
+			writeError(w, http.StatusBadRequest, fmt.Errorf("persist_enabled or page_visibility_enabled is required"))
 			return
 		}
 		paths, err := discoverPaths()
@@ -144,7 +140,7 @@ func serveMemoryControls(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		controls, err := memory.SetPersistEnabled(paths, *request.PersistEnabled)
+		controls, err := memory.UpdateControls(paths, request)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return

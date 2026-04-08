@@ -8,17 +8,18 @@ import (
 )
 
 type View struct {
-	ConfigFile             string                  `json:"config_file"`
-	ChromeBinary           string                  `json:"chrome_binary"`
-	DefaultProfile         string                  `json:"default_profile"`
-	ListenAddr             string                  `json:"listen_addr"`
-	WebAppURL              string                  `json:"web_app_url"`
-	MemoryPersistEnabled   bool                    `json:"memory_persist_enabled"`
-	SidebarProvider        string                  `json:"sidebar_provider"`
-	SidebarModel           string                  `json:"sidebar_model"`
-	SidebarBaseURL         string                  `json:"sidebar_base_url"`
-	SidebarDefaultProvider string                  `json:"sidebar_default_provider"`
-	SidebarProviders       []SidebarProviderConfig `json:"sidebar_providers"`
+	ConfigFile                  string                  `json:"config_file"`
+	ChromeBinary                string                  `json:"chrome_binary"`
+	DefaultProfile              string                  `json:"default_profile"`
+	ListenAddr                  string                  `json:"listen_addr"`
+	WebAppURL                   string                  `json:"web_app_url"`
+	MemoryPersistEnabled        bool                    `json:"memory_persist_enabled"`
+	MemoryPageVisibilityEnabled bool                    `json:"memory_page_visibility_enabled"`
+	SidebarProvider             string                  `json:"sidebar_provider"`
+	SidebarModel                string                  `json:"sidebar_model"`
+	SidebarBaseURL              string                  `json:"sidebar_base_url"`
+	SidebarDefaultProvider      string                  `json:"sidebar_default_provider"`
+	SidebarProviders            []SidebarProviderConfig `json:"sidebar_providers"`
 }
 
 func LoadView(paths macos.Paths) (View, error) {
@@ -28,17 +29,18 @@ func LoadView(paths macos.Paths) (View, error) {
 	}
 
 	return View{
-		ConfigFile:             paths.ConfigFile,
-		ChromeBinary:           config.ChromeBinary,
-		DefaultProfile:         config.DefaultProfile,
-		ListenAddr:             config.ListenAddr,
-		WebAppURL:              config.WebAppURL,
-		MemoryPersistEnabled:   config.MemoryPersistEnabledValue(),
-		SidebarProvider:        config.SidebarProvider,
-		SidebarModel:           config.SidebarModel,
-		SidebarBaseURL:         config.SidebarBaseURL,
-		SidebarDefaultProvider: config.SidebarDefaultProvider,
-		SidebarProviders:       append([]SidebarProviderConfig(nil), config.SidebarProviders...),
+		ConfigFile:                  paths.ConfigFile,
+		ChromeBinary:                config.ChromeBinary,
+		DefaultProfile:              config.DefaultProfile,
+		ListenAddr:                  config.ListenAddr,
+		WebAppURL:                   config.WebAppURL,
+		MemoryPersistEnabled:        config.MemoryPersistEnabledValue(),
+		MemoryPageVisibilityEnabled: config.MemoryPageVisibilityEnabledValue(),
+		SidebarProvider:             config.SidebarProvider,
+		SidebarModel:                config.SidebarModel,
+		SidebarBaseURL:              config.SidebarBaseURL,
+		SidebarDefaultProvider:      config.SidebarDefaultProvider,
+		SidebarProviders:            append([]SidebarProviderConfig(nil), config.SidebarProviders...),
 	}, nil
 }
 
@@ -51,6 +53,7 @@ func (v View) Render() string {
 		fmt.Sprintf("listen_addr=%s", v.ListenAddr),
 		fmt.Sprintf("web_app_url=%s", v.WebAppURL),
 		fmt.Sprintf("memory_persist_enabled=%t", v.MemoryPersistEnabled),
+		fmt.Sprintf("memory_page_visibility_enabled=%t", v.MemoryPageVisibilityEnabled),
 		fmt.Sprintf("sidebar_provider=%s", v.SidebarProvider),
 		fmt.Sprintf("sidebar_model=%s", v.SidebarModel),
 		fmt.Sprintf("sidebar_base_url=%s", v.SidebarBaseURL),

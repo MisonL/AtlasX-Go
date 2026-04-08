@@ -88,7 +88,7 @@ func serveSidebarSelectionAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	memorySnippets, err := memory.FindRelevantSnippets(paths, memory.RetrievalInput{
+	memorySnippets, err := memory.FindRelevantSnippetsForPage(paths, memory.RetrievalInput{
 		TabID:    context.ID,
 		Title:    context.Title,
 		URL:      context.URL,

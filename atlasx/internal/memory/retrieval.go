@@ -79,6 +79,17 @@ func FindRelevantSnippets(paths macos.Paths, input RetrievalInput) ([]string, er
 	return snippets, nil
 }
 
+func FindRelevantSnippetsForPage(paths macos.Paths, input RetrievalInput) ([]string, error) {
+	controls, err := LoadControls(paths)
+	if err != nil {
+		return nil, err
+	}
+	if !controls.PageVisibilityEnabled {
+		return nil, nil
+	}
+	return FindRelevantSnippets(paths, input)
+}
+
 func scoreEvent(event Event, input RetrievalInput) int {
 	score := 0
 	if input.URL != "" {

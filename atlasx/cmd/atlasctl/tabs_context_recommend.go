@@ -25,7 +25,7 @@ func runTabsContextRecommend(paths macos.Paths, client commandTabsClient, args [
 		return err
 	}
 
-	memorySnippets, err := memory.FindRelevantSnippets(paths, memory.RetrievalInput{
+	memorySnippets, err := memory.FindRelevantSnippetsForPage(paths, memory.RetrievalInput{
 		TabID:    context.ID,
 		Title:    context.Title,
 		URL:      context.URL,

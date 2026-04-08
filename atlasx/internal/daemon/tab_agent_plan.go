@@ -57,7 +57,7 @@ func loadDaemonAgentPlan(paths macos.Paths, client tabClient, targetID string) (
 		return tabs.PageContext{}, nil, agentplan.Plan{}, err
 	}
 
-	memorySnippets, err := memory.FindRelevantSnippets(paths, memory.RetrievalInput{
+	memorySnippets, err := memory.FindRelevantSnippetsForPage(paths, memory.RetrievalInput{
 		TabID:    context.ID,
 		Title:    context.Title,
 		URL:      context.URL,

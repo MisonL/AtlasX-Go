@@ -145,6 +145,7 @@ func TestMemoryControlsContract(t *testing.T) {
 	assertContainsAll(t, output,
 		"config_file=",
 		"persist_enabled=",
+		"page_visibility_enabled=",
 	)
 }
 

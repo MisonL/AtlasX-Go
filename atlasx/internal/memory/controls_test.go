@@ -23,6 +23,9 @@ func TestLoadControlsDefaultsToEnabled(t *testing.T) {
 	if !controls.PersistEnabled {
 		t.Fatalf("expected persist enabled by default: %+v", controls)
 	}
+	if !controls.PageVisibilityEnabled {
+		t.Fatalf("expected page visibility enabled by default: %+v", controls)
+	}
 }
 
 func TestSetPersistEnabledUpdatesConfig(t *testing.T) {
@@ -47,6 +50,37 @@ func TestSetPersistEnabledUpdatesConfig(t *testing.T) {
 	}
 	if config.MemoryPersistEnabledValue() {
 		t.Fatalf("expected config persist disabled: %+v", config)
+	}
+	if !config.MemoryPageVisibilityEnabledValue() {
+		t.Fatalf("expected page visibility to remain enabled: %+v", config)
+	}
+}
+
+func TestSetPageVisibilityEnabledUpdatesConfig(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	controls, err := SetPageVisibilityEnabled(paths, false)
+	if err != nil {
+		t.Fatalf("set page visibility failed: %v", err)
+	}
+	if controls.PageVisibilityEnabled {
+		t.Fatalf("expected page visibility disabled: %+v", controls)
+	}
+
+	config, err := settings.NewStore(paths.ConfigFile).Load()
+	if err != nil {
+		t.Fatalf("load config failed: %v", err)
+	}
+	if config.MemoryPageVisibilityEnabledValue() {
+		t.Fatalf("expected config page visibility disabled: %+v", config)
+	}
+	if !config.MemoryPersistEnabledValue() {
+		t.Fatalf("expected persist to remain enabled: %+v", config)
 	}
 }
 
@@ -129,6 +163,31 @@ func TestParsePersistValueSupportsCommonWords(t *testing.T) {
 		}
 		if got != want {
 			t.Fatalf("parse persist value %q = %t, want %t", raw, got, want)
+		}
+	}
+}
+
+func TestParsePageVisibilityValueSupportsCommonWords(t *testing.T) {
+	cases := map[string]bool{
+		"visible":  true,
+		"enabled":  true,
+		"true":     true,
+		"on":       true,
+		"1":        true,
+		"hidden":   false,
+		"disabled": false,
+		"false":    false,
+		"off":      false,
+		"0":        false,
+	}
+
+	for raw, want := range cases {
+		got, err := ParsePageVisibilityValue(raw)
+		if err != nil {
+			t.Fatalf("parse page visibility value %q failed: %v", raw, err)
+		}
+		if got != want {
+			t.Fatalf("parse page visibility value %q = %t, want %t", raw, got, want)
 		}
 	}
 }

@@ -19,6 +19,7 @@ type Config struct {
 	ListenAddr             string                  `json:"listen_addr"`
 	WebAppURL              string                  `json:"web_app_url"`
 	MemoryPersistEnabled   *bool                   `json:"memory_persist_enabled,omitempty"`
+	MemoryPageVisibility   *bool                   `json:"memory_page_visibility_enabled,omitempty"`
 	SidebarProvider        string                  `json:"sidebar_provider"`
 	SidebarModel           string                  `json:"sidebar_model"`
 	SidebarBaseURL         string                  `json:"sidebar_base_url"`
@@ -89,6 +90,7 @@ func DefaultConfig() Config {
 		ListenAddr:           DefaultListenAddr,
 		WebAppURL:            DefaultWebAppURL,
 		MemoryPersistEnabled: Bool(true),
+		MemoryPageVisibility: Bool(true),
 	}
 }
 
@@ -105,6 +107,9 @@ func (c Config) withDefaults() Config {
 	if c.MemoryPersistEnabled == nil {
 		c.MemoryPersistEnabled = Bool(true)
 	}
+	if c.MemoryPageVisibility == nil {
+		c.MemoryPageVisibility = Bool(true)
+	}
 	if len(c.SidebarProviders) > 0 && c.SidebarDefaultProvider == "" {
 		c.SidebarDefaultProvider = c.SidebarProviders[0].ID
 	}
@@ -116,6 +121,13 @@ func (c Config) MemoryPersistEnabledValue() bool {
 		return true
 	}
 	return *c.MemoryPersistEnabled
+}
+
+func (c Config) MemoryPageVisibilityEnabledValue() bool {
+	if c.MemoryPageVisibility == nil {
+		return true
+	}
+	return *c.MemoryPageVisibility
 }
 
 func Bool(value bool) *bool {

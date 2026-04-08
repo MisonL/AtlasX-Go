@@ -17,6 +17,9 @@ func TestMemoryControlsOutputsPersistFlag(t *testing.T) {
 	if !strings.Contains(output, "persist_enabled=true") {
 		t.Fatalf("unexpected output: %s", output)
 	}
+	if !strings.Contains(output, "page_visibility_enabled=true") {
+		t.Fatalf("unexpected output: %s", output)
+	}
 }
 
 func TestMemorySetPersistUpdatesControls(t *testing.T) {
@@ -31,6 +34,23 @@ func TestMemorySetPersistUpdatesControls(t *testing.T) {
 	if !strings.Contains(output, "persist_enabled=false") {
 		t.Fatalf("unexpected output: %s", output)
 	}
+	if !strings.Contains(output, "page_visibility_enabled=true") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestMemorySetPageVisibilityUpdatesControls(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-page-visibility", "hidden"})
+	})
+	if err != nil {
+		t.Fatalf("run memory set-page-visibility failed: %v", err)
+	}
+	if !strings.Contains(output, "page_visibility_enabled=false") {
+		t.Fatalf("unexpected output: %s", output)
+	}
 }
 
 func TestMemorySetPersistRejectsInvalidValue(t *testing.T) {
@@ -43,6 +63,20 @@ func TestMemorySetPersistRejectsInvalidValue(t *testing.T) {
 		t.Fatal("expected memory set-persist to fail")
 	}
 	if !strings.Contains(err.Error(), `invalid persist value "maybe"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMemorySetPageVisibilityRejectsInvalidValue(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-page-visibility", "maybe"})
+	})
+	if err == nil {
+		t.Fatal("expected memory set-page-visibility to fail")
+	}
+	if !strings.Contains(err.Error(), `invalid page visibility value "maybe"`) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

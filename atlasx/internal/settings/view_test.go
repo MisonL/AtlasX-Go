@@ -71,6 +71,7 @@ func TestViewRenderIncludesSidebarProviders(t *testing.T) {
 	for _, fragment := range []string{
 		"config_file=" + expectedConfigFile,
 		"memory_persist_enabled=true",
+		"memory_page_visibility_enabled=true",
 		"sidebar_default_provider=primary",
 		"sidebar_provider_count=1",
 		"sidebar_provider[0].id=primary",

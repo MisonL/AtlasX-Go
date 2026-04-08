@@ -64,7 +64,7 @@ func serveTabMemories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippets, err := memory.FindRelevantSnippets(paths, memory.RetrievalInput{
+	snippets, err := memory.FindRelevantSnippetsForPage(paths, memory.RetrievalInput{
 		TabID:    context.ID,
 		Title:    context.Title,
 		URL:      context.URL,
