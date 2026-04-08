@@ -41,6 +41,8 @@ type stubCommandTabsClient struct {
 	windowBoundsErr              error
 	openDevTools                 tabs.Target
 	openDevToolsErr              error
+	openDevToolsInWindow         tabs.WindowOpenResult
+	openDevToolsInWindowErr      error
 	openDevToolsPanel            tabs.Target
 	openDevToolsPanelErr         error
 	openDevToolsPanelInWindow    tabs.WindowOpenResult
@@ -150,6 +152,13 @@ func (s *stubCommandTabsClient) OpenDevToolsWindow(targetID string) (tabs.Target
 		return tabs.Target{}, s.openDevToolsErr
 	}
 	return s.openDevTools, nil
+}
+
+func (s *stubCommandTabsClient) OpenDevToolsInWindow(targetID string, windowID int) (tabs.WindowOpenResult, error) {
+	if s.openDevToolsInWindowErr != nil {
+		return tabs.WindowOpenResult{}, s.openDevToolsInWindowErr
+	}
+	return s.openDevToolsInWindow, nil
 }
 
 func (s *stubCommandTabsClient) OpenDevToolsPanelWindow(targetID string, panel string) (tabs.Target, error) {
