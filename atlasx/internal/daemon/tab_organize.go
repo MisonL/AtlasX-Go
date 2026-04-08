@@ -38,6 +38,38 @@ func serveTabOrganize(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func serveTabOrganizeWindow(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		return
+	}
+
+	windowID, err := decodePositiveIntQuery(r, "window_id")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paths, err := discoverPaths()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	client, err := newTabsClient(paths)
+	if err != nil {
+		writeError(w, http.StatusConflict, err)
+		return
+	}
+
+	result, err := tabgroups.SuggestWindow(client, windowID)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
 func serveTabOrganizeGroupToWindow(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))

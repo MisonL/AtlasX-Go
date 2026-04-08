@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"atlasx/internal/imports"
@@ -579,6 +580,21 @@ func serveMirrorScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, snapshot)
+}
+
+func decodePositiveIntQuery(r *http.Request, name string) (int, error) {
+	value := r.URL.Query().Get(name)
+	if value == "" {
+		return 0, fmt.Errorf("missing query parameter %s", name)
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid query parameter %s", name)
+	}
+	if parsed <= 0 {
+		return 0, fmt.Errorf("query parameter %s must be positive", name)
+	}
+	return parsed, nil
 }
 
 func serveChromeImport(w http.ResponseWriter, r *http.Request) {

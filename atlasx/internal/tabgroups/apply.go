@@ -47,6 +47,12 @@ type ApplyWindowIntoWindowResult struct {
 	Groups         []ApplyResult `json:"groups"`
 }
 
+type SuggestWindowResult struct {
+	SourceWindowID int     `json:"source_window_id"`
+	Returned       int     `json:"returned"`
+	Groups         []Group `json:"groups"`
+}
+
 func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -58,6 +64,20 @@ func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, erro
 		return ApplyResult{}, err
 	}
 	return applyGroupToNewWindow(client, group)
+}
+
+func SuggestWindow(client OrganizerClient, sourceWindowID int) (SuggestWindowResult, error) {
+	window, err := findWindow(client, sourceWindowID)
+	if err != nil {
+		return SuggestWindowResult{}, err
+	}
+
+	groups := Suggest(window.Targets)
+	return SuggestWindowResult{
+		SourceWindowID: sourceWindowID,
+		Returned:       len(groups),
+		Groups:         groups,
+	}, nil
 }
 
 func ApplyAllToNewWindows(client OrganizerClient) (ApplyAllResult, error) {

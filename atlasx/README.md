@@ -66,6 +66,7 @@ go run ./cmd/atlasctl tabs suggest <target-id>
 go run ./cmd/atlasctl tabs memories <target-id>
 go run ./cmd/atlasctl tabs recommend-context <target-id>
 go run ./cmd/atlasctl tabs organize
+go run ./cmd/atlasctl tabs organize-window <window-id>
 go run ./cmd/atlasctl tabs devtools <target-id>
 go run ./cmd/atlasctl tabs emulate-device <target-id> <preset>
 go run ./cmd/atlasctl import-chrome
@@ -121,6 +122,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs/memories`
 - `GET /v1/tabs/context-recommendations`
 - `GET /v1/tabs/organize`
+- `GET /v1/tabs/organize-window`
 - `GET /v1/tabs/devtools`
 - `POST /v1/tabs/emulate-device`
 - `POST /v1/tabs/open`
@@ -188,6 +190,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs organize-into-window <window-id>`，可基于既有 organize 建议结果按组顺序逐个复用 `organize-group-into-window` 主链，把全部建议组整理到指定现有窗口，并显式返回各组的 moved targets 与 aligned targets。
 - 当前已提供 `tabs organize-window-to-windows <window-id>`，可仅针对指定源窗口中的 page targets 生成建议组，再按组顺序逐个复用 `organize-group-to-window` 主链，把命中的建议组拆到各自新窗口，未命中建议组的标签保留在源窗口。
 - 当前已提供 `tabs organize-window-into-window <source-window-id> <target-window-id>`，可仅针对指定源窗口中的 page targets 生成建议组，再按组顺序逐个复用 `organize-group-into-window` 主链，把命中的建议组整理到指定现有目标窗口，未命中建议组的标签保留在源窗口。
+- 当前已提供 `tabs organize-window <window-id>`，可仅针对指定窗口中的 page targets 生成结构化整理建议，作为窗口级只读观测入口。
 - 当前已提供 `tabs merge-window <source-window-id> <target-window-id>`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `tabs open-devtools <target-id>`，可解析指定标签页的 `devtools_frontend_url` 并复用新窗口打开主链，把对应 DevTools 放到独立浏览器窗口。
 - 当前已提供 `tabs close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
@@ -212,6 +215,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `GET /v1/tabs/memories?id=<target-id>`，可基于当前页上下文返回相关 Browser memories snippets，不写 memory，也不引入第二套检索排序逻辑。
 - 当前已提供 `GET /v1/tabs/context-recommendations?id=<target-id>`，可基于当前页上下文、同 host 标签页与本地 memory retrieval 返回结构化上下文推荐，不直接改动浏览器状态或写 memory。
 - 当前已提供 `GET /v1/tabs/organize`，可基于当前 page targets 返回结构化分组建议，不直接改动浏览器状态。
+- 当前已提供 `GET /v1/tabs/organize-window?window_id=<id>`，可仅针对指定窗口中的 page targets 返回结构化分组建议，不直接改动浏览器状态。
 - 当前已提供 `GET /v1/tabs/devtools?id=<target-id>`，可按标签页解析并返回对应的 `devtools_frontend_url`，作为最小 DevTools 入口。
 - 当前已提供 `GET /v1/tabs/search?q=<query>`，可在当前 page target 列表上按 `title/url` 大小写不敏感匹配查询词，返回结构化命中结果。
 - 当前已提供 `GET /v1/tabs/windows`，可按当前 page targets 返回结构化浏览器窗口分组结果，不执行窗口移动或关闭。

@@ -253,6 +253,51 @@ func TestApplyAllToNewWindowsReturnsEmptyWithoutGroups(t *testing.T) {
 	}
 }
 
+func TestSuggestWindowReturnsStructuredGroups(t *testing.T) {
+	client := &stubOrganizerClient{
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+					{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+					{ID: "tab-3", Type: "page", Title: "Elsewhere", URL: "https://example.com/other"},
+				},
+			},
+		},
+	}
+
+	result, err := SuggestWindow(client, 11)
+	if err != nil {
+		t.Fatalf("suggest window failed: %v", err)
+	}
+	if result.SourceWindowID != 11 || result.Returned != 1 || len(result.Groups) != 1 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if result.Groups[0].ID != "host:chatgpt.com" {
+		t.Fatalf("unexpected groups: %+v", result.Groups)
+	}
+}
+
+func TestSuggestWindowRejectsUnknownWindow(t *testing.T) {
+	client := &stubOrganizerClient{
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 9,
+				Targets: []tabs.Target{
+					{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+				},
+			},
+		},
+	}
+
+	if _, err := SuggestWindow(client, 11); err == nil {
+		t.Fatal("expected suggest window to fail")
+	} else if !strings.Contains(err.Error(), "window 11 not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestApplyAllToWindowMovesAllSuggestedGroupsIntoTargetWindow(t *testing.T) {
 	client := &stubOrganizerClient{
 		targets: []tabs.Target{
