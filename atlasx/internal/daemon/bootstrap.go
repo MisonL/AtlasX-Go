@@ -199,6 +199,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/profile", func(w http.ResponseWriter, r *http.Request) {
 		serveProfile(w, r)
 	})
+	mux.HandleFunc("/v1/policy", func(w http.ResponseWriter, r *http.Request) {
+		servePolicy(w, r)
+	})
 	mux.HandleFunc("/v1/settings", func(w http.ResponseWriter, r *http.Request) {
 		serveSettings(w, r)
 	})

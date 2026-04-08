@@ -132,6 +132,30 @@ func TestProfileStatusContract(t *testing.T) {
 	)
 }
 
+func TestPolicyStatusContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"policy", "status"})
+	})
+	if err != nil {
+		t.Fatalf("run policy status failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"config_file=",
+		"default_listen_addr=",
+		"loopback_only_default=",
+		"remote_control_flag=",
+		"remote_control_flag_required=",
+		"shared_profile_managed=",
+		"sidebar_secrets_persisted=",
+		"sidebar_provider_count=",
+		"mirror_allowed_root_count=",
+		"chrome_import_allowed_root_count=",
+	)
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

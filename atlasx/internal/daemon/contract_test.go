@@ -102,6 +102,35 @@ func TestProfileEndpointContract(t *testing.T) {
 	)
 }
 
+func TestPolicyEndpointContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, "/v1/policy", nil)
+	recorder := httptest.NewRecorder()
+
+	NewMux(Status{}).ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	payload := decodeObjectResponse(t, recorder)
+	assertMapKeys(t, payload,
+		"config_file",
+		"default_listen_addr",
+		"loopback_only_default",
+		"remote_control_flag",
+		"remote_control_flag_required",
+		"shared_profile_managed",
+		"sidebar_secrets_persisted",
+		"sidebar_default_provider",
+		"sidebar_provider_count",
+		"sidebar_provider_env_keys",
+		"mirror_allowed_roots",
+		"chrome_import_allowed_roots",
+	)
+}
+
 func TestMemoryEndpointContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
