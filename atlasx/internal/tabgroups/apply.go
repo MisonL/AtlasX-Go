@@ -28,6 +28,11 @@ type ApplyResult struct {
 	MovedTargets []AppliedTarget `json:"moved_targets"`
 }
 
+type ApplyAllResult struct {
+	Returned int           `json:"returned"`
+	Groups   []ApplyResult `json:"groups"`
+}
+
 func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -38,8 +43,33 @@ func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, erro
 	if err != nil {
 		return ApplyResult{}, err
 	}
+	return applyGroupToNewWindow(client, group)
+}
+
+func ApplyAllToNewWindows(client OrganizerClient) (ApplyAllResult, error) {
+	targets, err := client.List()
+	if err != nil {
+		return ApplyAllResult{}, err
+	}
+
+	groups := Suggest(targets)
+	result := ApplyAllResult{
+		Groups: make([]ApplyResult, 0, len(groups)),
+	}
+	for _, group := range groups {
+		applied, err := applyGroupToNewWindow(client, group)
+		if err != nil {
+			return ApplyAllResult{}, err
+		}
+		result.Groups = append(result.Groups, applied)
+	}
+	result.Returned = len(result.Groups)
+	return result, nil
+}
+
+func applyGroupToNewWindow(client OrganizerClient, group Group) (ApplyResult, error) {
 	if len(group.Targets) < 2 {
-		return ApplyResult{}, fmt.Errorf("group %s has fewer than 2 page targets", groupID)
+		return ApplyResult{}, fmt.Errorf("group %s has fewer than 2 page targets", group.ID)
 	}
 
 	firstMove, err := client.MoveToNewWindow(group.Targets[0].ID)

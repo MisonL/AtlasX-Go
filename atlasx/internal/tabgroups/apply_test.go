@@ -15,6 +15,7 @@ type stubOrganizerClient struct {
 	moveToWindow    map[string]tabs.WindowMoveResult
 	moveToWindowErr error
 	moveToNew       tabs.WindowMoveToNewResult
+	moveToNewByID   map[string]tabs.WindowMoveToNewResult
 	moveToNewErr    error
 	moveWindowID    int
 	moveCalls       []string
@@ -41,6 +42,9 @@ func (s *stubOrganizerClient) MoveToNewWindow(targetID string) (tabs.WindowMoveT
 	s.moveCalls = append(s.moveCalls, "new:"+targetID)
 	if s.moveToNewErr != nil {
 		return tabs.WindowMoveToNewResult{}, s.moveToNewErr
+	}
+	if result, ok := s.moveToNewByID[targetID]; ok {
+		return result, nil
 	}
 	return s.moveToNew, nil
 }
@@ -146,6 +150,106 @@ func TestApplyToNewWindowSurfacesMoveFailure(t *testing.T) {
 		t.Fatal("expected apply to new window to fail")
 	} else if !strings.Contains(err.Error(), "move failed") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestApplyAllToNewWindowsMovesAllSuggestedGroups(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+			{ID: "tab-2", Type: "page", Title: "Atlas B", URL: "https://chatgpt.com/atlas/b"},
+			{ID: "tab-3", Type: "page", Title: "Build Log - A", URL: "about:blank"},
+			{ID: "tab-4", Type: "page", Title: "Build Log - B", URL: "about:blank"},
+		},
+		windows: []tabs.WindowSummary{
+			{
+				WindowID: 11,
+				Targets: []tabs.Target{
+					{ID: "new-1", Type: "page", Title: "Atlas A", URL: "https://chatgpt.com/atlas/a"},
+				},
+			},
+			{
+				WindowID: 12,
+				Targets: []tabs.Target{
+					{ID: "new-3", Type: "page", Title: "Build Log - A", URL: "about:blank"},
+				},
+			},
+		},
+		moveToNewByID: map[string]tabs.WindowMoveToNewResult{
+			"tab-1": {
+				SourceWindowID: 9,
+				SourceTargetID: "tab-1",
+				Target: tabs.Target{
+					ID:    "new-1",
+					Type:  "page",
+					Title: "Atlas A",
+					URL:   "https://chatgpt.com/atlas/a",
+				},
+			},
+			"tab-3": {
+				SourceWindowID: 9,
+				SourceTargetID: "tab-3",
+				Target: tabs.Target{
+					ID:    "new-3",
+					Type:  "page",
+					Title: "Build Log - A",
+					URL:   "about:blank",
+				},
+			},
+		},
+		moveToWindow: map[string]tabs.WindowMoveResult{
+			"tab-2": {
+				SourceWindowID:    9,
+				TargetWindowID:    11,
+				SourceTargetID:    "tab-2",
+				ActivatedTargetID: "new-1",
+				Target: tabs.Target{
+					ID:    "new-2",
+					Type:  "page",
+					Title: "Atlas B",
+					URL:   "https://chatgpt.com/atlas/b",
+				},
+			},
+			"tab-4": {
+				SourceWindowID:    9,
+				TargetWindowID:    12,
+				SourceTargetID:    "tab-4",
+				ActivatedTargetID: "new-3",
+				Target: tabs.Target{
+					ID:    "new-4",
+					Type:  "page",
+					Title: "Build Log - B",
+					URL:   "about:blank",
+				},
+			},
+		},
+	}
+
+	result, err := ApplyAllToNewWindows(client)
+	if err != nil {
+		t.Fatalf("apply all to new windows failed: %v", err)
+	}
+	if result.Returned != 2 || len(result.Groups) != 2 {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	if result.Groups[0].GroupID != "title:build log" || result.Groups[1].GroupID != "host:chatgpt.com" {
+		t.Fatalf("unexpected groups: %+v", result.Groups)
+	}
+}
+
+func TestApplyAllToNewWindowsReturnsEmptyWithoutGroups(t *testing.T) {
+	client := &stubOrganizerClient{
+		targets: []tabs.Target{
+			{ID: "tab-1", Type: "page", Title: "Solo", URL: "https://example.com"},
+		},
+	}
+
+	result, err := ApplyAllToNewWindows(client)
+	if err != nil {
+		t.Fatalf("apply all to new windows failed: %v", err)
+	}
+	if result.Returned != 0 || len(result.Groups) != 0 {
+		t.Fatalf("unexpected result: %+v", result)
 	}
 }
 

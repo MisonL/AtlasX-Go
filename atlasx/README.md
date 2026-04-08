@@ -44,6 +44,7 @@ go run ./cmd/atlasctl tabs open-in-window <window-id> https://openai.com
 go run ./cmd/atlasctl tabs move-to-window <tab-id> <target-window-id>
 go run ./cmd/atlasctl tabs move-to-new-window <tab-id>
 go run ./cmd/atlasctl tabs organize-group-to-window <group-id>
+go run ./cmd/atlasctl tabs organize-to-windows
 go run ./cmd/atlasctl tabs merge-window <source-window-id> <target-window-id>
 go run ./cmd/atlasctl tabs open-devtools <target-id>
 go run ./cmd/atlasctl tabs close-duplicates
@@ -124,6 +125,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/tabs/move-to-window`
 - `POST /v1/tabs/move-to-new-window`
 - `POST /v1/tabs/organize-group-to-window`
+- `POST /v1/tabs/organize-to-windows`
 - `POST /v1/tabs/merge-window`
 - `POST /v1/tabs/open-devtools`
 - `POST /v1/tabs/close-duplicates`
@@ -173,6 +175,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs move-to-window <tab-id> <target-window-id>`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
 - 当前已提供 `tabs move-to-new-window <tab-id>`，可定位指定 page target 所属源窗口，再复用既有 `open-window` 与 `close(target)` 主链把该标签拆到新窗口。
 - 当前已提供 `tabs organize-group-to-window <group-id>`，可基于既有 organize 建议结果定位指定建议组，再复用 `move-to-new-window` 与 `move-to-window` 主链把该组标签整理到同一新窗口。
+- 当前已提供 `tabs organize-to-windows`，可基于既有 organize 建议结果按组顺序逐个复用 `organize-group-to-window` 主链，把全部建议组整理到各自新窗口。
 - 当前已提供 `tabs merge-window <source-window-id> <target-window-id>`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `tabs open-devtools <target-id>`，可解析指定标签页的 `devtools_frontend_url` 并复用新窗口打开主链，把对应 DevTools 放到独立浏览器窗口。
 - 当前已提供 `tabs close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。
@@ -204,6 +207,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `POST /v1/tabs/move-to-window`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
 - 当前已提供 `POST /v1/tabs/move-to-new-window`，可定位指定 page target 所属源窗口，再复用既有 `open-window` 与 `close(target)` 主链把该标签拆到新窗口。
 - 当前已提供 `POST /v1/tabs/organize-group-to-window`，可基于既有 organize 建议结果定位指定建议组，再复用 `move-to-new-window` 与 `move-to-window` 主链把该组标签整理到同一新窗口。
+- 当前已提供 `POST /v1/tabs/organize-to-windows`，可基于既有 organize 建议结果按组顺序逐个复用 `organize-group-to-window` 主链，把全部建议组整理到各自新窗口。
 - 当前已提供 `POST /v1/tabs/merge-window`，可读取源窗口 page targets，再复用既有 `open-in-window` 与 `close(target)` 主链把源窗口标签迁入目标窗口。
 - 当前已提供 `POST /v1/tabs/open-devtools`，可解析指定标签页的 `devtools_frontend_url` 并在新窗口中打开该 DevTools，不引入第二套 URL 推导逻辑。
 - 当前已提供 `POST /v1/tabs/close-duplicates`，可基于当前 page target 列表按规范化 URL 识别重复页，并复用既有 `close(target)` 主链关闭后续重复项。

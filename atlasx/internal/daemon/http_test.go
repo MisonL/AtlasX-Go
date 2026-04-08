@@ -36,8 +36,10 @@ type stubTabsClient struct {
 	windowOpenErr     error
 	windowMove        tabs.WindowMoveResult
 	windowMoveErr     error
+	windowMoveByID    map[string]tabs.WindowMoveResult
 	windowMoveNew     tabs.WindowMoveToNewResult
 	windowMoveNewErr  error
+	windowMoveNewByID map[string]tabs.WindowMoveToNewResult
 	windowMerge       tabs.WindowMergeResult
 	windowMergeErr    error
 	windowActivate    tabs.WindowActivateResult
@@ -95,12 +97,18 @@ func (s *stubTabsClient) MoveToWindow(targetID string, targetWindowID int) (tabs
 	if s.windowMoveErr != nil {
 		return tabs.WindowMoveResult{}, s.windowMoveErr
 	}
+	if result, ok := s.windowMoveByID[targetID]; ok {
+		return result, nil
+	}
 	return s.windowMove, nil
 }
 
 func (s *stubTabsClient) MoveToNewWindow(targetID string) (tabs.WindowMoveToNewResult, error) {
 	if s.windowMoveNewErr != nil {
 		return tabs.WindowMoveToNewResult{}, s.windowMoveNewErr
+	}
+	if result, ok := s.windowMoveNewByID[targetID]; ok {
+		return result, nil
 	}
 	return s.windowMoveNew, nil
 }

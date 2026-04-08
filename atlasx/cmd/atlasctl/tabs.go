@@ -43,7 +43,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-group-to-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-group-to-window, organize-to-windows, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -351,6 +351,29 @@ func runTabs(args []string) error {
 				moved.Target.Title,
 				moved.Target.URL,
 			)
+		}
+		return nil
+	case "organize-to-windows":
+		result, err := tabgroups.ApplyAllToNewWindows(client)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("returned=%d\n", result.Returned)
+		for groupIndex, group := range result.Groups {
+			fmt.Printf("group_index=%d group_id=%s label=%q window_id=%d returned=%d\n", groupIndex, group.GroupID, group.Label, group.WindowID, group.Returned)
+			for index, moved := range group.MovedTargets {
+				fmt.Printf(
+					"index=%d source_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+					index,
+					moved.SourceWindowID,
+					moved.SourceTargetID,
+					moved.ActivatedTargetID,
+					moved.Target.ID,
+					moved.Target.Type,
+					moved.Target.Title,
+					moved.Target.URL,
+				)
+			}
 		}
 		return nil
 	case "recommend-context":

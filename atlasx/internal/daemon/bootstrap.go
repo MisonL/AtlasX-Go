@@ -287,6 +287,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/tabs/organize-group-to-window", func(w http.ResponseWriter, r *http.Request) {
 		serveTabOrganizeGroupToWindow(w, r)
 	})
+	mux.HandleFunc("/v1/tabs/organize-to-windows", func(w http.ResponseWriter, r *http.Request) {
+		serveTabOrganizeToWindows(w, r)
+	})
 	mux.HandleFunc("/v1/tabs/devtools", func(w http.ResponseWriter, r *http.Request) {
 		serveTabDevTools(w, r)
 	})
