@@ -43,7 +43,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, activate, close, navigate, capture, extract-context, selection, devtools, emulate-device, suggest, memories, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -423,6 +423,8 @@ func runTabs(args []string) error {
 		return runTabsOrganizeWindowToWindows(client, args[1:])
 	case "organize-window-into-window":
 		return runTabsOrganizeWindowIntoWindow(client, args[1:])
+	case "organize-window-group-to-window":
+		return runTabsOrganizeWindowGroupToWindow(client, args[1:])
 	case "recommend-context":
 		return runTabsContextRecommend(paths, client, args[1:])
 	default:

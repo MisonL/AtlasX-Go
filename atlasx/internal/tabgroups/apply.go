@@ -53,6 +53,16 @@ type SuggestWindowResult struct {
 	Groups         []Group `json:"groups"`
 }
 
+type ApplyWindowGroupResult struct {
+	SourceWindowID int             `json:"source_window_id"`
+	GroupID        string          `json:"group_id"`
+	Label          string          `json:"label"`
+	WindowID       int             `json:"window_id"`
+	Returned       int             `json:"returned"`
+	MovedTargets   []AppliedTarget `json:"moved_targets"`
+	AlignedTargets []AppliedTarget `json:"aligned_targets"`
+}
+
 func ApplyToNewWindow(client OrganizerClient, groupID string) (ApplyResult, error) {
 	targets, err := client.List()
 	if err != nil {
@@ -99,6 +109,19 @@ func ApplyAllToNewWindows(client OrganizerClient) (ApplyAllResult, error) {
 	}
 	result.Returned = len(result.Groups)
 	return result, nil
+}
+
+func ApplyWindowGroupToNewWindow(client OrganizerClient, sourceWindowID int, groupID string) (ApplyWindowGroupResult, error) {
+	group, err := findGroupInWindow(client, sourceWindowID, groupID)
+	if err != nil {
+		return ApplyWindowGroupResult{}, err
+	}
+
+	applied, err := applyGroupToNewWindow(client, group)
+	if err != nil {
+		return ApplyWindowGroupResult{}, err
+	}
+	return wrapApplyWindowGroupResult(sourceWindowID, applied), nil
 }
 
 func ApplyWindowToNewWindows(client OrganizerClient, sourceWindowID int) (ApplyWindowResult, error) {
@@ -340,4 +363,24 @@ func findWindow(client OrganizerClient, windowID int) (tabs.WindowSummary, error
 		}
 	}
 	return tabs.WindowSummary{}, fmt.Errorf("window %d not found", windowID)
+}
+
+func findGroupInWindow(client OrganizerClient, sourceWindowID int, groupID string) (Group, error) {
+	window, err := findWindow(client, sourceWindowID)
+	if err != nil {
+		return Group{}, err
+	}
+	return findGroup(Suggest(window.Targets), groupID)
+}
+
+func wrapApplyWindowGroupResult(sourceWindowID int, applied ApplyResult) ApplyWindowGroupResult {
+	return ApplyWindowGroupResult{
+		SourceWindowID: sourceWindowID,
+		GroupID:        applied.GroupID,
+		Label:          applied.Label,
+		WindowID:       applied.WindowID,
+		Returned:       applied.Returned,
+		MovedTargets:   applied.MovedTargets,
+		AlignedTargets: applied.AlignedTargets,
+	}
 }
