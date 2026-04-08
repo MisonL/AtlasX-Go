@@ -199,6 +199,9 @@ func NewMux(_ Status) *http.ServeMux {
 	mux.HandleFunc("/v1/default-browser", func(w http.ResponseWriter, r *http.Request) {
 		serveDefaultBrowserStatus(w, r)
 	})
+	mux.HandleFunc("/v1/logs", func(w http.ResponseWriter, r *http.Request) {
+		serveLogsStatus(w, r)
+	})
 	mux.HandleFunc("/v1/memory", func(w http.ResponseWriter, r *http.Request) {
 		serveMemoryList(w, r)
 	})

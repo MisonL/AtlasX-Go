@@ -48,6 +48,25 @@ func TestDefaultBrowserStatusContract(t *testing.T) {
 	)
 }
 
+func TestLogsStatusContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"logs", "status"})
+	})
+	if err != nil {
+		t.Fatalf("run logs status failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"logs_root=",
+		"present=",
+		"file_count=",
+		"total_bytes=",
+		"returned=",
+	)
+}
+
 func TestRuntimeStatusContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
