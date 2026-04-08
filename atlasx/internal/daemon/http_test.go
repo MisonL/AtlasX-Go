@@ -34,6 +34,8 @@ type stubTabsClient struct {
 	duplicateCloseErr error
 	windowOpen        tabs.WindowOpenResult
 	windowOpenErr     error
+	windowMerge       tabs.WindowMergeResult
+	windowMergeErr    error
 	windowActivate    tabs.WindowActivateResult
 	windowActivateErr error
 	windowClose       tabs.WindowCloseResult
@@ -83,6 +85,13 @@ func (s *stubTabsClient) OpenInWindow(windowID int, targetURL string) (tabs.Wind
 		return tabs.WindowOpenResult{}, s.windowOpenErr
 	}
 	return s.windowOpen, nil
+}
+
+func (s *stubTabsClient) MergeWindow(sourceWindowID int, targetWindowID int) (tabs.WindowMergeResult, error) {
+	if s.windowMergeErr != nil {
+		return tabs.WindowMergeResult{}, s.windowMergeErr
+	}
+	return s.windowMerge, nil
 }
 
 func (s *stubTabsClient) ActivateWindow(windowID int) (tabs.WindowActivateResult, error) {

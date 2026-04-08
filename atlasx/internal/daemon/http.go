@@ -29,6 +29,7 @@ type tabClient interface {
 	Windows() ([]tabs.WindowSummary, error)
 	CloseDuplicates() (tabs.CloseDuplicatesResult, error)
 	OpenInWindow(int, string) (tabs.WindowOpenResult, error)
+	MergeWindow(int, int) (tabs.WindowMergeResult, error)
 	ActivateWindow(int) (tabs.WindowActivateResult, error)
 	CloseWindow(int) (tabs.WindowCloseResult, error)
 	SetWindowState(int, string) (tabs.WindowBounds, error)
@@ -80,6 +81,11 @@ type windowIDRequest struct {
 type windowOpenRequest struct {
 	WindowID int    `json:"window_id"`
 	URL      string `json:"url"`
+}
+
+type windowMergeRequest struct {
+	SourceWindowID int `json:"source_window_id"`
+	TargetWindowID int `json:"target_window_id"`
 }
 
 type openIndexRequest struct {
