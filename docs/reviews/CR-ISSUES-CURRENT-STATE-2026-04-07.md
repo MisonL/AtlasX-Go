@@ -65,6 +65,8 @@
   - 当前已完成
 - `T130`
   - 当前已完成
+- `T131`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -141,6 +143,7 @@
   - 只读 Agent 预演计划，可基于当前页上下文、页面建议、上下文推荐与 memory 生成多步计划，不执行动作，并导出 step 级 `executable/execution_path/requires_provider` 元数据
   - 显式确认的 Agent 执行入口，当前支持单步执行与显式有界链式执行（`step_ids + max_steps`）；支持执行 sidebar 类型计划步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，不写 memory
   - 项目级 gate 与发布/恢复手册
+  - 发布证据自动采集脚本 `bash scripts/release_evidence.sh`
 
 ## 当前开发机观测事实
 
@@ -233,6 +236,8 @@
   - `atlasx/scripts/e2e_gate.sh`
 - release checklist:
   - `docs/reviews/RELEASE-CHECKLIST-2026-04-07.md`
+- release evidence:
+  - `atlasx/scripts/release_evidence.sh`
 
 ## 注意事项
 

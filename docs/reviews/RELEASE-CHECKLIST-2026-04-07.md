@@ -1,10 +1,11 @@
 # RELEASE-CHECKLIST
 
 - 日期: 2026-04-07
-- 适用范围: 当前 `T001-T059` 完成后的 AtlasX-Go 仓库
+- 适用范围: 当前 `T001-T131` 完成后的 AtlasX-Go 仓库
 
 ## 发布前必须执行
 
+- `cd atlasx && bash scripts/release_evidence.sh`
 - `cd atlasx && go test ./...`
 - `cd atlasx && bash scripts/e2e_gate.sh`
 - `cd atlasx && go run ./cmd/atlasd --once`
@@ -23,9 +24,13 @@
 
 ## 证据留存
 
-- 保存本次 `go test ./...` 输出
-- 保存本次 `bash scripts/e2e_gate.sh` 输出
-- 保存本次 `go run ./cmd/atlasd --once` 输出
+- 优先使用 `cd atlasx && bash scripts/release_evidence.sh`
+- 默认会把 `go test ./...`、`bash scripts/e2e_gate.sh`、`go run ./cmd/atlasd --once` 的输出统一落到单一输出目录
+- 输出目录至少应包含：
+  - `go-test.log`
+  - `e2e-gate.log`
+  - `atlasd-once.log`
+  - `SUMMARY.md`
 - 记录本次使用的 runtime 版本或 channel
 - 记录本次使用的 provider id，不记录真实密钥
 

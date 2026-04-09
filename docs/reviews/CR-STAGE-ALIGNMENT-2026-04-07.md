@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-09
-- 目标: 将 `T001-T130` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T130` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制、页面级登录模式推断、browser-data open smoke 前置条件收敛和结构化 doctor 诊断入口与统一 gate/runbook 入口
+- 目标: 将 `T001-T131` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T131` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制、页面级登录模式推断、browser-data open smoke 前置条件收敛、发布证据自动采集和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -234,6 +234,8 @@
   - `atlasx/docs/RUNBOOK.md`
 - gate 脚本:
   - `atlasx/scripts/e2e_gate.sh`
+- release evidence 脚本:
+  - `atlasx/scripts/release_evidence.sh`
 - gate 说明:
   - `atlasx/docs/E2E-GATE.md`
 - 当前状态文档:

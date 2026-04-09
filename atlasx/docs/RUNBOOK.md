@@ -280,6 +280,34 @@ gate 结果解释：
 - 脚本退出码为 0 且出现 `UNCOVERED`
   - 当前机缺少真实前置条件，未覆盖项需要在发布前单独补齐
 
+## 发布证据采集
+
+统一证据采集入口：
+
+```bash
+cd atlasx
+bash scripts/release_evidence.sh
+```
+
+如需避免把证据输出到仓库默认目录，可显式指定输出目录：
+
+```bash
+cd atlasx
+bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
+```
+
+脚本会统一落盘：
+
+- `go-test.log`
+- `e2e-gate.log`
+- `atlasd-once.log`
+- `SUMMARY.md`
+
+失败原则：
+
+- 任一子步骤失败时，脚本退出码非 `0`
+- 已完成步骤和失败步骤的输出仍会被保留，便于发布前审计
+
 ## 发布检查单
 
 - 运行 `go test ./...`
