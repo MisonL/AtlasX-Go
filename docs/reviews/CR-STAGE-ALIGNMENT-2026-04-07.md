@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-09
-- 目标: 将 `T001-T129` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T129` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制、页面级登录模式推断和结构化 doctor 诊断入口与统一 gate/runbook 入口
+- 目标: 将 `T001-T130` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T130` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制、页面级登录模式推断、browser-data open smoke 前置条件收敛和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
@@ -143,6 +143,7 @@
 - 当前边界:
   - 真实 `runtime install` live smoke 仍是显式 opt-in
   - 真实回滚 smoke 仍通过离线测试守住，不主动在本机制造失败安装
+  - gate 当前已能把 `browser-data open smoke` 的“无落盘数据”和“有落盘数据但无受管会话”两类阻断显式区分，但真实覆盖仍依赖本机前置条件
 
 ### Phase 4 Intelligence Layer
 

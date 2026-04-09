@@ -31,7 +31,7 @@ bash scripts/e2e_gate.sh
 | `runtime install` | 本机真实 smoke | 设置 `ATLASX_E2E_ALLOW_INSTALL=1` 且 install plan 已存在，`atlasctl runtime install` 通过 | 未显式允许安装或本机没有 install plan |
 | `runtime rollback` | 离线强制 | `internal/managedruntime` 的 rollback 测试通过 | 不适用 |
 | `tabs capture` | 本机真实 smoke | 当前机存在受管浏览器会话且至少有一个 page target，`atlasctl tabs capture` 通过 | 无受管会话或无 page target |
-| `browser-data open` | 本机真实 smoke | 当前机已有 history/bookmarks/downloads 落盘数据，至少一个 `open` 动作成功 | 当前机没有可打开的数据 |
+| `browser-data open` | 本机真实 smoke | 当前机已有 history/bookmarks/downloads 落盘数据，且存在受管浏览器会话，至少一个 `open` 动作成功 | 当前机没有可打开的数据，或已有落盘数据但当前没有受管浏览器会话 |
 | `sidebar ask` | 本机真实 smoke | `sidebar_qa_ready=true` 且存在 page target，`POST /v1/sidebar/ask` 成功 | 缺失真实 provider 凭据、配置未 ready 或无 page target |
 
 ## 设计约束

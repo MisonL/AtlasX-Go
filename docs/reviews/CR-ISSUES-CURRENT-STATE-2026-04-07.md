@@ -63,6 +63,8 @@
   - 当前已完成
 - `T129`
   - 当前已完成
+- `T130`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -216,6 +218,9 @@
 当前解释：
 
 - 这些未覆盖项不是代码失败，而是本机当前缺少 staged runtime、受管浏览器会话和真实 provider readiness
+- 当前 gate 已进一步区分 `browser-data open smoke` 的两类阻断：
+  - 若没有已落盘 history/bookmarks/downloads 数据，会显式返回“当前都没有可打开的已落盘数据”
+  - 若已有落盘数据但没有受管浏览器会话，会显式返回“已有落盘数据但当前没有受管浏览器会话”
 - 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
 
 ## 当前推荐入口

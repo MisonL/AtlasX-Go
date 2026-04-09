@@ -74,21 +74,38 @@ run_browser_data_open_smoke() {
   local history_output=""
   local bookmarks_output=""
   local downloads_output=""
+  local session_ready="false"
+
+  if status_has_true "managed_session_live"; then
+    session_ready="true"
+  fi
 
   history_output="$(go run ./cmd/atlasctl history list 2>&1 || true)"
   if printf '%s\n' "$history_output" | grep -q '^index='; then
+    if [[ "$session_ready" != "true" ]]; then
+      mark_uncovered "browser-data open smoke" "history 数据已落盘但当前没有受管浏览器会话"
+      return 0
+    fi
     run_step "history open smoke" go run ./cmd/atlasctl history open 0 >/dev/null
     return 0
   fi
 
   bookmarks_output="$(go run ./cmd/atlasctl bookmarks list 2>&1 || true)"
   if printf '%s\n' "$bookmarks_output" | grep -q '^index='; then
+    if [[ "$session_ready" != "true" ]]; then
+      mark_uncovered "browser-data open smoke" "bookmarks 数据已落盘但当前没有受管浏览器会话"
+      return 0
+    fi
     run_step "bookmarks open smoke" go run ./cmd/atlasctl bookmarks open 0 >/dev/null
     return 0
   fi
 
   downloads_output="$(go run ./cmd/atlasctl downloads list 2>&1 || true)"
   if printf '%s\n' "$downloads_output" | grep -q '^index='; then
+    if [[ "$session_ready" != "true" ]]; then
+      mark_uncovered "browser-data open smoke" "downloads 数据已落盘但当前没有受管浏览器会话"
+      return 0
+    fi
     run_step "downloads open smoke" go run ./cmd/atlasctl downloads open 0 >/dev/null
     return 0
   fi
@@ -147,7 +164,7 @@ run_browser_smoke() {
 
   if ! status_has_true "managed_session_live"; then
     mark_uncovered "tabs capture smoke" "当前没有受管浏览器会话"
-    mark_uncovered "browser-data open smoke" "当前没有受管浏览器会话"
+    run_browser_data_open_smoke
     return 0
   fi
 
@@ -183,4 +200,6 @@ main() {
   fi
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
