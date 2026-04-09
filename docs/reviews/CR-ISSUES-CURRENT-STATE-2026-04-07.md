@@ -75,6 +75,8 @@
   - 当前已完成
 - `T135`
   - 当前已完成
+- `T136`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -156,6 +158,7 @@
   - 发布证据摘要自动汇总 `uncovered_count` 与 `uncovered_items`
   - 发布证据摘要自动汇总 `tasks_total/tasks_done/tasks_doing/tasks_todo` 与 `release_ready/release_blockers`
   - 发布证据摘要自动汇总 `atlasd_ready/managed_session_live/sidebar_qa_ready`
+  - 发布证据摘要自动汇总 `release_prerequisites`
 
 ## 当前开发机观测事实
 
@@ -240,12 +243,13 @@
   - `runtime_manifest_version=none`
   - `runtime_manifest_channel=none`
   - `sidebar_default_provider=none`
-  - `tasks_total=134`
-  - `tasks_done=134`
+  - `tasks_total=136`
+  - `tasks_done=136`
   - `tasks_doing=0`
   - `tasks_todo=0`
   - `release_ready=false`
   - `release_blockers` 当前包含 `uncovered_items_present`
+  - `release_prerequisites` 当前覆盖 staged runtime、install plan、managed session、browser-data open 和 provider readiness 五类前置条件
 - 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
 
 ## 当前推荐入口

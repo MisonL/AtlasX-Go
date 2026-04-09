@@ -58,6 +58,7 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tasks_todo=0")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "release_ready=true")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "release_blockers=none")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "release_prerequisites=none")
 }
 
 func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T) {
@@ -107,6 +108,9 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "command_failures_present")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "atlasd_ready_false")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_items_present")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "先修复 atlasd --once readiness 到 ready=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "启动受管浏览器会话并确保至少存在一个 page target")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "配置真实 provider 凭据并让 sidebar_qa_ready=true，同时保证存在 page target")
 }
 
 func createReleaseEvidenceStubDir(t *testing.T) string {

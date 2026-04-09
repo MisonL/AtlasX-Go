@@ -21,6 +21,7 @@ RUNTIME_MANIFEST_VERSION="none"
 RUNTIME_MANIFEST_CHANNEL="none"
 SIDEBAR_DEFAULT_PROVIDER="none"
 UNCOVERED_ITEMS=()
+UNCOVERED_COUNT="0"
 TASKS_TOTAL="0"
 TASKS_DONE="0"
 TASKS_DOING="0"
@@ -30,6 +31,8 @@ MANAGED_SESSION_LIVE="false_or_unknown"
 SIDEBAR_QA_READY="false_or_unknown"
 RELEASE_READY="false"
 RELEASE_BLOCKERS=()
+RELEASE_PREREQUISITES=()
+RELEASE_PREREQUISITES_COUNT="0"
 
 log() {
   printf '%s\n' "$*"
@@ -121,6 +124,7 @@ refresh_metadata_from_atlasd_once() {
 
 refresh_uncovered_from_e2e_gate() {
   UNCOVERED_ITEMS=()
+  UNCOVERED_COUNT="0"
 
   if [[ ! -f "$E2E_GATE_LOG" ]]; then
     return 0
@@ -128,6 +132,7 @@ refresh_uncovered_from_e2e_gate() {
 
   while IFS= read -r line; do
     UNCOVERED_ITEMS+=("${line#  - }")
+    UNCOVERED_COUNT="$((UNCOVERED_COUNT + 1))"
   done < <(grep '^  - ' "$E2E_GATE_LOG" || true)
 }
 
@@ -197,7 +202,7 @@ refresh_release_readiness() {
   if [[ "$TASKS_TODO" != "0" ]]; then
     RELEASE_BLOCKERS+=("tasks_not_started_present")
   fi
-  if [[ "${#UNCOVERED_ITEMS[@]}" -gt 0 ]]; then
+  if [[ "$UNCOVERED_COUNT" != "0" ]]; then
     RELEASE_BLOCKERS+=("uncovered_items_present")
   fi
 
@@ -206,6 +211,50 @@ refresh_release_readiness() {
   else
     RELEASE_READY="false"
   fi
+}
+
+append_release_prerequisite() {
+  local item="$1"
+  local existing
+
+  for existing in "${RELEASE_PREREQUISITES[@]-}"; do
+    if [[ "$existing" == "$item" ]]; then
+      return 0
+    fi
+  done
+
+  RELEASE_PREREQUISITES+=("$item")
+  RELEASE_PREREQUISITES_COUNT="$((RELEASE_PREREQUISITES_COUNT + 1))"
+}
+
+refresh_release_prerequisites() {
+  RELEASE_PREREQUISITES=()
+  RELEASE_PREREQUISITES_COUNT="0"
+
+  if [[ "$ATLASD_READY" != "true" ]]; then
+    append_release_prerequisite "先修复 atlasd --once readiness 到 ready=true"
+  fi
+
+  local item
+  for item in "${UNCOVERED_ITEMS[@]-}"; do
+    case "$item" in
+      runtime\ verify\ smoke:*)
+        append_release_prerequisite "准备 staged managed runtime，并重新执行 runtime verify smoke"
+        ;;
+      runtime\ install\ smoke:*)
+        append_release_prerequisite "准备 install plan，并显式设置 ATLASX_E2E_ALLOW_INSTALL=1 后重跑 runtime install smoke"
+        ;;
+      tabs\ capture\ smoke:*)
+        append_release_prerequisite "启动受管浏览器会话并确保至少存在一个 page target"
+        ;;
+      browser-data\ open\ smoke:*)
+        append_release_prerequisite "确保受管浏览器会话可用，并保留至少一条可打开的 history/bookmarks/downloads 数据"
+        ;;
+      sidebar\ ask\ real\ smoke:*)
+        append_release_prerequisite "配置真实 provider 凭据并让 sidebar_qa_ready=true，同时保证存在 page target"
+        ;;
+    esac
+  done
 }
 
 write_summary() {
@@ -219,7 +268,7 @@ write_summary() {
     printf -- '- atlasd_ready=%s\n' "$ATLASD_READY"
     printf -- '- managed_session_live=%s\n' "$MANAGED_SESSION_LIVE"
     printf -- '- sidebar_qa_ready=%s\n' "$SIDEBAR_QA_READY"
-    printf -- '- uncovered_count=%s\n' "${#UNCOVERED_ITEMS[@]}"
+    printf -- '- uncovered_count=%s\n' "$UNCOVERED_COUNT"
     printf -- '- tasks_total=%s\n' "$TASKS_TOTAL"
     printf -- '- tasks_done=%s\n' "$TASKS_DONE"
     printf -- '- tasks_doing=%s\n' "$TASKS_DOING"
@@ -244,10 +293,10 @@ write_summary() {
     fi
 
     printf '\n## Uncovered\n\n'
-    if [[ "${#UNCOVERED_ITEMS[@]}" -eq 0 ]]; then
+    if [[ "$UNCOVERED_COUNT" == "0" ]]; then
       printf -- '- uncovered_items=none\n'
     else
-      for item in "${UNCOVERED_ITEMS[@]}"; do
+      for item in "${UNCOVERED_ITEMS[@]-}"; do
         printf -- '- %s\n' "$item"
       done
     fi
@@ -257,6 +306,15 @@ write_summary() {
       printf -- '- release_blockers=none\n'
     else
       for item in "${RELEASE_BLOCKERS[@]}"; do
+        printf -- '- %s\n' "$item"
+      done
+    fi
+
+    printf '\n## Release Prerequisites\n\n'
+    if [[ "$RELEASE_PREREQUISITES_COUNT" == "0" ]]; then
+      printf -- '- release_prerequisites=none\n'
+    else
+      for item in "${RELEASE_PREREQUISITES[@]-}"; do
         printf -- '- %s\n' "$item"
       done
     fi
@@ -270,6 +328,7 @@ refresh_metadata_from_atlasd_once
 refresh_uncovered_from_e2e_gate
 refresh_task_counts
 refresh_release_readiness
+refresh_release_prerequisites
 write_summary
 
 if [[ "${#FAILURES[@]}" -gt 0 ]]; then

@@ -1,7 +1,7 @@
 # RELEASE-CHECKLIST
 
 - 日期: 2026-04-07
-- 适用范围: 当前 `T001-T131` 完成后的 AtlasX-Go 仓库
+- 适用范围: 当前 `T001-T136` 完成后的 AtlasX-Go 仓库
 
 ## 发布前必须执行
 
@@ -46,6 +46,7 @@
   - `tasks_todo`
   - `release_ready`
   - `release_blockers`
+  - `release_prerequisites`
 
 ## 阻断条件
 

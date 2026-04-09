@@ -319,6 +319,7 @@ bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
 - `tasks_todo`
 - `release_ready`
 - `release_blockers`
+- `release_prerequisites`
 
 失败原则：
 
