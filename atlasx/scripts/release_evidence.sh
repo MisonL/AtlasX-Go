@@ -19,6 +19,7 @@ RESULT_LINES=()
 FAILURES=()
 RUNTIME_MANIFEST_VERSION="none"
 RUNTIME_MANIFEST_CHANNEL="none"
+CHROME_SOURCE="none"
 SIDEBAR_DEFAULT_PROVIDER="none"
 UNCOVERED_ITEMS=()
 UNCOVERED_COUNT="0"
@@ -27,6 +28,8 @@ TASKS_DONE="0"
 TASKS_DOING="0"
 TASKS_TODO="0"
 ATLASD_READY="false_or_unknown"
+RUNTIME_MANIFEST_PRESENT="false_or_unknown"
+MIRROR_PRESENT="false_or_unknown"
 MANAGED_SESSION_LIVE="false_or_unknown"
 SIDEBAR_QA_READY="false_or_unknown"
 RELEASE_READY="false"
@@ -114,10 +117,13 @@ try {
 }
 
 refresh_metadata_from_atlasd_once() {
+  CHROME_SOURCE="$(extract_json_string_field "$ATLASD_ONCE_LOG" "chrome_source")"
   RUNTIME_MANIFEST_VERSION="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_version")"
   RUNTIME_MANIFEST_CHANNEL="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_channel")"
   SIDEBAR_DEFAULT_PROVIDER="$(extract_json_string_field "$ATLASD_ONCE_LOG" "sidebar_qa_default_provider")"
   ATLASD_READY="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "ready")"
+  RUNTIME_MANIFEST_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "runtime_manifest_present")"
+  MIRROR_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "mirror_present")"
   MANAGED_SESSION_LIVE="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "managed_session_live")"
   SIDEBAR_QA_READY="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "sidebar_qa_ready")"
 }
@@ -262,10 +268,13 @@ write_summary() {
     printf '# Release Evidence\n\n'
     printf -- '- collected_at=%s\n' "$TIMESTAMP"
     printf -- '- output_dir=%s\n' "$OUTPUT_DIR"
+    printf -- '- chrome_source=%s\n' "$CHROME_SOURCE"
     printf -- '- runtime_manifest_version=%s\n' "$RUNTIME_MANIFEST_VERSION"
     printf -- '- runtime_manifest_channel=%s\n' "$RUNTIME_MANIFEST_CHANNEL"
     printf -- '- sidebar_default_provider=%s\n' "$SIDEBAR_DEFAULT_PROVIDER"
     printf -- '- atlasd_ready=%s\n' "$ATLASD_READY"
+    printf -- '- runtime_manifest_present=%s\n' "$RUNTIME_MANIFEST_PRESENT"
+    printf -- '- mirror_present=%s\n' "$MIRROR_PRESENT"
     printf -- '- managed_session_live=%s\n' "$MANAGED_SESSION_LIVE"
     printf -- '- sidebar_qa_ready=%s\n' "$SIDEBAR_QA_READY"
     printf -- '- uncovered_count=%s\n' "$UNCOVERED_COUNT"

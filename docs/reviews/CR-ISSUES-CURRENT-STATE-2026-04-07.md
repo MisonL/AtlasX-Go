@@ -77,6 +77,8 @@
   - 当前已完成
 - `T136`
   - 当前已完成
+- `T137`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -159,6 +161,7 @@
   - 发布证据摘要自动汇总 `tasks_total/tasks_done/tasks_doing/tasks_todo` 与 `release_ready/release_blockers`
   - 发布证据摘要自动汇总 `atlasd_ready/managed_session_live/sidebar_qa_ready`
   - 发布证据摘要自动汇总 `release_prerequisites`
+  - 发布证据摘要自动汇总 `chrome_source/runtime_manifest_present/mirror_present`
 
 ## 当前开发机观测事实
 
@@ -242,9 +245,12 @@
 - 当前 `bash scripts/release_evidence.sh /tmp/atlasx-release-evidence` 生成的 `SUMMARY.md` 元数据事实：
   - `runtime_manifest_version=none`
   - `runtime_manifest_channel=none`
+  - `chrome_source=system_auto`
   - `sidebar_default_provider=none`
-  - `tasks_total=136`
-  - `tasks_done=136`
+  - `runtime_manifest_present=false`
+  - `mirror_present=true`
+  - `tasks_total=137`
+  - `tasks_done=137`
   - `tasks_doing=0`
   - `tasks_todo=0`
   - `release_ready=false`

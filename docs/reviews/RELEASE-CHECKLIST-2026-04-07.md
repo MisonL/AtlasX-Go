@@ -1,7 +1,7 @@
 # RELEASE-CHECKLIST
 
 - 日期: 2026-04-07
-- 适用范围: 当前 `T001-T136` 完成后的 AtlasX-Go 仓库
+- 适用范围: 当前 `T001-T137` 完成后的 AtlasX-Go 仓库
 
 ## 发布前必须执行
 
@@ -34,8 +34,11 @@
 - `SUMMARY.md` 应自动包含：
   - `runtime_manifest_version`
   - `runtime_manifest_channel`
+  - `chrome_source`
   - `sidebar_default_provider`
   - `atlasd_ready`
+  - `runtime_manifest_present`
+  - `mirror_present`
   - `managed_session_live`
   - `sidebar_qa_ready`
   - `uncovered_count`

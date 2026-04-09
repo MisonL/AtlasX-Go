@@ -307,8 +307,11 @@ bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
 
 - `runtime_manifest_version`
 - `runtime_manifest_channel`
+- `chrome_source`
 - `sidebar_default_provider`
 - `atlasd_ready`
+- `runtime_manifest_present`
+- `mirror_present`
 - `managed_session_live`
 - `sidebar_qa_ready`
 - `uncovered_count`
