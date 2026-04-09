@@ -67,6 +67,8 @@
   - 当前已完成
 - `T131`
   - 当前已完成
+- `T132`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -144,6 +146,7 @@
   - 显式确认的 Agent 执行入口，当前支持单步执行与显式有界链式执行（`step_ids + max_steps`）；支持执行 sidebar 类型计划步骤、`related_tab` 单步激活与 `memory_snippet` 单步问答，不写 memory
   - 项目级 gate 与发布/恢复手册
   - 发布证据自动采集脚本 `bash scripts/release_evidence.sh`
+  - 发布证据摘要自动汇总 `runtime_manifest_version`、`runtime_manifest_channel` 与 `sidebar_default_provider`
 
 ## 当前开发机观测事实
 
@@ -224,6 +227,10 @@
 - 当前 gate 已进一步区分 `browser-data open smoke` 的两类阻断：
   - 若没有已落盘 history/bookmarks/downloads 数据，会显式返回“当前都没有可打开的已落盘数据”
   - 若已有落盘数据但没有受管浏览器会话，会显式返回“已有落盘数据但当前没有受管浏览器会话”
+- 当前 `bash scripts/release_evidence.sh /tmp/atlasx-release-evidence` 生成的 `SUMMARY.md` 元数据事实：
+  - `runtime_manifest_version=none`
+  - `runtime_manifest_channel=none`
+  - `sidebar_default_provider=none`
 - 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
 
 ## 当前推荐入口

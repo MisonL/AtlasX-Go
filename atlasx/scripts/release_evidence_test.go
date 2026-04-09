@@ -25,7 +25,7 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 		"STUB_GO_TEST_EXIT=0",
 		"STUB_GO_TEST_OUTPUT=go test output\n",
 		"STUB_ATLASD_ONCE_EXIT=0",
-		"STUB_ATLASD_ONCE_OUTPUT=ready=true\n",
+		`STUB_ATLASD_ONCE_OUTPUT={"runtime_manifest_version":"136.0.7103.114","runtime_manifest_channel":"stable","sidebar_qa_default_provider":"primary"}`+"\n",
 		"STUB_E2E_GATE_EXIT=0",
 		"STUB_E2E_GATE_OUTPUT=E2E gate finished\n",
 	)
@@ -36,12 +36,15 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 
 	assertFileContains(t, filepath.Join(outputDir, "go-test.log"), "go test output")
 	assertFileContains(t, filepath.Join(outputDir, "e2e-gate.log"), "E2E gate finished")
-	assertFileContains(t, filepath.Join(outputDir, "atlasd-once.log"), "ready=true")
+	assertFileContains(t, filepath.Join(outputDir, "atlasd-once.log"), `"runtime_manifest_version":"136.0.7103.114"`)
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "success=true")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "go-test.log")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "e2e-gate.log")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "atlasd-once.log")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "collected_at=20260409T120000Z")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_version=136.0.7103.114")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_channel=stable")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=primary")
 }
 
 func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T) {
@@ -61,7 +64,7 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 		"STUB_GO_TEST_EXIT=0",
 		"STUB_GO_TEST_OUTPUT=go test output\n",
 		"STUB_ATLASD_ONCE_EXIT=0",
-		"STUB_ATLASD_ONCE_OUTPUT=ready=true\n",
+		"STUB_ATLASD_ONCE_OUTPUT={}\n",
 		"STUB_E2E_GATE_EXIT=9",
 		"STUB_E2E_GATE_OUTPUT=e2e gate failure\n",
 	)
@@ -72,10 +75,13 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 
 	assertFileContains(t, filepath.Join(outputDir, "go-test.log"), "go test output")
 	assertFileContains(t, filepath.Join(outputDir, "e2e-gate.log"), "e2e gate failure")
-	assertFileContains(t, filepath.Join(outputDir, "atlasd-once.log"), "ready=true")
+	assertFileContains(t, filepath.Join(outputDir, "atlasd-once.log"), "{}")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "success=false")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "failed_steps=bash scripts/e2e_gate.sh")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "exit_code=9")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_version=none")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_channel=none")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=none")
 }
 
 func createReleaseEvidenceStubDir(t *testing.T) string {

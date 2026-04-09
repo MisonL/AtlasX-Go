@@ -303,6 +303,12 @@ bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
 - `atlasd-once.log`
 - `SUMMARY.md`
 
+`SUMMARY.md` 会额外汇总：
+
+- `runtime_manifest_version`
+- `runtime_manifest_channel`
+- `sidebar_default_provider`
+
 失败原则：
 
 - 任一子步骤失败时，脚本退出码非 `0`

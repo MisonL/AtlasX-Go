@@ -11,9 +11,13 @@ OUTPUT_DIR="${1:-${ATLASX_RELEASE_EVIDENCE_DIR:-$DEFAULT_OUTPUT_DIR}}"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 SUMMARY_FILE="$OUTPUT_DIR/SUMMARY.md"
+ATLASD_ONCE_LOG="$OUTPUT_DIR/atlasd-once.log"
 
 RESULT_LINES=()
 FAILURES=()
+RUNTIME_MANIFEST_VERSION="none"
+RUNTIME_MANIFEST_CHANNEL="none"
+SIDEBAR_DEFAULT_PROVIDER="none"
 
 log() {
   printf '%s\n' "$*"
@@ -38,11 +42,47 @@ run_and_capture() {
   RESULT_LINES+=("$label|$exit_code|$logfile")
 }
 
+extract_json_string_field() {
+  local logfile_path="$1"
+  local field_name="$2"
+
+  if [[ ! -f "$logfile_path" ]]; then
+    printf 'none'
+    return 0
+  fi
+
+  node -e '
+const fs = require("fs");
+const filePath = process.argv[1];
+const fieldName = process.argv[2];
+try {
+  const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const value = payload[fieldName];
+  if (typeof value === "string" && value.trim() !== "") {
+    process.stdout.write(value.trim());
+  } else {
+    process.stdout.write("none");
+  }
+} catch (error) {
+  process.stdout.write("none");
+}
+' "$logfile_path" "$field_name"
+}
+
+refresh_metadata_from_atlasd_once() {
+  RUNTIME_MANIFEST_VERSION="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_version")"
+  RUNTIME_MANIFEST_CHANNEL="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_channel")"
+  SIDEBAR_DEFAULT_PROVIDER="$(extract_json_string_field "$ATLASD_ONCE_LOG" "sidebar_qa_default_provider")"
+}
+
 write_summary() {
   {
     printf '# Release Evidence\n\n'
     printf -- '- collected_at=%s\n' "$TIMESTAMP"
     printf -- '- output_dir=%s\n' "$OUTPUT_DIR"
+    printf -- '- runtime_manifest_version=%s\n' "$RUNTIME_MANIFEST_VERSION"
+    printf -- '- runtime_manifest_channel=%s\n' "$RUNTIME_MANIFEST_CHANNEL"
+    printf -- '- sidebar_default_provider=%s\n' "$SIDEBAR_DEFAULT_PROVIDER"
     printf '\n## Results\n\n'
     for line in "${RESULT_LINES[@]}"; do
       IFS='|' read -r label exit_code logfile <<<"$line"
@@ -66,6 +106,7 @@ write_summary() {
 run_and_capture "go test ./..." "go-test.log" env ATLASX_RELEASE_EVIDENCE_ACTIVE=1 go test ./...
 run_and_capture "bash scripts/e2e_gate.sh" "e2e-gate.log" env ATLASX_RELEASE_EVIDENCE_ACTIVE=1 bash scripts/e2e_gate.sh
 run_and_capture "go run ./cmd/atlasd --once" "atlasd-once.log" go run ./cmd/atlasd --once
+refresh_metadata_from_atlasd_once
 write_summary
 
 if [[ "${#FAILURES[@]}" -gt 0 ]]; then

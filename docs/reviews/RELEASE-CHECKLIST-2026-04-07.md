@@ -31,8 +31,10 @@
   - `e2e-gate.log`
   - `atlasd-once.log`
   - `SUMMARY.md`
-- 记录本次使用的 runtime 版本或 channel
-- 记录本次使用的 provider id，不记录真实密钥
+- `SUMMARY.md` 应自动包含：
+  - `runtime_manifest_version`
+  - `runtime_manifest_channel`
+  - `sidebar_default_provider`
 
 ## 阻断条件
 
