@@ -310,6 +310,12 @@ bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
 - `sidebar_default_provider`
 - `uncovered_count`
 - `uncovered_items`
+- `tasks_total`
+- `tasks_done`
+- `tasks_doing`
+- `tasks_todo`
+- `release_ready`
+- `release_blockers`
 
 失败原则：
 

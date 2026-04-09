@@ -71,6 +71,8 @@
   - 当前已完成
 - `T133`
   - 当前已完成
+- `T134`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -150,6 +152,7 @@
   - 发布证据自动采集脚本 `bash scripts/release_evidence.sh`
   - 发布证据摘要自动汇总 `runtime_manifest_version`、`runtime_manifest_channel` 与 `sidebar_default_provider`
   - 发布证据摘要自动汇总 `uncovered_count` 与 `uncovered_items`
+  - 发布证据摘要自动汇总 `tasks_total/tasks_done/tasks_doing/tasks_todo` 与 `release_ready/release_blockers`
 
 ## 当前开发机观测事实
 
@@ -234,6 +237,12 @@
   - `runtime_manifest_version=none`
   - `runtime_manifest_channel=none`
   - `sidebar_default_provider=none`
+  - `tasks_total=134`
+  - `tasks_done=134`
+  - `tasks_doing=0`
+  - `tasks_todo=0`
+  - `release_ready=false`
+  - `release_blockers` 当前包含 `uncovered_items_present`
 - 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
 
 ## 当前推荐入口

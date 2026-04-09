@@ -14,6 +14,7 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 	}
 
 	outputDir := t.TempDir()
+	tasksFile := writeTasksFixture(t, "ID,标题,内容,验收标准,审查要求,状态,标签\nT001,a,b,c,d,已完成,高优先级\nT002,a,b,c,d,已完成,高优先级\n")
 	repoDir := filepath.Clean(filepath.Join(".."))
 	stubDir := createReleaseEvidenceStubDir(t)
 
@@ -21,6 +22,7 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 	command.Dir = repoDir
 	command.Env = append(os.Environ(),
 		"PATH="+stubDir+":"+os.Getenv("PATH"),
+		"ATLASX_RELEASE_EVIDENCE_TASKS_FILE="+tasksFile,
 		"STUB_DATE_OUTPUT=20260409T120000Z",
 		"STUB_GO_TEST_EXIT=0",
 		"STUB_GO_TEST_OUTPUT=go test output\n",
@@ -47,6 +49,12 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=primary")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_count=0")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_items=none")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tasks_total=")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tasks_done=")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tasks_doing=0")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tasks_todo=0")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "release_ready=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "release_blockers=none")
 }
 
 func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T) {
@@ -55,6 +63,7 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 	}
 
 	outputDir := t.TempDir()
+	tasksFile := writeTasksFixture(t, "ID,标题,内容,验收标准,审查要求,状态,标签\nT001,a,b,c,d,已完成,高优先级\nT002,a,b,c,d,已完成,高优先级\n")
 	repoDir := filepath.Clean(filepath.Join(".."))
 	stubDir := createReleaseEvidenceStubDir(t)
 
@@ -62,6 +71,7 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 	command.Dir = repoDir
 	command.Env = append(os.Environ(),
 		"PATH="+stubDir+":"+os.Getenv("PATH"),
+		"ATLASX_RELEASE_EVIDENCE_TASKS_FILE="+tasksFile,
 		"STUB_DATE_OUTPUT=20260409T120500Z",
 		"STUB_GO_TEST_EXIT=0",
 		"STUB_GO_TEST_OUTPUT=go test output\n",
@@ -87,6 +97,9 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_count=2")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tabs capture smoke: 当前没有受管浏览器会话")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar ask real smoke: sidebar_qa_ready=false")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "release_ready=false")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "command_failures_present")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_items_present")
 }
 
 func createReleaseEvidenceStubDir(t *testing.T) string {
@@ -134,6 +147,15 @@ func writeExecutableFile(t *testing.T, path string, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
 		t.Fatalf("write executable file %s: %v", path, err)
 	}
+}
+
+func writeTasksFixture(t *testing.T, content string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "tasks.csv")
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write tasks fixture %s: %v", path, err)
+	}
+	return path
 }
 
 func assertFileContains(t *testing.T, path string, want string) {

@@ -13,6 +13,7 @@ OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 SUMMARY_FILE="$OUTPUT_DIR/SUMMARY.md"
 ATLASD_ONCE_LOG="$OUTPUT_DIR/atlasd-once.log"
 E2E_GATE_LOG="$OUTPUT_DIR/e2e-gate.log"
+TASKS_FILE="${ATLASX_RELEASE_EVIDENCE_TASKS_FILE:-$ROOT_DIR/../tasks.csv}"
 
 RESULT_LINES=()
 FAILURES=()
@@ -20,6 +21,12 @@ RUNTIME_MANIFEST_VERSION="none"
 RUNTIME_MANIFEST_CHANNEL="none"
 SIDEBAR_DEFAULT_PROVIDER="none"
 UNCOVERED_ITEMS=()
+TASKS_TOTAL="0"
+TASKS_DONE="0"
+TASKS_DOING="0"
+TASKS_TODO="0"
+RELEASE_READY="false"
+RELEASE_BLOCKERS=()
 
 log() {
   printf '%s\n' "$*"
@@ -89,6 +96,80 @@ refresh_uncovered_from_e2e_gate() {
   done < <(grep '^  - ' "$E2E_GATE_LOG" || true)
 }
 
+refresh_task_counts() {
+  local counts
+
+  if [[ ! -f "$TASKS_FILE" ]]; then
+    TASKS_TOTAL="0"
+    TASKS_DONE="0"
+    TASKS_DOING="0"
+    TASKS_TODO="0"
+    return 0
+  fi
+
+  counts="$(node -e '
+const fs = require("fs");
+const filePath = process.argv[1];
+const lines = fs.readFileSync(filePath, "utf8").trim().split(/\r?\n/).slice(1);
+const stats = { total: 0, done: 0, doing: 0, todo: 0 };
+for (const line of lines) {
+  const cols = [];
+  let cur = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === "\"") {
+      if (quoted && line[i + 1] === "\"") {
+        cur += "\"";
+        i += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+    if (ch === "," && !quoted) {
+      cols.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  cols.push(cur);
+  stats.total += 1;
+  const status = cols[5] || "";
+  if (status === "已完成") stats.done += 1;
+  if (status === "进行中") stats.doing += 1;
+  if (status === "未开始") stats.todo += 1;
+}
+process.stdout.write(`${stats.total}|${stats.done}|${stats.doing}|${stats.todo}`);
+' "$TASKS_FILE")"
+
+  IFS='|' read -r TASKS_TOTAL TASKS_DONE TASKS_DOING TASKS_TODO <<<"$counts"
+}
+
+refresh_release_readiness() {
+  RELEASE_BLOCKERS=()
+
+  if [[ "${#FAILURES[@]}" -gt 0 ]]; then
+    RELEASE_BLOCKERS+=("command_failures_present")
+  fi
+  if [[ "$TASKS_DOING" != "0" ]]; then
+    RELEASE_BLOCKERS+=("tasks_in_progress_present")
+  fi
+  if [[ "$TASKS_TODO" != "0" ]]; then
+    RELEASE_BLOCKERS+=("tasks_not_started_present")
+  fi
+  if [[ "${#UNCOVERED_ITEMS[@]}" -gt 0 ]]; then
+    RELEASE_BLOCKERS+=("uncovered_items_present")
+  fi
+
+  if [[ "${#RELEASE_BLOCKERS[@]}" -eq 0 ]]; then
+    RELEASE_READY="true"
+  else
+    RELEASE_READY="false"
+  fi
+}
+
 write_summary() {
   {
     printf '# Release Evidence\n\n'
@@ -98,6 +179,11 @@ write_summary() {
     printf -- '- runtime_manifest_channel=%s\n' "$RUNTIME_MANIFEST_CHANNEL"
     printf -- '- sidebar_default_provider=%s\n' "$SIDEBAR_DEFAULT_PROVIDER"
     printf -- '- uncovered_count=%s\n' "${#UNCOVERED_ITEMS[@]}"
+    printf -- '- tasks_total=%s\n' "$TASKS_TOTAL"
+    printf -- '- tasks_done=%s\n' "$TASKS_DONE"
+    printf -- '- tasks_doing=%s\n' "$TASKS_DOING"
+    printf -- '- tasks_todo=%s\n' "$TASKS_TODO"
+    printf -- '- release_ready=%s\n' "$RELEASE_READY"
     printf '\n## Results\n\n'
     for line in "${RESULT_LINES[@]}"; do
       IFS='|' read -r label exit_code logfile <<<"$line"
@@ -124,6 +210,15 @@ write_summary() {
         printf -- '- %s\n' "$item"
       done
     fi
+
+    printf '\n## Release Blockers\n\n'
+    if [[ "${#RELEASE_BLOCKERS[@]}" -eq 0 ]]; then
+      printf -- '- release_blockers=none\n'
+    else
+      for item in "${RELEASE_BLOCKERS[@]}"; do
+        printf -- '- %s\n' "$item"
+      done
+    fi
   } >"$SUMMARY_FILE"
 }
 
@@ -132,6 +227,8 @@ run_and_capture "bash scripts/e2e_gate.sh" "e2e-gate.log" env ATLASX_RELEASE_EVI
 run_and_capture "go run ./cmd/atlasd --once" "atlasd-once.log" go run ./cmd/atlasd --once
 refresh_metadata_from_atlasd_once
 refresh_uncovered_from_e2e_gate
+refresh_task_counts
+refresh_release_readiness
 write_summary
 
 if [[ "${#FAILURES[@]}" -gt 0 ]]; then
