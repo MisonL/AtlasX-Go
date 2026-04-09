@@ -274,6 +274,49 @@ func TestTabsAgentPlanContract(t *testing.T) {
 	)
 }
 
+func TestTabsAuthModeContract(t *testing.T) {
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		authMode: tabs.AuthModeView{
+			ID:                     "tab-1",
+			Title:                  "ChatGPT",
+			URL:                    "https://chatgpt.com/c/abc123",
+			CapturedAt:             "2026-04-09T10:00:00Z",
+			Host:                   "chatgpt.com",
+			Path:                   "/c/abc123",
+			Mode:                   "logged_in",
+			Inferred:               true,
+			Reason:                 "workspace_signals_observed",
+			LoginPromptPresent:     false,
+			WorkspaceSignalPresent: true,
+			CookieCount:            1,
+			CookieNames:            []string{"oai-session"},
+			LocalStorageCount:      1,
+			LocalStorageKeys:       []string{"atlas:last-project"},
+			SessionStorageCount:    0,
+			SessionStorageKeys:     []string{},
+		},
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"tabs", "auth-mode", "tab-1"})
+	})
+	if err != nil {
+		t.Fatalf("run tabs auth-mode failed: %v", err)
+	}
+
+	assertContainsAll(t, output,
+		"id=tab-1",
+		"mode=logged_in",
+		"inferred=true",
+		"reason=workspace_signals_observed",
+		"host=chatgpt.com",
+		"path=/c/abc123",
+		"cookie_count=1",
+		"local_storage_count=1",
+		"session_storage_count=0",
+	)
+}
+
 func TestTabsGroupsContract(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

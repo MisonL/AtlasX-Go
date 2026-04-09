@@ -62,6 +62,8 @@ type stubCommandTabsClient struct {
 	activateErr                          error
 	context                              tabs.PageContext
 	captureErr                           error
+	authMode                             tabs.AuthModeView
+	authModeErr                          error
 	semanticContext                      tabs.SemanticContext
 	semanticErr                          error
 	selection                            tabs.SelectionContext
@@ -247,6 +249,10 @@ func (s *stubCommandTabsClient) Navigate(string, string) error {
 
 func (s *stubCommandTabsClient) Capture(string) (tabs.PageContext, error) {
 	return s.context, s.captureErr
+}
+
+func (s *stubCommandTabsClient) AuthMode(string) (tabs.AuthModeView, error) {
+	return s.authMode, s.authModeErr
 }
 
 func (s *stubCommandTabsClient) CaptureSemanticContext(string) (tabs.SemanticContext, error) {

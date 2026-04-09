@@ -43,6 +43,7 @@ type commandTabsClient interface {
 	Close(string) error
 	Navigate(string, string) error
 	Capture(string) (tabs.PageContext, error)
+	AuthMode(string) (tabs.AuthModeView, error)
 	CaptureSemanticContext(string) (tabs.SemanticContext, error)
 	CaptureSelection(string) (tabs.SelectionContext, error)
 	DevTools(string) (tabs.DevToolsTarget, error)
@@ -52,7 +53,7 @@ type commandTabsClient interface {
 
 func runTabs(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-in-window, open-devtools-panel, open-devtools-panel-in-window, open-devtools-window-to-windows, open-devtools-panel-window-to-windows, open-devtools-panel-window-into-window, open-devtools-window-into-window, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, set-title, activate, close, navigate, capture, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, agent-execute, memories, groups, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
+		return errors.New("missing tabs subcommand: list, search, windows, open, open-window, open-in-window, move-to-window, move-to-new-window, merge-window, open-devtools, open-devtools-in-window, open-devtools-panel, open-devtools-panel-in-window, open-devtools-window-to-windows, open-devtools-panel-window-to-windows, open-devtools-panel-window-into-window, open-devtools-window-into-window, close-duplicates, activate-window, close-window, set-window-state, set-window-bounds, set-title, activate, close, navigate, capture, auth-mode, extract-context, selection, devtools, devtools-panel, emulate-device, suggest, agent-plan, agent-execute, memories, groups, organize, organize-window, organize-group-to-window, organize-group-into-window, organize-to-windows, organize-into-window, organize-window-to-windows, organize-window-into-window, organize-window-group-to-window, organize-window-group-into-window, recommend-context")
 	}
 
 	paths, err := macos.DiscoverPaths()
@@ -499,6 +500,8 @@ func runTabs(args []string) error {
 		return nil
 	case "capture":
 		return runTabsCapture(paths, client, args[1:])
+	case "auth-mode":
+		return runTabsAuthMode(client, args[1:])
 	case "extract-context":
 		return runTabsExtractContext(client, args[1:])
 	case "selection":

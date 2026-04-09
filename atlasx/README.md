@@ -83,6 +83,7 @@ go run ./cmd/atlasctl tabs navigate <target-id> https://openai.com
 go run ./cmd/atlasctl tabs activate <target-id>
 go run ./cmd/atlasctl tabs close <target-id>
 go run ./cmd/atlasctl tabs capture <target-id>
+go run ./cmd/atlasctl tabs auth-mode <target-id>
 go run ./cmd/atlasctl tabs extract-context <target-id>
 go run ./cmd/atlasctl tabs selection <target-id>
 go run ./cmd/atlasctl tabs suggest <target-id>
@@ -154,6 +155,7 @@ bash scripts/e2e_gate.sh
 - `GET /v1/tabs/windows`
 - `GET /v1/tabs/groups`
 - `GET /v1/tabs/context`
+- `GET /v1/tabs/auth-mode`
 - `GET /v1/tabs/semantic-context`
 - `GET /v1/tabs/selection`
 - `GET /v1/tabs/suggestions`
@@ -243,6 +245,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `tabs search <query>`，可在当前 page target 列表上按 `title/url` 大小写不敏感匹配查询词，返回结构化命中结果。
 - 当前已提供 `tabs windows`，可通过 browser websocket 对当前 page targets 按浏览器窗口分组，输出 `window_id/state/targets` 等只读结构化窗口视图。
 - 当前已提供 `tabs groups`，可复用既有 `tabs windows` 与 `tabgroups.Suggest` 规则生成结构化只读 group 视图，显式返回 `inferred=true`、`window_returned` 与 `window_ids`，用于观测推导分组而非原生浏览器 tab group。
+- 当前已提供 `tabs auth-mode <target-id>` 与 `GET /v1/tabs/auth-mode`，可基于当前受管标签页的 URL、DOM 文本、cookie 名称与 Web Storage 键做 `inferred=true` 的 logged-in/logged-out 模式推断；该入口只读，不写任何登录状态，也不伪装成权威授权结果。
 - 当前已提供 `tabs open-window <url>`，可通过 browser websocket 调用 `Target.createTarget(newWindow=true)` 显式创建新浏览器窗口中的 page target。
 - 当前已提供 `tabs open-in-window <window-id> <url>`，可先聚焦目标窗口，再复用既有 `open(url)` 主链在该窗口中打开新标签。
 - 当前已提供 `tabs move-to-window <tab-id> <target-window-id>`，可定位指定 page target 所属源窗口，再复用既有 `open-in-window` 与 `close(target)` 主链把该标签迁入目标窗口。
