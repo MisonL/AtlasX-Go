@@ -35,6 +35,8 @@
   - `runtime_manifest_version`
   - `runtime_manifest_channel`
   - `sidebar_default_provider`
+  - `uncovered_count`
+  - `uncovered_items`
 
 ## 阻断条件
 

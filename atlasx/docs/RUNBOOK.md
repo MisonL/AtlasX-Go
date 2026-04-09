@@ -308,6 +308,8 @@ bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
 - `runtime_manifest_version`
 - `runtime_manifest_channel`
 - `sidebar_default_provider`
+- `uncovered_count`
+- `uncovered_items`
 
 失败原则：
 

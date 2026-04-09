@@ -69,6 +69,8 @@
   - 当前已完成
 - `T132`
   - 当前已完成
+- `T133`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -147,6 +149,7 @@
   - 项目级 gate 与发布/恢复手册
   - 发布证据自动采集脚本 `bash scripts/release_evidence.sh`
   - 发布证据摘要自动汇总 `runtime_manifest_version`、`runtime_manifest_channel` 与 `sidebar_default_provider`
+  - 发布证据摘要自动汇总 `uncovered_count` 与 `uncovered_items`
 
 ## 当前开发机观测事实
 

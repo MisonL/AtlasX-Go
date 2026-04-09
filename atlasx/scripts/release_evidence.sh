@@ -12,12 +12,14 @@ mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 SUMMARY_FILE="$OUTPUT_DIR/SUMMARY.md"
 ATLASD_ONCE_LOG="$OUTPUT_DIR/atlasd-once.log"
+E2E_GATE_LOG="$OUTPUT_DIR/e2e-gate.log"
 
 RESULT_LINES=()
 FAILURES=()
 RUNTIME_MANIFEST_VERSION="none"
 RUNTIME_MANIFEST_CHANNEL="none"
 SIDEBAR_DEFAULT_PROVIDER="none"
+UNCOVERED_ITEMS=()
 
 log() {
   printf '%s\n' "$*"
@@ -75,6 +77,18 @@ refresh_metadata_from_atlasd_once() {
   SIDEBAR_DEFAULT_PROVIDER="$(extract_json_string_field "$ATLASD_ONCE_LOG" "sidebar_qa_default_provider")"
 }
 
+refresh_uncovered_from_e2e_gate() {
+  UNCOVERED_ITEMS=()
+
+  if [[ ! -f "$E2E_GATE_LOG" ]]; then
+    return 0
+  fi
+
+  while IFS= read -r line; do
+    UNCOVERED_ITEMS+=("${line#  - }")
+  done < <(grep '^  - ' "$E2E_GATE_LOG" || true)
+}
+
 write_summary() {
   {
     printf '# Release Evidence\n\n'
@@ -83,6 +97,7 @@ write_summary() {
     printf -- '- runtime_manifest_version=%s\n' "$RUNTIME_MANIFEST_VERSION"
     printf -- '- runtime_manifest_channel=%s\n' "$RUNTIME_MANIFEST_CHANNEL"
     printf -- '- sidebar_default_provider=%s\n' "$SIDEBAR_DEFAULT_PROVIDER"
+    printf -- '- uncovered_count=%s\n' "${#UNCOVERED_ITEMS[@]}"
     printf '\n## Results\n\n'
     for line in "${RESULT_LINES[@]}"; do
       IFS='|' read -r label exit_code logfile <<<"$line"
@@ -100,6 +115,15 @@ write_summary() {
       printf -- '- success=false\n'
       printf -- '- failed_steps=%s\n' "$(IFS=,; printf '%s' "${FAILURES[*]}")"
     fi
+
+    printf '\n## Uncovered\n\n'
+    if [[ "${#UNCOVERED_ITEMS[@]}" -eq 0 ]]; then
+      printf -- '- uncovered_items=none\n'
+    else
+      for item in "${UNCOVERED_ITEMS[@]}"; do
+        printf -- '- %s\n' "$item"
+      done
+    fi
   } >"$SUMMARY_FILE"
 }
 
@@ -107,6 +131,7 @@ run_and_capture "go test ./..." "go-test.log" env ATLASX_RELEASE_EVIDENCE_ACTIVE
 run_and_capture "bash scripts/e2e_gate.sh" "e2e-gate.log" env ATLASX_RELEASE_EVIDENCE_ACTIVE=1 bash scripts/e2e_gate.sh
 run_and_capture "go run ./cmd/atlasd --once" "atlasd-once.log" go run ./cmd/atlasd --once
 refresh_metadata_from_atlasd_once
+refresh_uncovered_from_e2e_gate
 write_summary
 
 if [[ "${#FAILURES[@]}" -gt 0 ]]; then

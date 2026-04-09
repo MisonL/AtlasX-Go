@@ -27,7 +27,7 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 		"STUB_ATLASD_ONCE_EXIT=0",
 		`STUB_ATLASD_ONCE_OUTPUT={"runtime_manifest_version":"136.0.7103.114","runtime_manifest_channel":"stable","sidebar_qa_default_provider":"primary"}`+"\n",
 		"STUB_E2E_GATE_EXIT=0",
-		"STUB_E2E_GATE_OUTPUT=E2E gate finished\n",
+		"STUB_E2E_GATE_OUTPUT=E2E gate finished\nUNCOVERED summary: none\n",
 	)
 	output, err := command.CombinedOutput()
 	if err != nil {
@@ -45,6 +45,8 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_version=136.0.7103.114")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_channel=stable")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=primary")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_count=0")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_items=none")
 }
 
 func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T) {
@@ -66,7 +68,7 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 		"STUB_ATLASD_ONCE_EXIT=0",
 		"STUB_ATLASD_ONCE_OUTPUT={}\n",
 		"STUB_E2E_GATE_EXIT=9",
-		"STUB_E2E_GATE_OUTPUT=e2e gate failure\n",
+		"STUB_E2E_GATE_OUTPUT=e2e gate failure\nUNCOVERED summary:\n  - tabs capture smoke: 当前没有受管浏览器会话\n  - sidebar ask real smoke: sidebar_qa_ready=false\n",
 	)
 	output, err := command.CombinedOutput()
 	if err == nil {
@@ -82,6 +84,9 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_version=none")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_channel=none")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=none")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_count=2")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tabs capture smoke: 当前没有受管浏览器会话")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar ask real smoke: sidebar_qa_ready=false")
 }
 
 func createReleaseEvidenceStubDir(t *testing.T) string {
