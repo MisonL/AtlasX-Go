@@ -308,6 +308,9 @@ bash scripts/release_evidence.sh /tmp/atlasx-release-evidence
 - `runtime_manifest_version`
 - `runtime_manifest_channel`
 - `sidebar_default_provider`
+- `atlasd_ready`
+- `managed_session_live`
+- `sidebar_qa_ready`
 - `uncovered_count`
 - `uncovered_items`
 - `tasks_total`

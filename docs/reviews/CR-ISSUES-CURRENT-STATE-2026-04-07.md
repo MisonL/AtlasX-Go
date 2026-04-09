@@ -73,6 +73,8 @@
   - 当前已完成
 - `T134`
   - 当前已完成
+- `T135`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -153,6 +155,7 @@
   - 发布证据摘要自动汇总 `runtime_manifest_version`、`runtime_manifest_channel` 与 `sidebar_default_provider`
   - 发布证据摘要自动汇总 `uncovered_count` 与 `uncovered_items`
   - 发布证据摘要自动汇总 `tasks_total/tasks_done/tasks_doing/tasks_todo` 与 `release_ready/release_blockers`
+  - 发布证据摘要自动汇总 `atlasd_ready/managed_session_live/sidebar_qa_ready`
 
 ## 当前开发机观测事实
 

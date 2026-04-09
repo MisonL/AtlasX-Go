@@ -25,6 +25,9 @@ TASKS_TOTAL="0"
 TASKS_DONE="0"
 TASKS_DOING="0"
 TASKS_TODO="0"
+ATLASD_READY="false_or_unknown"
+MANAGED_SESSION_LIVE="false_or_unknown"
+SIDEBAR_QA_READY="false_or_unknown"
 RELEASE_READY="false"
 RELEASE_BLOCKERS=()
 
@@ -78,10 +81,42 @@ try {
 ' "$logfile_path" "$field_name"
 }
 
+extract_json_bool_field() {
+  local logfile_path="$1"
+  local field_name="$2"
+
+  if [[ ! -f "$logfile_path" ]]; then
+    printf 'false_or_unknown'
+    return 0
+  fi
+
+  node -e '
+const fs = require("fs");
+const filePath = process.argv[1];
+const fieldName = process.argv[2];
+try {
+  const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const value = payload[fieldName];
+  if (value === true) {
+    process.stdout.write("true");
+  } else if (value === false) {
+    process.stdout.write("false");
+  } else {
+    process.stdout.write("false_or_unknown");
+  }
+} catch (error) {
+  process.stdout.write("false_or_unknown");
+}
+' "$logfile_path" "$field_name"
+}
+
 refresh_metadata_from_atlasd_once() {
   RUNTIME_MANIFEST_VERSION="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_version")"
   RUNTIME_MANIFEST_CHANNEL="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_channel")"
   SIDEBAR_DEFAULT_PROVIDER="$(extract_json_string_field "$ATLASD_ONCE_LOG" "sidebar_qa_default_provider")"
+  ATLASD_READY="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "ready")"
+  MANAGED_SESSION_LIVE="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "managed_session_live")"
+  SIDEBAR_QA_READY="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "sidebar_qa_ready")"
 }
 
 refresh_uncovered_from_e2e_gate() {
@@ -153,6 +188,9 @@ refresh_release_readiness() {
   if [[ "${#FAILURES[@]}" -gt 0 ]]; then
     RELEASE_BLOCKERS+=("command_failures_present")
   fi
+  if [[ "$ATLASD_READY" != "true" ]]; then
+    RELEASE_BLOCKERS+=("atlasd_ready_false")
+  fi
   if [[ "$TASKS_DOING" != "0" ]]; then
     RELEASE_BLOCKERS+=("tasks_in_progress_present")
   fi
@@ -178,6 +216,9 @@ write_summary() {
     printf -- '- runtime_manifest_version=%s\n' "$RUNTIME_MANIFEST_VERSION"
     printf -- '- runtime_manifest_channel=%s\n' "$RUNTIME_MANIFEST_CHANNEL"
     printf -- '- sidebar_default_provider=%s\n' "$SIDEBAR_DEFAULT_PROVIDER"
+    printf -- '- atlasd_ready=%s\n' "$ATLASD_READY"
+    printf -- '- managed_session_live=%s\n' "$MANAGED_SESSION_LIVE"
+    printf -- '- sidebar_qa_ready=%s\n' "$SIDEBAR_QA_READY"
     printf -- '- uncovered_count=%s\n' "${#UNCOVERED_ITEMS[@]}"
     printf -- '- tasks_total=%s\n' "$TASKS_TOTAL"
     printf -- '- tasks_done=%s\n' "$TASKS_DONE"
