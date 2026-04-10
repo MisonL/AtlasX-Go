@@ -146,6 +146,90 @@ func TestStatusMarksOldManagedSessionStaleWhenCDPIsDown(t *testing.T) {
 	}
 }
 
+func TestStatusKeepsRecentManagedSessionWhenProcessIsNotYetObservable(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := SaveState(paths, State{
+		Mode:        profile.ModeIsolated,
+		Managed:     true,
+		UserDataDir: filepath.Join(t.TempDir(), "profile"),
+		StartedAt:   time.Now().UTC().Format(time.RFC3339),
+	}); err != nil {
+		t.Fatalf("save state failed: %v", err)
+	}
+
+	previousFind := findProcessesByUserDataDir
+	previousProbe := probeManagedCDP
+	findProcessesByUserDataDir = func(string) ([]macos.ProcessInfo, error) {
+		return nil, nil
+	}
+	probeManagedCDP = func(string) CDPReport {
+		return CDPReport{Status: cdpStatusPortFileAbsent}
+	}
+	t.Cleanup(func() {
+		findProcessesByUserDataDir = previousFind
+		probeManagedCDP = previousProbe
+	})
+
+	report, err := Status(paths)
+	if err != nil {
+		t.Fatalf("status failed: %v", err)
+	}
+	if !report.Present || report.StateCleaned || report.Stale || report.Alive {
+		t.Fatalf("expected recent session state to be preserved: %+v", report)
+	}
+	if _, err := os.Stat(paths.SessionFile); err != nil {
+		t.Fatalf("expected session file preserved: %v", err)
+	}
+}
+
+func TestStatusTreatsCDPPortAsAliveEvidence(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := SaveState(paths, State{
+		Mode:        profile.ModeIsolated,
+		Managed:     true,
+		UserDataDir: filepath.Join(t.TempDir(), "profile"),
+		StartedAt:   time.Now().UTC().Format(time.RFC3339),
+	}); err != nil {
+		t.Fatalf("save state failed: %v", err)
+	}
+
+	previousFind := findProcessesByUserDataDir
+	previousProbe := probeManagedCDP
+	findProcessesByUserDataDir = func(string) ([]macos.ProcessInfo, error) {
+		return nil, nil
+	}
+	probeManagedCDP = func(string) CDPReport {
+		return CDPReport{
+			Status:          cdpStatusVersionDown,
+			VersionEndpoint: "http://127.0.0.1:12345/json/version",
+		}
+	}
+	t.Cleanup(func() {
+		findProcessesByUserDataDir = previousFind
+		probeManagedCDP = previousProbe
+	})
+
+	report, err := Status(paths)
+	if err != nil {
+		t.Fatalf("status failed: %v", err)
+	}
+	if !report.Present || !report.Alive || report.StateCleaned {
+		t.Fatalf("expected cdp evidence to keep session alive: %+v", report)
+	}
+}
+
 func TestStatusHealsCDPWhenRetrySucceeds(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

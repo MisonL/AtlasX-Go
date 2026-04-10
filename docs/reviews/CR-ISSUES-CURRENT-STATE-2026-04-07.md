@@ -93,6 +93,8 @@
   - 当前已完成
 - `T144`
   - 当前已完成
+- `T145`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -187,10 +189,10 @@
 - `ready=true`
 - `chrome_status=ok`
 - `chrome_source=managed_auto`
-- `managed_session_live=false`
+- `managed_session_live=true`
 - `mirror_present=true`
 - `chrome_import_present=true`
-- `memory_present=false`
+- `memory_present=true`
 - `runtime_manifest_present=true`
 - `runtime_manifest_version=146.0.7680.178`
 - `runtime_manifest_channel=stable`
@@ -236,9 +238,9 @@
 - 本机 `atlasctl permissions status` 返回的是代码边界事实而不是真实 TCC 授权态；当前代码库未实现权限探测、权限提示或授权写路径
 - 本机直接运行 `atlasctl tabs agent-plan <target-id>` 仍依赖受管浏览器会话；当前无 managed session 时会显式失败 `no managed browser session`
 - 本机 `atlasctl tabs agent-execute --confirm [--max-steps <n>] <target-id> <step-id>...` 同样依赖受管浏览器会话；执行 `sidebar_*` 与 `memory_snippet` 步骤时还依赖 sidebar provider readiness，执行 `related_tab` 步骤不依赖 provider；多步请求超过 `max_steps` 时会显式失败；当前无 managed session 时会显式失败
-- 当前没有受管浏览器会话
+- 当前已有受管浏览器会话，`atlasctl status` 返回 `alive=true`、`ready=true`
 - mirror/import 已有历史落盘
-- 当前没有本地 memory 事件
+- 当前已有本地 memory 事件，最近一条来自 `page_capture`
 - 当前没有配置好真实 provider 凭据或 provider registry
 
 ## 当前 Gate 结果
@@ -247,31 +249,32 @@
 
 - 离线强制 gate 通过
 - 当前 `UNCOVERED` 项：
-  - `tabs capture smoke`
-  - `browser-data open smoke`
   - `sidebar ask real smoke`
 
 当前解释：
 
 - `runtime verify smoke` 与 `runtime install smoke` 已在当前开发机通过真实 managed runtime 主链收敛，不再出现在开启安装开关后的 gate 中
-- 剩余未覆盖项不是代码失败，而是本机当前缺少受管浏览器会话和真实 provider readiness
+- `tabs capture smoke` 与 `browser-data open smoke` 已在当前开发机通过真实 managed session、真实 page target 与真实 browser-data open 主链收敛
+- 剩余未覆盖项不是代码失败，而是本机当前缺少真实 provider readiness
 - 当前 gate 已进一步区分 `browser-data open smoke` 的两类阻断：
   - 若没有已落盘 history/bookmarks/downloads 数据，会显式返回“当前都没有可打开的已落盘数据”
   - 若已有落盘数据但没有受管浏览器会话，会显式返回“已有落盘数据但当前没有受管浏览器会话”
-- 当前 `ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/release_evidence.sh /tmp/atlasx-release-evidence-t144-install` 生成的 `SUMMARY.md` 元数据事实：
+- 当前 `ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/release_evidence.sh /tmp/atlasx-release-evidence-t145` 生成的 `SUMMARY.md` 元数据事实：
   - `runtime_manifest_version=146.0.7680.178`
   - `runtime_manifest_channel=stable`
   - `chrome_source=managed_auto`
   - `sidebar_default_provider=none`
   - `runtime_manifest_present=true`
   - `mirror_present=true`
-  - `tasks_total=144`
-  - `tasks_done=144`
+  - `managed_session_live=true`
+  - `memory_present=true`
+  - `tasks_total=145`
+  - `tasks_done=145`
   - `tasks_doing=0`
   - `tasks_todo=0`
   - `release_ready=false`
   - `release_blockers` 当前包含 `uncovered_items_present`
-  - `release_prerequisites` 当前覆盖 managed session、browser-data open 和 provider readiness 三类前置条件
+  - `release_prerequisites` 当前仅剩 provider readiness
 - 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
 
 ## 当前推荐入口

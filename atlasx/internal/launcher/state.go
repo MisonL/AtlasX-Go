@@ -115,23 +115,23 @@ func Status(paths macos.Paths) (StatusReport, error) {
 	for _, process := range processes {
 		report.ProcessIDs = append(report.ProcessIDs, process.PID)
 	}
-	report.Alive = len(report.ProcessIDs) > 0
-	if report.Alive {
-		report.CDP = healManagedCDP(state.UserDataDir)
-		report.Ready = report.CDP.Status == cdpStatusOK
-		report.Stale = !report.Ready && shouldMarkSessionStale(state)
-	} else {
+	report.CDP = healManagedCDP(state.UserDataDir)
+	report.Alive = len(report.ProcessIDs) > 0 || hasManagedSessionEvidence(report.CDP)
+	report.Ready = report.CDP.Status == cdpStatusOK
+	report.Stale = !report.Ready && shouldMarkSessionStale(state)
+	if !report.Alive {
 		report.CDP = CDPReport{
 			Status:         cdpStatusSessionDead,
 			ActivePortFile: filepath.Join(state.UserDataDir, devToolsActivePortFile),
 			Host:           defaultDevToolsHost,
 		}
-		report.Stale = true
-		if err := ClearState(paths); err != nil {
-			return StatusReport{}, err
+		if report.Stale {
+			if err := ClearState(paths); err != nil {
+				return StatusReport{}, err
+			}
+			report.StateCleaned = true
+			report.Present = false
 		}
-		report.StateCleaned = true
-		report.Present = false
 	}
 	return report, nil
 }
@@ -255,4 +255,13 @@ func shouldMarkSessionStale(state State) bool {
 		return true
 	}
 	return nowTime().Sub(startedAt) >= sessionStaleAfter
+}
+
+func hasManagedSessionEvidence(report CDPReport) bool {
+	switch report.Status {
+	case cdpStatusOK, cdpStatusVersionDown, cdpStatusPortFileBad:
+		return true
+	default:
+		return false
+	}
 }
