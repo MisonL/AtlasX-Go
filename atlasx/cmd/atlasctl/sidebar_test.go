@@ -93,7 +93,7 @@ func TestSidebarSetProviderWritesRegistryAndShowsStatus(t *testing.T) {
 			"--provider", "openai",
 			"--model", "gpt-5.4",
 			"--base-url", "https://api.openai.com/v1",
-			"--api-key-env", "OPENAI_API_KEY",
+			"--api-key-env", "ATLASX_TEST_OPENAI_API_KEY",
 			"--default",
 		})
 	})
@@ -107,9 +107,9 @@ func TestSidebarSetProviderWritesRegistryAndShowsStatus(t *testing.T) {
 		"default_provider=primary",
 		"provider=openai",
 		"model=gpt-5.4",
-		"api_key_env=OPENAI_API_KEY",
+		"api_key_env=ATLASX_TEST_OPENAI_API_KEY",
 		"provider_count=1",
-		"reason=sidebar qa api key env OPENAI_API_KEY is not set",
+		"reason=sidebar qa api key env ATLASX_TEST_OPENAI_API_KEY is not set",
 	} {
 		if !strings.Contains(output, fragment) {
 			t.Fatalf("expected output to contain %q, got %s", fragment, output)
@@ -130,7 +130,7 @@ func TestSidebarSetProviderWritesRegistryAndShowsStatus(t *testing.T) {
 	if len(config.SidebarProviders) != 1 {
 		t.Fatalf("unexpected providers: %+v", config.SidebarProviders)
 	}
-	if config.SidebarProviders[0].APIKeyEnv != "OPENAI_API_KEY" {
+	if config.SidebarProviders[0].APIKeyEnv != "ATLASX_TEST_OPENAI_API_KEY" {
 		t.Fatalf("unexpected provider env: %+v", config.SidebarProviders[0])
 	}
 }

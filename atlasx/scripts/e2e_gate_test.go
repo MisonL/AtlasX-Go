@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -121,6 +122,26 @@ done
 	}
 	if !strings.Contains(logOutput, "run ./cmd/atlasctl runtime install") {
 		t.Fatalf("expected runtime install invocation, got log=%s", logOutput)
+	}
+}
+
+func TestResolveAtlasdPortUsesEphemeralPortWhenUnset(t *testing.T) {
+	output := runGateShellTest(t, `source ./scripts/e2e_gate.sh
+ATLASD_PORT=""
+port="$(resolve_atlasd_port)"
+printf 'port=%s\n' "$port"
+`, map[string]string{})
+
+	line := strings.TrimSpace(output)
+	if !strings.HasPrefix(line, "port=") {
+		t.Fatalf("expected port output, got %s", output)
+	}
+	value, err := strconv.Atoi(strings.TrimPrefix(line, "port="))
+	if err != nil {
+		t.Fatalf("expected numeric port, got %s err=%v", output, err)
+	}
+	if value <= 0 {
+		t.Fatalf("expected positive port, got %d", value)
 	}
 }
 

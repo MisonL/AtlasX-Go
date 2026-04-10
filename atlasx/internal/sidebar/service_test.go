@@ -477,6 +477,11 @@ func TestBuildPromptDropsMemoryWhenBudgetIsTight(t *testing.T) {
 
 func TestAskRetriesTimeoutOnceAndReturnsProviderFailure(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
+	previousTimeout := providerRequestTimeout
+	providerRequestTimeout = 100 * time.Millisecond
+	t.Cleanup(func() {
+		providerRequestTimeout = previousTimeout
+	})
 
 	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

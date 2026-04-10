@@ -99,6 +99,8 @@
   - 当前已完成
 - `T147`
   - 当前已完成
+- `T148`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -185,10 +187,11 @@
   - 发布证据摘要自动汇总 `release_prerequisites`
   - 发布证据摘要自动汇总 `chrome_source/runtime_manifest_present/mirror_present`
   - 发布证据摘要自动汇总 `chrome_import_present/memory_present/logs_present/logs_file_count/updates_plan_present/updates_plan_pending`
+  - `e2e_gate.sh` 默认选择空闲回环端口启动临时 `atlasd`，避免被本机常驻 `127.0.0.1:17537` 进程污染
 
 ## 当前开发机观测事实
 
-以下事实来自 `cd atlasx && go run ./cmd/atlasd --once`：
+以下事实来自 `cd atlasx && OPENAI_API_KEY=<command-env> go run ./cmd/atlasd --once`：
 
 - `ready=true`
 - `chrome_status=ok`
@@ -200,7 +203,8 @@
 - `runtime_manifest_present=true`
 - `runtime_manifest_version=146.0.7680.178`
 - `runtime_manifest_channel=stable`
-- `sidebar_qa_ready=false`
+- `sidebar_qa_ready=true`
+- `sidebar_qa_default_provider=primary`
 - `default_browser_http_bundle_id=org.mozilla.firefox`
 - `default_browser_https_bundle_id=org.mozilla.firefox`
 - `default_browser_consistent=true`
@@ -245,18 +249,23 @@
 - 当前已有受管浏览器会话，`atlasctl status` 返回 `alive=true`、`ready=true`
 - mirror/import 已有历史落盘
 - 当前已有本地 memory 事件，最近一条来自 `page_capture`
-- 当前没有配置好真实 provider 凭据
 - 当前 `config.json` 已包含 `sidebar_default_provider=primary` 与 `sidebar_providers[0].api_key_env=OPENAI_API_KEY`
-- 当前 `sidebar status` 返回 `configured=true`、`ready=false`、`reason=sidebar qa api key env OPENAI_API_KEY is not set`
-- 当前 shell 中仍未导出 `OPENAI_API_KEY`
+- 当前 `sidebar status` 在命令上下文注入 `OPENAI_API_KEY` 时返回 `configured=true`、`ready=true`
+- 真实 provider 配置为 `provider=openai-compatible`、`model=gpt-5.4`、`base_url=https://daidai.rxwysystem.com/v1`
+- 真实密钥仅通过命令环境变量注入，不写入 `config.json` 或仓库文件
 
 ## 当前 Gate 结果
 
-以下事实来自 `cd atlasx && ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/e2e_gate.sh`：
+以下事实来自 `cd atlasx && OPENAI_API_KEY=<command-env> ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/e2e_gate.sh`：
 
 - 离线强制 gate 通过
-- 当前 `UNCOVERED` 项：
-  - `sidebar ask real smoke`
+- 当前 `UNCOVERED summary: none`
+
+以下事实来自 `cd atlasx && OPENAI_API_KEY=<command-env> ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/release_evidence.sh /tmp/atlasx-release-evidence-t148`：
+
+- `success=true`
+- `release_ready=true`
+- `release_blockers=none`
 
 当前解释：
 

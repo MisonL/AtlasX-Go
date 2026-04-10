@@ -17,7 +17,8 @@ import (
 	"atlasx/internal/tabs"
 )
 
-const providerRequestTimeout = 2 * time.Second
+var providerRequestTimeout = 12 * time.Second
+
 const providerRetryAttempts = 1
 const providerTokenBudget = 1200
 

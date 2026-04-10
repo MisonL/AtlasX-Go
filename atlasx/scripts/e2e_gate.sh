@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-ATLASD_PORT="${ATLASX_E2E_PORT:-17537}"
+ATLASD_PORT="${ATLASX_E2E_PORT:-}"
 ATLASD_LOG="$(mktemp -t atlasx-atlasd.XXXXXX.log)"
 ATLASD_PID=""
 FIRST_TAB_ID=""
@@ -24,6 +24,31 @@ trap cleanup EXIT
 
 log() {
   printf '%s\n' "$*"
+}
+
+resolve_atlasd_port() {
+  if [[ -n "$ATLASD_PORT" ]]; then
+    printf '%s\n' "$ATLASD_PORT"
+    return 0
+  fi
+
+  node -e '
+const net = require("net");
+const server = net.createServer();
+server.listen(0, "127.0.0.1", () => {
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    console.error("failed to resolve atlasd port");
+    process.exit(1);
+  }
+  process.stdout.write(String(address.port));
+  server.close();
+});
+server.on("error", (error) => {
+  console.error(error.message);
+  process.exit(1);
+});
+'
 }
 
 mark_uncovered() {
@@ -55,11 +80,17 @@ refresh_status() {
 }
 
 start_atlasd() {
-  log "RUN atlasd server"
+  ATLASD_PORT="$(resolve_atlasd_port)"
+  log "RUN atlasd server on ${ATLASD_PORT}"
   go run ./cmd/atlasd --listen "127.0.0.1:${ATLASD_PORT}" >"$ATLASD_LOG" 2>&1 &
   ATLASD_PID="$!"
 
   for _ in $(seq 1 30); do
+    if ! kill -0 "$ATLASD_PID" >/dev/null 2>&1; then
+      log "atlasd log:"
+      cat "$ATLASD_LOG"
+      return 1
+    fi
     if curl -sf "http://127.0.0.1:${ATLASD_PORT}/healthz" >/dev/null; then
       refresh_status
       return 0
