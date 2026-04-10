@@ -87,7 +87,11 @@
   - 当前已完成
 - `T141`
   - 当前已完成
+- `T142`
+  - 当前已完成
 - `T143`
+  - 当前已完成
+- `T144`
   - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -189,7 +193,7 @@
 - `memory_present=false`
 - `runtime_manifest_present=true`
 - `runtime_manifest_version=146.0.7680.178`
-- `runtime_manifest_channel=local`
+- `runtime_manifest_channel=stable`
 - `sidebar_qa_ready=false`
 - `default_browser_http_bundle_id=org.mozilla.firefox`
 - `default_browser_https_bundle_id=org.mozilla.firefox`
@@ -197,10 +201,9 @@
 - `logs_present=false`
 - `logs_file_count=0`
 - `updates_manifest_present=false`
-- `updates_plan_present=false`
+- `updates_plan_present=true`
 - `updates_plan_pending=false`
-- `doctor_json_chrome_status=ok`
-- `doctor_json_chrome_source=system_auto`
+- `updates_plan_phase=staged`
 - `profile_default_profile=isolated`
 - `profile_selected_mode=isolated`
 
@@ -226,8 +229,8 @@
 - 本机系统 Chrome 可发现
 - 本机 LaunchServices 当前 `http/https` 默认浏览器一致，均指向 `org.mozilla.firefox`
 - 本机当前 `Application Support/AtlasX/logs` 尚不存在，日志状态入口返回 `present=false`
-- 本机当前已有 staged managed runtime，但仍没有 install plan，顶层更新状态入口返回 `manifest_present=true`、`plan_present=false`
-- 本机 `atlasctl doctor --json` 可返回结构化诊断结果，当前 `ChromeStatus=ok`、`Chrome.Source=system_auto`
+- 本机当前已有 `stable` channel staged managed runtime，`runtime verify` 真实通过，`runtime plan status` 返回 `install_plan_present=true` 且 `install_plan_phase=staged`
+- 顶层更新状态入口当前返回 `updates_plan_present=true`、`updates_plan_pending=false`、`updates_plan_phase=staged`
 - 本机 `atlasctl profile status` 返回 `default_profile=isolated`、`selected_mode=isolated`，并确认 isolated profile 目录已存在
 - 本机 `atlasctl policy status` 返回当前治理护栏视图，默认仅允许回环监听，远程控制危险开关名称为 `--allow-remote-control`，shared profile 当前显式视为非受管
 - 本机 `atlasctl permissions status` 返回的是代码边界事实而不是真实 TCC 授权态；当前代码库未实现权限探测、权限提示或授权写路径
@@ -235,42 +238,40 @@
 - 本机 `atlasctl tabs agent-execute --confirm [--max-steps <n>] <target-id> <step-id>...` 同样依赖受管浏览器会话；执行 `sidebar_*` 与 `memory_snippet` 步骤时还依赖 sidebar provider readiness，执行 `related_tab` 步骤不依赖 provider；多步请求超过 `max_steps` 时会显式失败；当前无 managed session 时会显式失败
 - 当前没有受管浏览器会话
 - mirror/import 已有历史落盘
-- 当前没有 staged managed runtime
 - 当前没有本地 memory 事件
 - 当前没有配置好真实 provider 凭据或 provider registry
 
 ## 当前 Gate 结果
 
-以下事实来自 `cd atlasx && bash scripts/e2e_gate.sh`：
+以下事实来自 `cd atlasx && ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/e2e_gate.sh`：
 
 - 离线强制 gate 通过
 - 当前 `UNCOVERED` 项：
-  - `runtime verify smoke`
-  - `runtime install smoke`
   - `tabs capture smoke`
   - `browser-data open smoke`
   - `sidebar ask real smoke`
 
 当前解释：
 
-- 这些未覆盖项不是代码失败，而是本机当前缺少 staged runtime、受管浏览器会话和真实 provider readiness
+- `runtime verify smoke` 与 `runtime install smoke` 已在当前开发机通过真实 managed runtime 主链收敛，不再出现在开启安装开关后的 gate 中
+- 剩余未覆盖项不是代码失败，而是本机当前缺少受管浏览器会话和真实 provider readiness
 - 当前 gate 已进一步区分 `browser-data open smoke` 的两类阻断：
   - 若没有已落盘 history/bookmarks/downloads 数据，会显式返回“当前都没有可打开的已落盘数据”
   - 若已有落盘数据但没有受管浏览器会话，会显式返回“已有落盘数据但当前没有受管浏览器会话”
-- 当前 `bash scripts/release_evidence.sh /tmp/atlasx-release-evidence` 生成的 `SUMMARY.md` 元数据事实：
-  - `runtime_manifest_version=none`
-  - `runtime_manifest_channel=none`
-  - `chrome_source=system_auto`
+- 当前 `ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/release_evidence.sh /tmp/atlasx-release-evidence-t144-install` 生成的 `SUMMARY.md` 元数据事实：
+  - `runtime_manifest_version=146.0.7680.178`
+  - `runtime_manifest_channel=stable`
+  - `chrome_source=managed_auto`
   - `sidebar_default_provider=none`
-  - `runtime_manifest_present=false`
+  - `runtime_manifest_present=true`
   - `mirror_present=true`
-  - `tasks_total=137`
-  - `tasks_done=137`
+  - `tasks_total=144`
+  - `tasks_done=144`
   - `tasks_doing=0`
   - `tasks_todo=0`
   - `release_ready=false`
   - `release_blockers` 当前包含 `uncovered_items_present`
-  - `release_prerequisites` 当前覆盖 staged runtime、install plan、managed session、browser-data open 和 provider readiness 五类前置条件
+  - `release_prerequisites` 当前覆盖 managed session、browser-data open 和 provider readiness 三类前置条件
 - 若后续要做真实 smoke，需要先按 `atlasx/docs/RUNBOOK.md` 补齐对应前置条件
 
 ## 当前推荐入口

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"sync/atomic"
 
 	"atlasx/internal/platform/macos"
@@ -352,6 +351,7 @@ func locateExtractedBundle(extractRoot string) (string, error) {
 		}
 		if entry.IsDir() && filepath.Ext(path) == ".app" {
 			bundles = append(bundles, path)
+			return filepath.SkipDir
 		}
 		return nil
 	}); err != nil {
@@ -362,7 +362,6 @@ func locateExtractedBundle(extractRoot string) (string, error) {
 		return "", fmt.Errorf("managed runtime archive does not contain a .app bundle")
 	}
 	if len(bundles) > 1 {
-		sort.Strings(bundles)
 		return "", fmt.Errorf("managed runtime archive contains multiple bundles: %v", bundles)
 	}
 	return bundles[0], nil

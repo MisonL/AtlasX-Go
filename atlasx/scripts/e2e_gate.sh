@@ -43,6 +43,12 @@ status_has_true() {
   [[ "$STATUS_COMPACT" == *"\"$key\":true"* ]]
 }
 
+status_line_value() {
+  local input="$1"
+  local key="$2"
+  printf '%s\n' "$input" | sed -n "s/^${key}=//p" | head -n 1
+}
+
 refresh_status() {
   STATUS_JSON="$(curl -sf "http://127.0.0.1:${ATLASD_PORT}/v1/status")"
   STATUS_COMPACT="$(printf '%s' "$STATUS_JSON" | tr -d '[:space:]')"
@@ -134,6 +140,13 @@ run_sidebar_real_smoke() {
 run_runtime_smoke() {
   local runtime_status_output=""
   local plan_status_output=""
+  local plan_phase=""
+  local plan_version=""
+  local plan_channel=""
+  local plan_source_url=""
+  local plan_sha256=""
+  local plan_archive_path=""
+  local plan_bundle_path=""
 
   run_step "runtime status" go run ./cmd/atlasctl runtime status >/dev/null
   runtime_status_output="$(go run ./cmd/atlasctl runtime status)"
@@ -147,6 +160,23 @@ run_runtime_smoke() {
 
   if [[ "${ATLASX_E2E_ALLOW_INSTALL:-0}" == "1" ]]; then
     if printf '%s\n' "$plan_status_output" | grep -q 'install_plan_present=true'; then
+      plan_phase="$(status_line_value "$plan_status_output" "install_plan_phase")"
+      if [[ "$plan_phase" != "planned" ]]; then
+        plan_version="$(status_line_value "$plan_status_output" "install_plan_version")"
+        plan_channel="$(status_line_value "$plan_status_output" "install_plan_channel")"
+        plan_source_url="$(status_line_value "$plan_status_output" "install_plan_source_url")"
+        plan_sha256="$(status_line_value "$plan_status_output" "install_plan_expected_sha256")"
+        plan_archive_path="$(status_line_value "$plan_status_output" "install_plan_archive_path")"
+        plan_bundle_path="$(status_line_value "$plan_status_output" "install_plan_staged_bundle_path")"
+        run_step "runtime install plan reset" \
+          go run ./cmd/atlasctl runtime plan create \
+            --version "$plan_version" \
+            --channel "$plan_channel" \
+            --url "$plan_source_url" \
+            --sha256 "$plan_sha256" \
+            --archive-path "$plan_archive_path" \
+            --bundle-path "$plan_bundle_path" >/dev/null
+      fi
       run_step "runtime install smoke" go run ./cmd/atlasctl runtime install >/dev/null
     else
       mark_uncovered "runtime install smoke" "允许安装但当前没有 install plan"
