@@ -87,6 +87,8 @@
   - 当前已完成
 - `T141`
   - 当前已完成
+- `T143`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -180,12 +182,14 @@
 
 - `ready=true`
 - `chrome_status=ok`
-- `chrome_source=system_auto`
+- `chrome_source=managed_auto`
 - `managed_session_live=false`
 - `mirror_present=true`
 - `chrome_import_present=true`
 - `memory_present=false`
-- `runtime_manifest_present=false`
+- `runtime_manifest_present=true`
+- `runtime_manifest_version=146.0.7680.178`
+- `runtime_manifest_channel=local`
 - `sidebar_qa_ready=false`
 - `default_browser_http_bundle_id=org.mozilla.firefox`
 - `default_browser_https_bundle_id=org.mozilla.firefox`
@@ -222,7 +226,7 @@
 - 本机系统 Chrome 可发现
 - 本机 LaunchServices 当前 `http/https` 默认浏览器一致，均指向 `org.mozilla.firefox`
 - 本机当前 `Application Support/AtlasX/logs` 尚不存在，日志状态入口返回 `present=false`
-- 本机当前没有 staged managed runtime，也没有 install plan，顶层更新状态入口返回 `manifest_present=false`、`plan_present=false`
+- 本机当前已有 staged managed runtime，但仍没有 install plan，顶层更新状态入口返回 `manifest_present=true`、`plan_present=false`
 - 本机 `atlasctl doctor --json` 可返回结构化诊断结果，当前 `ChromeStatus=ok`、`Chrome.Source=system_auto`
 - 本机 `atlasctl profile status` 返回 `default_profile=isolated`、`selected_mode=isolated`，并确认 isolated profile 目录已存在
 - 本机 `atlasctl policy status` 返回当前治理护栏视图，默认仅允许回环监听，远程控制危险开关名称为 `--allow-remote-control`，shared profile 当前显式视为非受管
