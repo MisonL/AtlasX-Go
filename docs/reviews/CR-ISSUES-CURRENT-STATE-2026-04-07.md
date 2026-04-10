@@ -81,6 +81,8 @@
   - 当前已完成
 - `T138`
   - 当前已完成
+- `T139`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -101,6 +103,7 @@
   - 统一 memory 只读入口：`atlasctl memory list` 与 `/v1/memory`
   - 统一 memory 检索入口：`atlasctl memory search` 与 `/v1/memory/search`
   - 统一 memory 数据控制入口：`atlasctl memory controls`、`atlasctl memory set-persist`、`atlasctl memory set-page-visibility` 与 `/v1/memory/controls`
+  - 统一 memory 按站点页面可见性控制入口：`atlasctl memory set-site-visibility` 与扩展后的 `/v1/memory/controls`
   - 统一 sidebar status 入口：`atlasctl sidebar status` 与 `/v1/sidebar/status`
   - `atlasctl sidebar ask` 与 `/v1/sidebar/ask`
   - `atlasctl sidebar selection-ask` 与 `/v1/sidebar/selection/ask`

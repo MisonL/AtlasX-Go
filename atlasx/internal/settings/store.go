@@ -20,6 +20,7 @@ type Config struct {
 	WebAppURL              string                  `json:"web_app_url"`
 	MemoryPersistEnabled   *bool                   `json:"memory_persist_enabled,omitempty"`
 	MemoryPageVisibility   *bool                   `json:"memory_page_visibility_enabled,omitempty"`
+	MemoryHiddenHosts      []string                `json:"memory_hidden_hosts,omitempty"`
 	SidebarProvider        string                  `json:"sidebar_provider"`
 	SidebarModel           string                  `json:"sidebar_model"`
 	SidebarBaseURL         string                  `json:"sidebar_base_url"`

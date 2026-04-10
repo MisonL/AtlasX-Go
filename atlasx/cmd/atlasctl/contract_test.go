@@ -146,6 +146,7 @@ func TestMemoryControlsContract(t *testing.T) {
 		"config_file=",
 		"persist_enabled=",
 		"page_visibility_enabled=",
+		"hidden_host_count=",
 	)
 }
 

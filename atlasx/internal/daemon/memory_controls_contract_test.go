@@ -20,7 +20,7 @@ func TestMemoryControlsEndpointContract(t *testing.T) {
 	}
 
 	payload := decodeObjectResponse(t, recorder)
-	assertMapKeys(t, payload, "config_file", "persist_enabled", "page_visibility_enabled")
+	assertMapKeys(t, payload, "config_file", "persist_enabled", "page_visibility_enabled", "hidden_hosts")
 }
 
 func TestMemoryControlsSetEndpointContract(t *testing.T) {
@@ -36,5 +36,5 @@ func TestMemoryControlsSetEndpointContract(t *testing.T) {
 	}
 
 	payload := decodeObjectResponse(t, recorder)
-	assertMapKeys(t, payload, "config_file", "persist_enabled", "page_visibility_enabled")
+	assertMapKeys(t, payload, "config_file", "persist_enabled", "page_visibility_enabled", "hidden_hosts")
 }

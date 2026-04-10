@@ -2,6 +2,7 @@ package memory
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -36,9 +37,15 @@ func FindRelevantSnippets(paths macos.Paths, input RetrievalInput) ([]string, er
 		}
 		return nil, err
 	}
+	return findRelevantSnippetsFromEvents(events, input, nil), nil
+}
 
+func findRelevantSnippetsFromEvents(events []Event, input RetrievalInput, include func(Event) bool) []string {
 	candidates := make([]retrievalCandidate, 0, len(events))
 	for index, event := range events {
+		if include != nil && !include(event) {
+			continue
+		}
 		score := scoreEvent(event, input)
 		if score == 0 {
 			continue
@@ -50,7 +57,7 @@ func FindRelevantSnippets(paths macos.Paths, input RetrievalInput) ([]string, er
 		})
 	}
 	if len(candidates) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	sort.SliceStable(candidates, func(i, j int) bool {
@@ -76,7 +83,7 @@ func FindRelevantSnippets(paths macos.Paths, input RetrievalInput) ([]string, er
 			break
 		}
 	}
-	return snippets, nil
+	return snippets
 }
 
 func FindRelevantSnippetsForPage(paths macos.Paths, input RetrievalInput) ([]string, error) {
@@ -87,7 +94,40 @@ func FindRelevantSnippetsForPage(paths macos.Paths, input RetrievalInput) ([]str
 	if !controls.PageVisibilityEnabled {
 		return nil, nil
 	}
-	return FindRelevantSnippets(paths, input)
+	if isHiddenHostForPage(input.URL, controls.HiddenHosts) {
+		return nil, nil
+	}
+
+	events, err := Load(paths)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return findRelevantSnippetsFromEvents(events, input, func(event Event) bool {
+		return !isHiddenHostForPage(event.URL, controls.HiddenHosts)
+	}), nil
+}
+
+func isHiddenHostForPage(rawURL string, hiddenHosts []string) bool {
+	if len(hiddenHosts) == 0 {
+		return false
+	}
+	parsed, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil {
+		return false
+	}
+	host := strings.TrimSpace(strings.ToLower(strings.TrimSuffix(parsed.Hostname(), ".")))
+	if host == "" {
+		return false
+	}
+	for _, hiddenHost := range hiddenHosts {
+		if hiddenHost == host {
+			return true
+		}
+	}
+	return false
 }
 
 func scoreEvent(event Event, input RetrievalInput) int {

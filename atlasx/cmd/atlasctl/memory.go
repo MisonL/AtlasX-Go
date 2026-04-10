@@ -12,7 +12,7 @@ import (
 
 func runMemory(args []string) error {
 	if len(args) == 0 {
-		return errors.New("memory supports subcommands: list, search, controls, set-persist, set-page-visibility")
+		return errors.New("memory supports subcommands: list, search, controls, set-persist, set-page-visibility, set-site-visibility")
 	}
 
 	switch args[0] {
@@ -26,6 +26,8 @@ func runMemory(args []string) error {
 		return runMemorySetPersist(args[1:])
 	case "set-page-visibility":
 		return runMemorySetPageVisibility(args[1:])
+	case "set-site-visibility":
+		return runMemorySetSiteVisibility(args[1:])
 	default:
 		return fmt.Errorf("unknown memory subcommand %q", args[0])
 	}
@@ -138,11 +140,15 @@ func runMemoryControls(args []string) error {
 	}
 
 	fmt.Printf(
-		"config_file=%s persist_enabled=%t page_visibility_enabled=%t\n",
+		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
 		controls.ConfigFile,
 		controls.PersistEnabled,
 		controls.PageVisibilityEnabled,
+		len(controls.HiddenHosts),
 	)
+	for index, host := range controls.HiddenHosts {
+		fmt.Printf("hidden_host[%d]=%s\n", index, host)
+	}
 	return nil
 }
 
@@ -167,11 +173,15 @@ func runMemorySetPersist(args []string) error {
 	}
 
 	fmt.Printf(
-		"config_file=%s persist_enabled=%t page_visibility_enabled=%t\n",
+		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
 		controls.ConfigFile,
 		controls.PersistEnabled,
 		controls.PageVisibilityEnabled,
+		len(controls.HiddenHosts),
 	)
+	for index, host := range controls.HiddenHosts {
+		fmt.Printf("hidden_host[%d]=%s\n", index, host)
+	}
 	return nil
 }
 
@@ -196,10 +206,47 @@ func runMemorySetPageVisibility(args []string) error {
 	}
 
 	fmt.Printf(
-		"config_file=%s persist_enabled=%t page_visibility_enabled=%t\n",
+		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
 		controls.ConfigFile,
 		controls.PersistEnabled,
 		controls.PageVisibilityEnabled,
+		len(controls.HiddenHosts),
 	)
+	for index, host := range controls.HiddenHosts {
+		fmt.Printf("hidden_host[%d]=%s\n", index, host)
+	}
+	return nil
+}
+
+func runMemorySetSiteVisibility(args []string) error {
+	if len(args) != 2 {
+		return errors.New("memory set-site-visibility requires <host> <visible|hidden>")
+	}
+
+	enabled, err := memory.ParsePageVisibilityValue(strings.ToLower(strings.TrimSpace(args[1])))
+	if err != nil {
+		return err
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	controls, err := memory.SetSiteVisibility(paths, args[0], enabled)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf(
+		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
+		controls.ConfigFile,
+		controls.PersistEnabled,
+		controls.PageVisibilityEnabled,
+		len(controls.HiddenHosts),
+	)
+	for index, host := range controls.HiddenHosts {
+		fmt.Printf("hidden_host[%d]=%s\n", index, host)
+	}
 	return nil
 }

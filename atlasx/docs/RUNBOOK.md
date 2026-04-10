@@ -96,6 +96,7 @@ go run ./cmd/atlasd --once | rg '^config_file='
   "sidebar_provider": "",
   "sidebar_model": "",
   "sidebar_base_url": "",
+  "memory_hidden_hosts": [],
   "sidebar_default_provider": "primary",
   "sidebar_providers": [
     {
@@ -113,6 +114,7 @@ go run ./cmd/atlasd --once | rg '^config_file='
 
 - 优先使用 `sidebar_default_provider + sidebar_providers`
 - `api_key_env` 只保存环境变量名，不保存真实密钥
+- `memory_hidden_hosts` 只影响页面级 memory snippets 注入，不影响 `memory list/search` 与事件持久化
 - 旧字段 `sidebar_provider/sidebar_model/sidebar_base_url` 仅保留兼容桥接
 
 常用 provider 环境变量示例：
@@ -209,6 +211,16 @@ go run ./cmd/atlasctl import-safari
 go run ./cmd/atlasctl history list
 go run ./cmd/atlasctl bookmarks list
 go run ./cmd/atlasctl downloads list
+```
+
+检查和调整 memory 页面可见性控制：
+
+```bash
+cd atlasx
+go run ./cmd/atlasctl memory controls
+go run ./cmd/atlasctl memory set-page-visibility hidden
+go run ./cmd/atlasctl memory set-site-visibility chatgpt.com hidden
+go run ./cmd/atlasctl memory set-site-visibility chatgpt.com visible
 ```
 
 ## Sidebar 恢复

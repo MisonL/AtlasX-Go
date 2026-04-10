@@ -207,7 +207,83 @@ func TestFindRelevantSnippetsForPageRespectsVisibilityControl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find relevant snippets failed: %v", err)
 	}
-	if len(searchSnippets) != 1 {
+	if len(searchSnippets) == 0 {
 		t.Fatalf("expected direct memory search to remain available, got %+v", searchSnippets)
+	}
+	if !strings.Contains(searchSnippets[0], "chatgpt.com") && (len(searchSnippets) < 2 || !strings.Contains(searchSnippets[1], "chatgpt.com")) {
+		t.Fatalf("expected direct memory search to retain hidden-site snippets, got %+v", searchSnippets)
+	}
+}
+
+func TestFindRelevantSnippetsForPageRespectsHiddenHosts(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := AppendQATurn(paths, QATurnInput{
+		OccurredAt: "2026-04-07T00:01:00Z",
+		TabID:      "tab-1",
+		Title:      "Atlas",
+		URL:        "https://chatgpt.com/atlas",
+		Question:   "memory",
+		Answer:     "Atlas memory answer",
+		TraceID:    "trace-1",
+	}); err != nil {
+		t.Fatalf("append qa turn failed: %v", err)
+	}
+	if err := AppendQATurn(paths, QATurnInput{
+		OccurredAt: "2026-04-07T00:02:00Z",
+		TabID:      "tab-2",
+		Title:      "Example",
+		URL:        "https://example.com/page",
+		Question:   "memory",
+		Answer:     "Example memory answer",
+		TraceID:    "trace-2",
+	}); err != nil {
+		t.Fatalf("append qa turn failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		MemoryHiddenHosts: []string{"chatgpt.com"},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	hiddenSnippets, err := FindRelevantSnippetsForPage(paths, RetrievalInput{
+		URL:      "https://chatgpt.com/atlas",
+		Question: "memory",
+	})
+	if err != nil {
+		t.Fatalf("find relevant snippets for hidden site failed: %v", err)
+	}
+	if len(hiddenSnippets) != 0 {
+		t.Fatalf("expected hidden site snippets to be empty, got %+v", hiddenSnippets)
+	}
+
+	visibleSnippets, err := FindRelevantSnippetsForPage(paths, RetrievalInput{
+		URL:      "https://example.com/page",
+		Question: "memory",
+	})
+	if err != nil {
+		t.Fatalf("find relevant snippets for visible site failed: %v", err)
+	}
+	if len(visibleSnippets) != 1 {
+		t.Fatalf("expected visible site snippets, got %+v", visibleSnippets)
+	}
+
+	searchSnippets, err := FindRelevantSnippets(paths, RetrievalInput{
+		URL:      "https://chatgpt.com/atlas",
+		Question: "memory",
+	})
+	if err != nil {
+		t.Fatalf("find relevant snippets failed: %v", err)
+	}
+	if len(searchSnippets) == 0 {
+		t.Fatalf("expected direct memory search to remain available, got %+v", searchSnippets)
+	}
+	joined := strings.Join(searchSnippets, "\n")
+	if !strings.Contains(joined, "chatgpt.com/atlas") {
+		t.Fatalf("expected direct memory search to retain hidden-site snippets, got %+v", searchSnippets)
 	}
 }

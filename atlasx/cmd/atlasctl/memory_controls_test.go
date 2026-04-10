@@ -20,6 +20,9 @@ func TestMemoryControlsOutputsPersistFlag(t *testing.T) {
 	if !strings.Contains(output, "page_visibility_enabled=true") {
 		t.Fatalf("unexpected output: %s", output)
 	}
+	if !strings.Contains(output, "hidden_host_count=0") {
+		t.Fatalf("unexpected output: %s", output)
+	}
 }
 
 func TestMemorySetPersistUpdatesControls(t *testing.T) {
@@ -53,6 +56,23 @@ func TestMemorySetPageVisibilityUpdatesControls(t *testing.T) {
 	}
 }
 
+func TestMemorySetSiteVisibilityUpdatesControls(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-site-visibility", "https://ChatGPT.com/atlas", "hidden"})
+	})
+	if err != nil {
+		t.Fatalf("run memory set-site-visibility failed: %v", err)
+	}
+	if !strings.Contains(output, "hidden_host_count=1") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+	if !strings.Contains(output, "hidden_host[0]=chatgpt.com") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
 func TestMemorySetPersistRejectsInvalidValue(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
@@ -77,6 +97,20 @@ func TestMemorySetPageVisibilityRejectsInvalidValue(t *testing.T) {
 		t.Fatal("expected memory set-page-visibility to fail")
 	}
 	if !strings.Contains(err.Error(), `invalid page visibility value "maybe"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMemorySetSiteVisibilityRejectsInvalidHost(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-site-visibility", ":// bad host", "hidden"})
+	})
+	if err == nil {
+		t.Fatal("expected memory set-site-visibility to fail")
+	}
+	if !strings.Contains(err.Error(), `invalid site host ":// bad host"`) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

@@ -26,6 +26,9 @@ func TestLoadControlsDefaultsToEnabled(t *testing.T) {
 	if !controls.PageVisibilityEnabled {
 		t.Fatalf("expected page visibility enabled by default: %+v", controls)
 	}
+	if len(controls.HiddenHosts) != 0 {
+		t.Fatalf("expected no hidden hosts by default: %+v", controls)
+	}
 }
 
 func TestSetPersistEnabledUpdatesConfig(t *testing.T) {
@@ -81,6 +84,70 @@ func TestSetPageVisibilityEnabledUpdatesConfig(t *testing.T) {
 	}
 	if !config.MemoryPersistEnabledValue() {
 		t.Fatalf("expected persist to remain enabled: %+v", config)
+	}
+}
+
+func TestSetSiteVisibilityUpdatesConfig(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	controls, err := SetSiteVisibility(paths, "https://ChatGPT.com/atlas", false)
+	if err != nil {
+		t.Fatalf("set site visibility failed: %v", err)
+	}
+	if len(controls.HiddenHosts) != 1 || controls.HiddenHosts[0] != "chatgpt.com" {
+		t.Fatalf("unexpected hidden hosts: %+v", controls)
+	}
+
+	config, err := settings.NewStore(paths.ConfigFile).Load()
+	if err != nil {
+		t.Fatalf("load config failed: %v", err)
+	}
+	if len(config.MemoryHiddenHosts) != 1 || config.MemoryHiddenHosts[0] != "chatgpt.com" {
+		t.Fatalf("unexpected config hidden hosts: %+v", config)
+	}
+}
+
+func TestSetSiteVisibilityVisibleRemovesHiddenHost(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		MemoryHiddenHosts: []string{"chatgpt.com"},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	controls, err := SetSiteVisibility(paths, "chatgpt.com", true)
+	if err != nil {
+		t.Fatalf("set site visible failed: %v", err)
+	}
+	if len(controls.HiddenHosts) != 0 {
+		t.Fatalf("expected hidden hosts cleared: %+v", controls)
+	}
+}
+
+func TestSetSiteVisibilityRejectsInvalidHost(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	_, err = SetSiteVisibility(paths, ":// bad host", false)
+	if err == nil {
+		t.Fatal("expected invalid host error")
+	}
+	if err.Error() != `invalid site host ":// bad host"` {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
