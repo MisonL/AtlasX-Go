@@ -214,6 +214,7 @@ bash scripts/e2e_gate.sh
 - 当前已提供 `atlasctl memory controls` 与 `GET /v1/memory/controls`，可统一读取 memory 持久化与页面级可见性两个开关状态。
 - 当前已提供 `atlasctl memory set-persist <enabled|disabled>` 与 `POST /v1/memory/controls`，可显式控制 `tabs capture` 与 sidebar 问答/总结/选区问答是否写入 `memory/events.jsonl`。
 - 当前已提供 `atlasctl memory set-page-visibility <visible|hidden>` 与 `POST /v1/memory/controls`，可显式控制 `tabs memories`、`tabs suggest`、`tabs recommend-context`、`tabs agent-plan` 与 sidebar 页面问答/总结/选区问答是否注入 page-scoped memory snippets；该控制不影响 `memory list/search` 与 memory 持久化。
+- 当前已提供 `atlasctl memory set-site-visibility <host> <visible|hidden>` 与扩展后的 `POST /v1/memory/controls`，可按 host 显式隐藏页面级 memory snippets 注入；该控制不影响 `memory list/search` 与 memory 持久化。
 - 当前已提供 `atlasctl default-browser status` 与 `GET /v1/default-browser`，可读取 macOS LaunchServices 当前 `http/https` 默认 handler 的 bundle id 与角色信息。
 - 当前已提供 `atlasctl default-browser set <bundle-id>` 与 `POST /v1/default-browser/set`，可显式把 LaunchServices 中 `http/https` 的默认 handler 切到指定 bundle id，并在写后回读核验当前状态。
 - 当前已提供 `atlasctl logs status` 与 `GET /v1/logs`，可只读扫描 AtlasX support root 下的 logs 目录，返回目录存在性、文件数、总大小与最近文件列表，但不创建或写入日志文件。

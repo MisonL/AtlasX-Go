@@ -138,18 +138,7 @@ func runMemoryControls(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf(
-		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
-		controls.ConfigFile,
-		controls.PersistEnabled,
-		controls.PageVisibilityEnabled,
-		len(controls.HiddenHosts),
-	)
-	for index, host := range controls.HiddenHosts {
-		fmt.Printf("hidden_host[%d]=%s\n", index, host)
-	}
-	return nil
+	return printMemoryControls(controls)
 }
 
 func runMemorySetPersist(args []string) error {
@@ -171,18 +160,7 @@ func runMemorySetPersist(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf(
-		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
-		controls.ConfigFile,
-		controls.PersistEnabled,
-		controls.PageVisibilityEnabled,
-		len(controls.HiddenHosts),
-	)
-	for index, host := range controls.HiddenHosts {
-		fmt.Printf("hidden_host[%d]=%s\n", index, host)
-	}
-	return nil
+	return printMemoryControls(controls)
 }
 
 func runMemorySetPageVisibility(args []string) error {
@@ -204,18 +182,7 @@ func runMemorySetPageVisibility(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf(
-		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
-		controls.ConfigFile,
-		controls.PersistEnabled,
-		controls.PageVisibilityEnabled,
-		len(controls.HiddenHosts),
-	)
-	for index, host := range controls.HiddenHosts {
-		fmt.Printf("hidden_host[%d]=%s\n", index, host)
-	}
-	return nil
+	return printMemoryControls(controls)
 }
 
 func runMemorySetSiteVisibility(args []string) error {
@@ -237,7 +204,10 @@ func runMemorySetSiteVisibility(args []string) error {
 	if err != nil {
 		return err
 	}
+	return printMemoryControls(controls)
+}
 
+func printMemoryControls(controls memory.Controls) error {
 	fmt.Printf(
 		"config_file=%s persist_enabled=%t page_visibility_enabled=%t hidden_host_count=%d\n",
 		controls.ConfigFile,

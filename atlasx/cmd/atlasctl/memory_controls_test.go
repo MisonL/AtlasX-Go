@@ -73,6 +73,30 @@ func TestMemorySetSiteVisibilityUpdatesControls(t *testing.T) {
 	}
 }
 
+func TestMemorySetSiteVisibilityVisibleClearsControls(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-site-visibility", "chatgpt.com", "hidden"})
+	})
+	if err != nil {
+		t.Fatalf("run memory set-site-visibility hidden failed: %v", err)
+	}
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"memory", "set-site-visibility", "chatgpt.com", "visible"})
+	})
+	if err != nil {
+		t.Fatalf("run memory set-site-visibility visible failed: %v", err)
+	}
+	if !strings.Contains(output, "hidden_host_count=0") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+	if strings.Contains(output, "hidden_host[0]=") {
+		t.Fatalf("expected hidden hosts cleared, got output: %s", output)
+	}
+}
+
 func TestMemorySetPersistRejectsInvalidValue(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
