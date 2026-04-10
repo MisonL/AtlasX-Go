@@ -27,7 +27,7 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 		"STUB_GO_TEST_EXIT=0",
 		"STUB_GO_TEST_OUTPUT=go test output\n",
 		"STUB_ATLASD_ONCE_EXIT=0",
-		`STUB_ATLASD_ONCE_OUTPUT={"ready":true,"chrome_source":"managed_auto","runtime_manifest_present":true,"mirror_present":true,"managed_session_live":false,"sidebar_qa_ready":true,"runtime_manifest_version":"136.0.7103.114","runtime_manifest_channel":"stable","sidebar_qa_default_provider":"primary"}`+"\n",
+		`STUB_ATLASD_ONCE_OUTPUT={"ready":true,"chrome_source":"managed_auto","chrome_import_present":true,"logs_present":true,"logs_file_count":2,"memory_present":true,"runtime_manifest_present":true,"mirror_present":true,"managed_session_live":false,"sidebar_qa_ready":true,"updates_plan_present":true,"updates_plan_pending":false,"runtime_manifest_version":"136.0.7103.114","runtime_manifest_channel":"stable","sidebar_qa_default_provider":"primary"}`+"\n",
 		"STUB_E2E_GATE_EXIT=0",
 		"STUB_E2E_GATE_OUTPUT=E2E gate finished\nUNCOVERED summary: none\n",
 	)
@@ -49,10 +49,16 @@ func TestReleaseEvidenceScriptWritesExpectedArtifacts(t *testing.T) {
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=primary")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "chrome_source=managed_auto")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "atlasd_ready=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "chrome_import_present=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "logs_present=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "logs_file_count=2")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "memory_present=true")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_present=true")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "mirror_present=true")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "managed_session_live=false")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_qa_ready=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "updates_plan_present=true")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "updates_plan_pending=false")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_count=0")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_items=none")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tasks_total=")
@@ -103,10 +109,16 @@ func TestReleaseEvidenceScriptReturnsFailureAndSummaryWhenStepFails(t *testing.T
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_default_provider=none")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "chrome_source=none")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "atlasd_ready=false")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "chrome_import_present=false_or_unknown")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "logs_present=false_or_unknown")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "logs_file_count=0")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "memory_present=false_or_unknown")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "runtime_manifest_present=false_or_unknown")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "mirror_present=false_or_unknown")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "managed_session_live=false")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar_qa_ready=false")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "updates_plan_present=false_or_unknown")
+	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "updates_plan_pending=false_or_unknown")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "uncovered_count=2")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "tabs capture smoke: 当前没有受管浏览器会话")
 	assertFileContains(t, filepath.Join(outputDir, "SUMMARY.md"), "sidebar ask real smoke: sidebar_qa_ready=false")

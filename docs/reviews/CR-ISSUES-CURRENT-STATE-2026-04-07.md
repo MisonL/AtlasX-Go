@@ -1,6 +1,6 @@
 # CR-ISSUES-CURRENT-STATE
 
-- 日期: 2026-04-09
+- 日期: 2026-04-10
 - 目标: 记录当前仓库、当前开发机与当前 gate 的事实状态，供后续继续迭代直接接管
 
 ## 任务状态
@@ -78,6 +78,8 @@
 - `T136`
   - 当前已完成
 - `T137`
+  - 当前已完成
+- `T138`
   - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
@@ -162,6 +164,7 @@
   - 发布证据摘要自动汇总 `atlasd_ready/managed_session_live/sidebar_qa_ready`
   - 发布证据摘要自动汇总 `release_prerequisites`
   - 发布证据摘要自动汇总 `chrome_source/runtime_manifest_present/mirror_present`
+  - 发布证据摘要自动汇总 `chrome_import_present/memory_present/logs_present/logs_file_count/updates_plan_present/updates_plan_pending`
 
 ## 当前开发机观测事实
 

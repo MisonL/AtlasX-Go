@@ -176,3 +176,43 @@ func TestBootstrapLeavesMemorySummaryEmptyWhenAbsent(t *testing.T) {
 		t.Fatalf("expected memory paths: %+v", status)
 	}
 }
+
+func TestBootstrapIncludesLogsAndUpdatesSummary(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+
+	if err := os.MkdirAll(paths.LogsRoot, 0o755); err != nil {
+		t.Fatalf("mkdir logs root failed: %v", err)
+	}
+	logPath := filepath.Join(paths.LogsRoot, "atlasd.log")
+	if err := os.WriteFile(logPath, []byte("atlasd\n"), 0o644); err != nil {
+		t.Fatalf("write log file failed: %v", err)
+	}
+
+	plan := mustDaemonInstallPlan(t)
+	plan.CurrentPhase = managedruntime.InstallPhaseVerifying
+	if err := managedruntime.SaveInstallPlan(paths, plan); err != nil {
+		t.Fatalf("save install plan failed: %v", err)
+	}
+
+	status, err := Bootstrap()
+	if err != nil {
+		t.Fatalf("bootstrap failed: %v", err)
+	}
+	if !status.LogsPresent || status.LogsFileCount != 1 {
+		t.Fatalf("unexpected logs summary: %+v", status)
+	}
+	if status.LogsLatestFile != logPath || status.LogsLatestAt == "" {
+		t.Fatalf("unexpected latest log summary: %+v", status)
+	}
+	if !status.UpdatesPlanPresent || !status.UpdatesPlanPending || status.UpdatesPlanInFlight != true {
+		t.Fatalf("unexpected updates summary: %+v", status)
+	}
+	if status.UpdatesPlanPhase != managedruntime.InstallPhaseVerifying {
+		t.Fatalf("unexpected updates phase: %+v", status)
+	}
+}

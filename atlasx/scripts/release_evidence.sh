@@ -28,10 +28,16 @@ TASKS_DONE="0"
 TASKS_DOING="0"
 TASKS_TODO="0"
 ATLASD_READY="false_or_unknown"
+CHROME_IMPORT_PRESENT="false_or_unknown"
+LOGS_PRESENT="false_or_unknown"
+LOGS_FILE_COUNT="0"
+MEMORY_PRESENT="false_or_unknown"
 RUNTIME_MANIFEST_PRESENT="false_or_unknown"
 MIRROR_PRESENT="false_or_unknown"
 MANAGED_SESSION_LIVE="false_or_unknown"
 SIDEBAR_QA_READY="false_or_unknown"
+UPDATES_PLAN_PRESENT="false_or_unknown"
+UPDATES_PLAN_PENDING="false_or_unknown"
 RELEASE_READY="false"
 RELEASE_BLOCKERS=()
 RELEASE_PREREQUISITES=()
@@ -116,16 +122,49 @@ try {
 ' "$logfile_path" "$field_name"
 }
 
+extract_json_int_field() {
+  local logfile_path="$1"
+  local field_name="$2"
+
+  if [[ ! -f "$logfile_path" ]]; then
+    printf '0'
+    return 0
+  fi
+
+  node -e '
+const fs = require("fs");
+const filePath = process.argv[1];
+const fieldName = process.argv[2];
+try {
+  const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const value = payload[fieldName];
+  if (Number.isInteger(value)) {
+    process.stdout.write(String(value));
+  } else {
+    process.stdout.write("0");
+  }
+} catch (error) {
+  process.stdout.write("0");
+}
+' "$logfile_path" "$field_name"
+}
+
 refresh_metadata_from_atlasd_once() {
   CHROME_SOURCE="$(extract_json_string_field "$ATLASD_ONCE_LOG" "chrome_source")"
   RUNTIME_MANIFEST_VERSION="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_version")"
   RUNTIME_MANIFEST_CHANNEL="$(extract_json_string_field "$ATLASD_ONCE_LOG" "runtime_manifest_channel")"
   SIDEBAR_DEFAULT_PROVIDER="$(extract_json_string_field "$ATLASD_ONCE_LOG" "sidebar_qa_default_provider")"
   ATLASD_READY="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "ready")"
+  CHROME_IMPORT_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "chrome_import_present")"
+  LOGS_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "logs_present")"
+  LOGS_FILE_COUNT="$(extract_json_int_field "$ATLASD_ONCE_LOG" "logs_file_count")"
+  MEMORY_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "memory_present")"
   RUNTIME_MANIFEST_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "runtime_manifest_present")"
   MIRROR_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "mirror_present")"
   MANAGED_SESSION_LIVE="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "managed_session_live")"
   SIDEBAR_QA_READY="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "sidebar_qa_ready")"
+  UPDATES_PLAN_PRESENT="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "updates_plan_present")"
+  UPDATES_PLAN_PENDING="$(extract_json_bool_field "$ATLASD_ONCE_LOG" "updates_plan_pending")"
 }
 
 refresh_uncovered_from_e2e_gate() {
@@ -273,10 +312,16 @@ write_summary() {
     printf -- '- runtime_manifest_channel=%s\n' "$RUNTIME_MANIFEST_CHANNEL"
     printf -- '- sidebar_default_provider=%s\n' "$SIDEBAR_DEFAULT_PROVIDER"
     printf -- '- atlasd_ready=%s\n' "$ATLASD_READY"
+    printf -- '- chrome_import_present=%s\n' "$CHROME_IMPORT_PRESENT"
+    printf -- '- logs_present=%s\n' "$LOGS_PRESENT"
+    printf -- '- logs_file_count=%s\n' "$LOGS_FILE_COUNT"
+    printf -- '- memory_present=%s\n' "$MEMORY_PRESENT"
     printf -- '- runtime_manifest_present=%s\n' "$RUNTIME_MANIFEST_PRESENT"
     printf -- '- mirror_present=%s\n' "$MIRROR_PRESENT"
     printf -- '- managed_session_live=%s\n' "$MANAGED_SESSION_LIVE"
     printf -- '- sidebar_qa_ready=%s\n' "$SIDEBAR_QA_READY"
+    printf -- '- updates_plan_present=%s\n' "$UPDATES_PLAN_PRESENT"
+    printf -- '- updates_plan_pending=%s\n' "$UPDATES_PLAN_PENDING"
     printf -- '- uncovered_count=%s\n' "$UNCOVERED_COUNT"
     printf -- '- tasks_total=%s\n' "$TASKS_TOTAL"
     printf -- '- tasks_done=%s\n' "$TASKS_DONE"

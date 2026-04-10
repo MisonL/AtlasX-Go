@@ -8,75 +8,85 @@ import (
 	"atlasx/internal/browserdata"
 	"atlasx/internal/diagnostics"
 	"atlasx/internal/imports"
+	"atlasx/internal/logs"
 	"atlasx/internal/managedruntime"
 	"atlasx/internal/memory"
 	"atlasx/internal/mirror"
 	"atlasx/internal/settings"
 	"atlasx/internal/sidebar"
+	"atlasx/internal/updates"
 )
 
 const DefaultListenAddr = settings.DefaultListenAddr
 
 type Status struct {
-	Ready                      bool                     `json:"ready"`
-	ChromeStatus               string                   `json:"chrome_status"`
-	ChromeSource               string                   `json:"chrome_source"`
-	SupportRoot                string                   `json:"support_root"`
-	ConfigFile                 string                   `json:"config_file"`
-	ManagedSessionLive         bool                     `json:"managed_session_live"`
-	ManagedSessionStale        bool                     `json:"managed_session_stale"`
-	ManagedSessionStateCleaned bool                     `json:"managed_session_state_cleaned"`
-	ManagedSessionCDP          string                   `json:"managed_session_cdp"`
-	ManagedSessionCDPURL       string                   `json:"managed_session_cdp_url"`
-	MirrorFile                 string                   `json:"mirror_file"`
-	MirrorPresent              bool                     `json:"mirror_present"`
-	MirrorProfileDir           string                   `json:"mirror_profile_dir"`
-	MirrorHistoryRows          int                      `json:"mirror_history_rows"`
-	MirrorDownloadRows         int                      `json:"mirror_download_rows"`
-	MirrorLastScanAt           string                   `json:"mirror_last_scan_at"`
-	MirrorLastScanSource       string                   `json:"mirror_last_scan_source"`
-	MirrorLastScanResult       string                   `json:"mirror_last_scan_result"`
-	MirrorLastScanError        string                   `json:"mirror_last_scan_error"`
-	ChromeImportPresent        bool                     `json:"chrome_import_present"`
-	ChromeImportRoot           string                   `json:"chrome_import_root"`
-	ChromeImportBookmarks      bool                     `json:"chrome_import_bookmarks"`
-	ChromeImportHistory        bool                     `json:"chrome_import_history"`
-	ChromeImportLastAt         string                   `json:"chrome_import_last_at"`
-	ChromeImportLastSource     string                   `json:"chrome_import_last_source"`
-	ChromeImportLastResult     string                   `json:"chrome_import_last_result"`
-	ChromeImportLastError      string                   `json:"chrome_import_last_error"`
-	SafariImportLastAt         string                   `json:"safari_import_last_at"`
-	SafariImportLastSource     string                   `json:"safari_import_last_source"`
-	SafariImportLastResult     string                   `json:"safari_import_last_result"`
-	SafariImportLastError      string                   `json:"safari_import_last_error"`
-	MemoryRoot                 string                   `json:"memory_root"`
-	MemoryEventsFile           string                   `json:"memory_events_file"`
-	MemoryPresent              bool                     `json:"memory_present"`
-	MemoryEventCount           int                      `json:"memory_event_count"`
-	MemoryLastEventAt          string                   `json:"memory_last_event_at"`
-	MemoryLastEventKind        string                   `json:"memory_last_event_kind"`
-	RuntimeManifestPath        string                   `json:"runtime_manifest_path"`
-	RuntimeManifestPresent     bool                     `json:"runtime_manifest_present"`
-	RuntimeManifestVersion     string                   `json:"runtime_manifest_version"`
-	RuntimeManifestChannel     string                   `json:"runtime_manifest_channel"`
-	RuntimeManifestSHA256      string                   `json:"runtime_manifest_sha256"`
-	RuntimeManifestBundlePath  string                   `json:"runtime_manifest_bundle_path"`
-	RuntimeManifestBinaryPath  string                   `json:"runtime_manifest_binary_path"`
-	RuntimeBundlePresent       bool                     `json:"runtime_bundle_present"`
-	RuntimeBinaryPresent       bool                     `json:"runtime_binary_present"`
-	RuntimeBinaryExecutable    bool                     `json:"runtime_binary_executable"`
-	SidebarQAConfigured        bool                     `json:"sidebar_qa_configured"`
-	SidebarQAReady             bool                     `json:"sidebar_qa_ready"`
-	SidebarQADefaultProvider   string                   `json:"sidebar_qa_default_provider"`
-	SidebarQAProvider          string                   `json:"sidebar_qa_provider"`
-	SidebarQAModel             string                   `json:"sidebar_qa_model"`
-	SidebarQAProviders         []sidebar.ProviderStatus `json:"sidebar_qa_providers"`
-	SidebarQATimeoutMS         int                      `json:"sidebar_qa_timeout_ms"`
-	SidebarQARetryAttempts     int                      `json:"sidebar_qa_retry_attempts"`
-	SidebarQATokenBudget       int                      `json:"sidebar_qa_token_budget"`
-	SidebarQALastTraceID       string                   `json:"sidebar_qa_last_trace_id"`
-	SidebarQALastError         string                   `json:"sidebar_qa_last_error"`
-	SidebarQALastErrorAt       string                   `json:"sidebar_qa_last_error_at"`
+	Ready                      bool                        `json:"ready"`
+	ChromeStatus               string                      `json:"chrome_status"`
+	ChromeSource               string                      `json:"chrome_source"`
+	SupportRoot                string                      `json:"support_root"`
+	ConfigFile                 string                      `json:"config_file"`
+	ManagedSessionLive         bool                        `json:"managed_session_live"`
+	ManagedSessionStale        bool                        `json:"managed_session_stale"`
+	ManagedSessionStateCleaned bool                        `json:"managed_session_state_cleaned"`
+	ManagedSessionCDP          string                      `json:"managed_session_cdp"`
+	ManagedSessionCDPURL       string                      `json:"managed_session_cdp_url"`
+	MirrorFile                 string                      `json:"mirror_file"`
+	MirrorPresent              bool                        `json:"mirror_present"`
+	MirrorProfileDir           string                      `json:"mirror_profile_dir"`
+	MirrorHistoryRows          int                         `json:"mirror_history_rows"`
+	MirrorDownloadRows         int                         `json:"mirror_download_rows"`
+	MirrorLastScanAt           string                      `json:"mirror_last_scan_at"`
+	MirrorLastScanSource       string                      `json:"mirror_last_scan_source"`
+	MirrorLastScanResult       string                      `json:"mirror_last_scan_result"`
+	MirrorLastScanError        string                      `json:"mirror_last_scan_error"`
+	ChromeImportPresent        bool                        `json:"chrome_import_present"`
+	ChromeImportRoot           string                      `json:"chrome_import_root"`
+	ChromeImportBookmarks      bool                        `json:"chrome_import_bookmarks"`
+	ChromeImportHistory        bool                        `json:"chrome_import_history"`
+	ChromeImportLastAt         string                      `json:"chrome_import_last_at"`
+	ChromeImportLastSource     string                      `json:"chrome_import_last_source"`
+	ChromeImportLastResult     string                      `json:"chrome_import_last_result"`
+	ChromeImportLastError      string                      `json:"chrome_import_last_error"`
+	SafariImportLastAt         string                      `json:"safari_import_last_at"`
+	SafariImportLastSource     string                      `json:"safari_import_last_source"`
+	SafariImportLastResult     string                      `json:"safari_import_last_result"`
+	SafariImportLastError      string                      `json:"safari_import_last_error"`
+	LogsPresent                bool                        `json:"logs_present"`
+	LogsFileCount              int                         `json:"logs_file_count"`
+	LogsLatestFile             string                      `json:"logs_latest_file"`
+	LogsLatestAt               string                      `json:"logs_latest_at"`
+	MemoryRoot                 string                      `json:"memory_root"`
+	MemoryEventsFile           string                      `json:"memory_events_file"`
+	MemoryPresent              bool                        `json:"memory_present"`
+	MemoryEventCount           int                         `json:"memory_event_count"`
+	MemoryLastEventAt          string                      `json:"memory_last_event_at"`
+	MemoryLastEventKind        string                      `json:"memory_last_event_kind"`
+	RuntimeManifestPath        string                      `json:"runtime_manifest_path"`
+	RuntimeManifestPresent     bool                        `json:"runtime_manifest_present"`
+	RuntimeManifestVersion     string                      `json:"runtime_manifest_version"`
+	RuntimeManifestChannel     string                      `json:"runtime_manifest_channel"`
+	RuntimeManifestSHA256      string                      `json:"runtime_manifest_sha256"`
+	RuntimeManifestBundlePath  string                      `json:"runtime_manifest_bundle_path"`
+	RuntimeManifestBinaryPath  string                      `json:"runtime_manifest_binary_path"`
+	RuntimeBundlePresent       bool                        `json:"runtime_bundle_present"`
+	RuntimeBinaryPresent       bool                        `json:"runtime_binary_present"`
+	RuntimeBinaryExecutable    bool                        `json:"runtime_binary_executable"`
+	UpdatesPlanPresent         bool                        `json:"updates_plan_present"`
+	UpdatesPlanPending         bool                        `json:"updates_plan_pending"`
+	UpdatesPlanInFlight        bool                        `json:"updates_plan_in_flight"`
+	UpdatesPlanPhase           managedruntime.InstallPhase `json:"updates_plan_phase"`
+	SidebarQAConfigured        bool                        `json:"sidebar_qa_configured"`
+	SidebarQAReady             bool                        `json:"sidebar_qa_ready"`
+	SidebarQADefaultProvider   string                      `json:"sidebar_qa_default_provider"`
+	SidebarQAProvider          string                      `json:"sidebar_qa_provider"`
+	SidebarQAModel             string                      `json:"sidebar_qa_model"`
+	SidebarQAProviders         []sidebar.ProviderStatus    `json:"sidebar_qa_providers"`
+	SidebarQATimeoutMS         int                         `json:"sidebar_qa_timeout_ms"`
+	SidebarQARetryAttempts     int                         `json:"sidebar_qa_retry_attempts"`
+	SidebarQATokenBudget       int                         `json:"sidebar_qa_token_budget"`
+	SidebarQALastTraceID       string                      `json:"sidebar_qa_last_trace_id"`
+	SidebarQALastError         string                      `json:"sidebar_qa_last_error"`
+	SidebarQALastErrorAt       string                      `json:"sidebar_qa_last_error_at"`
 }
 
 func Bootstrap() (Status, error) {
@@ -151,6 +161,14 @@ func Bootstrap() (Status, error) {
 	status.MemoryEventCount = memorySummary.EventCount
 	status.MemoryLastEventAt = memorySummary.LastEventAt
 	status.MemoryLastEventKind = memorySummary.LastEventKind
+	logsStatus, err := logs.LoadStatus(report.Paths, 1)
+	if err != nil {
+		return Status{}, err
+	}
+	status.LogsPresent = logsStatus.Present
+	status.LogsFileCount = logsStatus.FileCount
+	status.LogsLatestFile = logsStatus.LatestFile
+	status.LogsLatestAt = logsStatus.LatestAt
 	status.RuntimeManifestPresent = report.RuntimeManifest.Present
 	status.RuntimeManifestVersion = report.RuntimeManifest.Version
 	status.RuntimeManifestChannel = report.RuntimeManifest.Channel
@@ -164,6 +182,14 @@ func Bootstrap() (Status, error) {
 	status.RuntimeBundlePresent = runtimeStatus.BundlePresent
 	status.RuntimeBinaryPresent = runtimeStatus.BinaryPresent
 	status.RuntimeBinaryExecutable = runtimeStatus.BinaryExecutable
+	updatesStatus, err := updates.LoadStatus(report.Paths)
+	if err != nil {
+		return Status{}, err
+	}
+	status.UpdatesPlanPresent = updatesStatus.PlanPresent
+	status.UpdatesPlanPending = updatesStatus.PlanPending
+	status.UpdatesPlanInFlight = updatesStatus.PlanInFlight
+	status.UpdatesPlanPhase = updatesStatus.PlanPhase
 
 	config, err := settings.NewStore(report.Paths.ConfigFile).Load()
 	if err != nil {
