@@ -16,7 +16,7 @@ import (
 
 func runSidebar(args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing sidebar subcommand: status, ask, summarize, selection-ask")
+		return errors.New("missing sidebar subcommand: status, ask, summarize, selection-ask, set-provider")
 	}
 
 	switch args[0] {
@@ -28,6 +28,8 @@ func runSidebar(args []string) error {
 		return runSidebarSummarize(args[1:])
 	case "selection-ask":
 		return runSidebarSelectionAsk(args[1:])
+	case "set-provider":
+		return runSidebarSetProvider(args[1:])
 	default:
 		return fmt.Errorf("unknown sidebar subcommand %q", args[0])
 	}
@@ -135,6 +137,57 @@ func runSidebarAsk(args []string) error {
 	}
 
 	printSidebarAsk(response)
+	return nil
+}
+
+func runSidebarSetProvider(args []string) error {
+	fs := flag.NewFlagSet("sidebar set-provider", flag.ContinueOnError)
+	fs.SetOutput(discardCommandOutput{})
+
+	id := fs.String("id", "", "sidebar provider id")
+	providerType := fs.String("provider", "", "sidebar provider type")
+	model := fs.String("model", "", "sidebar provider model")
+	baseURL := fs.String("base-url", "", "sidebar provider base url")
+	apiKeyEnv := fs.String("api-key-env", "", "environment variable name for provider api key")
+	setDefault := fs.Bool("default", false, "set the provider as sidebar default provider")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return errors.New("sidebar set-provider does not accept positional arguments")
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		return err
+	}
+
+	store := settings.NewStore(paths.ConfigFile)
+	config, err := store.Bootstrap()
+	if err != nil {
+		return err
+	}
+
+	updated, err := settings.UpsertSidebarProvider(config, settings.SidebarProviderConfig{
+		ID:        *id,
+		Provider:  *providerType,
+		Model:     *model,
+		BaseURL:   *baseURL,
+		APIKeyEnv: *apiKeyEnv,
+	}, *setDefault)
+	if err != nil {
+		return err
+	}
+	if err := store.Save(updated); err != nil {
+		return err
+	}
+
+	status, err := sidebar.FromSettings(updated).StatusWithRuntime(paths)
+	if err != nil {
+		return err
+	}
+	fmt.Print(status.Render())
 	return nil
 }
 

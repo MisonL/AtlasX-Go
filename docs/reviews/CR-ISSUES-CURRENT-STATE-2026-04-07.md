@@ -97,6 +97,8 @@
   - 当前已完成
 - `T146`
   - 当前已完成
+- `T147`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -243,10 +245,10 @@
 - 当前已有受管浏览器会话，`atlasctl status` 返回 `alive=true`、`ready=true`
 - mirror/import 已有历史落盘
 - 当前已有本地 memory 事件，最近一条来自 `page_capture`
-- 当前没有配置好真实 provider 凭据或 provider registry
-- 当前 `config.json` 不包含 `sidebar_default_provider` 与 `sidebar_providers`
-- 当前 `sidebar status` 返回 `configured=false`、`ready=false`、`reason=sidebar qa provider is not configured`
-- 当前 shell 中没有导出任何可供 sidebar 使用的 provider 密钥环境变量
+- 当前没有配置好真实 provider 凭据
+- 当前 `config.json` 已包含 `sidebar_default_provider=primary` 与 `sidebar_providers[0].api_key_env=OPENAI_API_KEY`
+- 当前 `sidebar status` 返回 `configured=true`、`ready=false`、`reason=sidebar qa api key env OPENAI_API_KEY is not set`
+- 当前 shell 中仍未导出 `OPENAI_API_KEY`
 
 ## 当前 Gate 结果
 
@@ -262,23 +264,21 @@
 - `tabs capture smoke` 与 `browser-data open smoke` 已在当前开发机通过真实 managed session、真实 page target 与真实 browser-data open 主链收敛
 - 剩余未覆盖项不是代码失败，而是本机当前缺少真实 provider readiness
 - 结合 `atlasx/docs/RUNBOOK.md`，当前 machine-level 缺失项已明确收敛为:
-  - `sidebar_default_provider`
-  - `sidebar_providers[].id/provider/model/base_url/api_key_env`
-  - 与 `api_key_env` 对应的真实环境变量
+  - 与 `sidebar_providers[0].api_key_env=OPENAI_API_KEY` 对应的真实环境变量
 - 当前 gate 已进一步区分 `browser-data open smoke` 的两类阻断：
   - 若没有已落盘 history/bookmarks/downloads 数据，会显式返回“当前都没有可打开的已落盘数据”
   - 若已有落盘数据但没有受管浏览器会话，会显式返回“已有落盘数据但当前没有受管浏览器会话”
-- 当前 `ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/release_evidence.sh /tmp/atlasx-release-evidence-t145` 生成的 `SUMMARY.md` 元数据事实：
+- 当前 `ATLASX_E2E_ALLOW_INSTALL=1 bash scripts/release_evidence.sh /tmp/atlasx-release-evidence-t147` 生成的 `SUMMARY.md` 元数据事实：
   - `runtime_manifest_version=146.0.7680.178`
   - `runtime_manifest_channel=stable`
   - `chrome_source=managed_auto`
-  - `sidebar_default_provider=none`
+  - `sidebar_default_provider=primary`
   - `runtime_manifest_present=true`
   - `mirror_present=true`
   - `managed_session_live=true`
   - `memory_present=true`
-  - `tasks_total=145`
-  - `tasks_done=145`
+  - `tasks_total=147`
+  - `tasks_done=147`
   - `tasks_doing=0`
   - `tasks_todo=0`
   - `release_ready=false`

@@ -77,3 +77,35 @@ func TestSaveLoadSidebarProviderRegistry(t *testing.T) {
 		t.Fatalf("unexpected raw secret in config: %s", text)
 	}
 }
+
+func TestUpsertSidebarProviderSetsDefaultAndReplacesExisting(t *testing.T) {
+	initial := Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-4.1",
+				BaseURL:   "https://api.openai.com/v1",
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}
+
+	updated, err := UpsertSidebarProvider(initial, SidebarProviderConfig{
+		ID:        "primary",
+		Provider:  "openai",
+		Model:     "gpt-5.4",
+		BaseURL:   "https://api.openai.com/v1",
+		APIKeyEnv: "OPENAI_API_KEY",
+	}, false)
+	if err != nil {
+		t.Fatalf("upsert provider failed: %v", err)
+	}
+	if updated.SidebarDefaultProvider != "primary" {
+		t.Fatalf("unexpected default provider: %+v", updated)
+	}
+	if len(updated.SidebarProviders) != 1 || updated.SidebarProviders[0].Model != "gpt-5.4" {
+		t.Fatalf("unexpected providers: %+v", updated.SidebarProviders)
+	}
+}

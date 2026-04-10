@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 
 	"atlasx/internal/platform/macos"
@@ -35,6 +36,12 @@ type SidebarProviderConfig struct {
 	BaseURL   string `json:"base_url"`
 	APIKeyEnv string `json:"api_key_env"`
 }
+
+var ErrSidebarProviderIDRequired = errors.New("sidebar provider id is required")
+var ErrSidebarProviderTypeRequired = errors.New("sidebar provider type is required")
+var ErrSidebarProviderModelRequired = errors.New("sidebar provider model is required")
+var ErrSidebarProviderBaseURLRequired = errors.New("sidebar provider base url is required")
+var ErrSidebarProviderAPIKeyEnvRequired = errors.New("sidebar provider api key env is required")
 
 type Store struct {
 	path string
@@ -133,4 +140,41 @@ func (c Config) MemoryPageVisibilityEnabledValue() bool {
 
 func Bool(value bool) *bool {
 	return &value
+}
+
+func UpsertSidebarProvider(cfg Config, provider SidebarProviderConfig, setDefault bool) (Config, error) {
+	if provider.ID == "" {
+		return Config{}, ErrSidebarProviderIDRequired
+	}
+	if provider.Provider == "" {
+		return Config{}, ErrSidebarProviderTypeRequired
+	}
+	if provider.Model == "" {
+		return Config{}, ErrSidebarProviderModelRequired
+	}
+	if provider.BaseURL == "" {
+		return Config{}, ErrSidebarProviderBaseURLRequired
+	}
+	if provider.APIKeyEnv == "" {
+		return Config{}, ErrSidebarProviderAPIKeyEnvRequired
+	}
+
+	nextProviders := make([]SidebarProviderConfig, 0, len(cfg.SidebarProviders)+1)
+	replaced := false
+	for _, current := range cfg.SidebarProviders {
+		if current.ID == provider.ID {
+			nextProviders = append(nextProviders, provider)
+			replaced = true
+			continue
+		}
+		nextProviders = append(nextProviders, current)
+	}
+	if !replaced {
+		nextProviders = append(nextProviders, provider)
+	}
+	cfg.SidebarProviders = nextProviders
+	if setDefault || cfg.SidebarDefaultProvider == "" {
+		cfg.SidebarDefaultProvider = provider.ID
+	}
+	return cfg.withDefaults(), nil
 }

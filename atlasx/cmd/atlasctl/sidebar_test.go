@@ -83,6 +83,78 @@ func TestSidebarStatusOutputsConfiguredProvider(t *testing.T) {
 	}
 }
 
+func TestSidebarSetProviderWritesRegistryAndShowsStatus(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{
+			"sidebar", "set-provider",
+			"--id", "primary",
+			"--provider", "openai",
+			"--model", "gpt-5.4",
+			"--base-url", "https://api.openai.com/v1",
+			"--api-key-env", "OPENAI_API_KEY",
+			"--default",
+		})
+	})
+	if err != nil {
+		t.Fatalf("run sidebar set-provider failed: %v", err)
+	}
+
+	for _, fragment := range []string{
+		"configured=true",
+		"ready=false",
+		"default_provider=primary",
+		"provider=openai",
+		"model=gpt-5.4",
+		"api_key_env=OPENAI_API_KEY",
+		"provider_count=1",
+		"reason=sidebar qa api key env OPENAI_API_KEY is not set",
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Fatalf("expected output to contain %q, got %s", fragment, output)
+		}
+	}
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	config, err := settings.NewStore(paths.ConfigFile).Load()
+	if err != nil {
+		t.Fatalf("load config failed: %v", err)
+	}
+	if config.SidebarDefaultProvider != "primary" {
+		t.Fatalf("unexpected default provider: %+v", config)
+	}
+	if len(config.SidebarProviders) != 1 {
+		t.Fatalf("unexpected providers: %+v", config.SidebarProviders)
+	}
+	if config.SidebarProviders[0].APIKeyEnv != "OPENAI_API_KEY" {
+		t.Fatalf("unexpected provider env: %+v", config.SidebarProviders[0])
+	}
+}
+
+func TestSidebarSetProviderRejectsMissingRequiredFields(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{
+			"sidebar", "set-provider",
+			"--id", "primary",
+			"--provider", "openai",
+			"--model", "gpt-5.4",
+			"--base-url", "https://api.openai.com/v1",
+		})
+	})
+	if err == nil {
+		t.Fatal("expected sidebar set-provider to fail")
+	}
+	if !strings.Contains(err.Error(), settings.ErrSidebarProviderAPIKeyEnvRequired.Error()) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestSidebarSummarizeOutputsStructuredSummary(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("OPENAI_API_KEY", "test-key")
