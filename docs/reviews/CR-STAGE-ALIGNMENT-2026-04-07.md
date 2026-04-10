@@ -1,8 +1,8 @@
 # CR-STAGE-ALIGNMENT
 
 - 日期: 2026-04-10
-- 目标: 将 `T001-T139` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
-- 结论: `tasks.csv` 与代码事实当前一致，`T001-T139` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制、memory 按站点页面可见性控制、页面级登录模式推断、browser-data open smoke 前置条件收敛、发布证据自动采集、发布元数据摘要收敛、UNCOVERED 摘要收敛、任务状态摘要与 release_ready 判定收敛、atlasd readiness 摘要收敛、release prerequisites 摘要收敛、关键环境快照摘要收敛、import/log/update 快照摘要收敛和结构化 doctor 诊断入口与统一 gate/runbook 入口
+- 目标: 将 `T001-T140` 的任务级 CR 收口为项目级阶段对齐事实，作为继续迭代前的统一入口
+- 结论: `tasks.csv` 与代码事实当前一致，`T001-T140` 已完成，AtlasX 已具备可验证的本地控制面、浏览器能力面、managed runtime 闭环、智能层最小闭环，以及 profile、policy、permissions、默认浏览器、日志、更新、memory 数据控制、memory 页面可见性控制、memory 按站点页面可见性控制、memory site visibility 参数错误码收敛、页面级登录模式推断、browser-data open smoke 前置条件收敛、发布证据自动采集、发布元数据摘要收敛、UNCOVERED 摘要收敛、任务状态摘要与 release_ready 判定收敛、atlasd readiness 摘要收敛、release prerequisites 摘要收敛、关键环境快照摘要收敛、import/log/update 快照摘要收敛和结构化 doctor 诊断入口与统一 gate/runbook 入口
 
 ## 阶段对齐
 
