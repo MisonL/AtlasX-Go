@@ -95,6 +95,8 @@
   - 当前已完成
 - `T145`
   - 当前已完成
+- `T146`
+  - 当前已完成
 - 当前任务源事实
   - `tasks.csv` 中没有剩余 `未开始` 或 `进行中` 条目
 
@@ -242,6 +244,9 @@
 - mirror/import 已有历史落盘
 - 当前已有本地 memory 事件，最近一条来自 `page_capture`
 - 当前没有配置好真实 provider 凭据或 provider registry
+- 当前 `config.json` 不包含 `sidebar_default_provider` 与 `sidebar_providers`
+- 当前 `sidebar status` 返回 `configured=false`、`ready=false`、`reason=sidebar qa provider is not configured`
+- 当前 shell 中没有导出任何可供 sidebar 使用的 provider 密钥环境变量
 
 ## 当前 Gate 结果
 
@@ -256,6 +261,10 @@
 - `runtime verify smoke` 与 `runtime install smoke` 已在当前开发机通过真实 managed runtime 主链收敛，不再出现在开启安装开关后的 gate 中
 - `tabs capture smoke` 与 `browser-data open smoke` 已在当前开发机通过真实 managed session、真实 page target 与真实 browser-data open 主链收敛
 - 剩余未覆盖项不是代码失败，而是本机当前缺少真实 provider readiness
+- 结合 `atlasx/docs/RUNBOOK.md`，当前 machine-level 缺失项已明确收敛为:
+  - `sidebar_default_provider`
+  - `sidebar_providers[].id/provider/model/base_url/api_key_env`
+  - 与 `api_key_env` 对应的真实环境变量
 - 当前 gate 已进一步区分 `browser-data open smoke` 的两类阻断：
   - 若没有已落盘 history/bookmarks/downloads 数据，会显式返回“当前都没有可打开的已落盘数据”
   - 若已有落盘数据但没有受管浏览器会话，会显式返回“已有落盘数据但当前没有受管浏览器会话”
