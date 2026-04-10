@@ -135,6 +135,10 @@ func serveMemoryControls(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, fmt.Errorf("persist_enabled or page_visibility_enabled or site_host + site_visibility_enabled is required"))
 			return
 		}
+		if request.SiteVisibilityEnabled != nil && request.SiteHost == "" {
+			writeError(w, http.StatusBadRequest, fmt.Errorf("site_host is required when site_visibility_enabled is provided"))
+			return
+		}
 		paths, err := discoverPaths()
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
