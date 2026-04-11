@@ -1,94 +1,51 @@
 # AtlasX-Go
 
-`AtlasX-Go` 是一个面向 Intel x64 macOS 的 `Atlas-like` 重建项目。
+`AtlasX-Go` 是一个面向 Intel x64 macOS 的 Atlas-like 控制面重建项目。
 
-当前仓库包含两部分：
+当前仓库已经不再是“最小骨架”阶段，而是一个可构建、可测试、可发布的 Go 控制面实现，主要由两部分组成：
 
-- [`docs/`](docs/00-INDEX.md)：可行性分析、公开资料梳理、产品蓝图、架构与交接文档
-- [`atlasx/`](atlasx/README.md)：Go 主导的最小控制面骨架
+- [`docs/`](docs/00-INDEX.md)：公开资料梳理、产品蓝图、架构决策、审计与发布记录
+- [`atlasx/`](atlasx/README.md)：`atlasctl` / `atlasd`、managed Chromium runtime、sidebar QA、memory 与 tabs automation 的实现
 
-当前已具备的最小能力：
+## 当前能力
 
-- `atlasctl blueprint`
-- `atlasctl doctor`
-- `atlasctl doctor --json`
-- `atlasctl profile status`
-- `atlasctl policy status`
-- `atlasctl permissions status`
-- `atlasctl settings`
-- `atlasctl default-browser status`
-- `atlasctl logs status`
-- `atlasctl updates status`
-- `atlasctl memory list`
-- `atlasctl memory search <question>`
-- `atlasctl sidebar status`
-- `atlasctl sidebar ask <target-id> <question>`
-- `atlasctl sidebar selection-ask <target-id> <question>`
-- `atlasctl sidebar summarize <target-id>`
-- `atlasctl status`
-- `atlasctl runtime stage|status|verify|clear|install`
-- `atlasctl runtime plan create|resolve|status|clear`
-- `atlasctl mirror-scan`
-- `atlasctl history|downloads|bookmarks list/open`
-- `atlasctl tabs list|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|open-devtools-panel|close-duplicates|activate-window|close-window|set-window-state|set-window-bounds|activate|close|navigate|capture|extract-context|selection|suggest|memories|recommend-context|organize|organize-window|organize-group-to-window|organize-group-into-window|organize-to-windows|organize-into-window|organize-window-to-windows|organize-window-into-window|organize-window-group-to-window|organize-window-group-into-window|devtools|devtools-panel|emulate-device`
-- `atlasctl tabs suggest <target-id>`
-- `atlasctl tabs agent-plan <target-id>`
-- `atlasctl tabs agent-execute --confirm <target-id> <step-id>`
-- `atlasctl tabs memories <target-id>`
-- `atlasctl tabs recommend-context <target-id>`
-- `atlasctl tabs windows`
-- `atlasctl tabs search <query>`
-- `atlasctl tabs open-in-window <window-id> <url>`
-- `atlasctl tabs move-to-window <tab-id> <target-window-id>`
-- `atlasctl tabs move-to-new-window <tab-id>`
-- `atlasctl tabs organize-group-to-window <group-id>`
-- `atlasctl tabs organize-group-into-window <group-id> <window-id>`
-- `atlasctl tabs organize-to-windows`
-- `atlasctl tabs organize-into-window <window-id>`
-- `atlasctl tabs organize-window-to-windows <window-id>`
-- `atlasctl tabs organize-window-into-window <source-window-id> <target-window-id>`
-- `atlasctl tabs organize-window <window-id>`
-- `atlasctl tabs organize-window-group-to-window <source-window-id> <group-id>`
-- `atlasctl tabs organize-window-group-into-window <source-window-id> <group-id> <target-window-id>`
-- `atlasctl tabs merge-window <source-window-id> <target-window-id>`
-- `atlasctl tabs open-devtools <target-id>`
-- `atlasctl tabs open-devtools-panel <target-id> <panel>`
-- `atlasctl tabs devtools-panel <target-id> <panel>`
-- `atlasctl tabs close-duplicates`
-- `atlasctl tabs activate-window <window-id>`
-- `atlasctl tabs close-window <window-id>`
-- `atlasctl tabs set-window-state <window-id> <state>`
-- `atlasctl tabs set-window-bounds <window-id> <left> <top> <width> <height>`
-- `atlasctl tabs open-window <url>`
-- `atlasctl tabs emulate-device <target-id> <preset>`
-- `atlasctl tabs extract-context <target-id>`
-- `atlasd /v1/history|downloads|bookmarks` 与对应 `/open` 动作 API
-- `atlasd /v1/settings`
-- `atlasd /v1/default-browser`
-- `atlasd /v1/logs`
-- `atlasd /v1/updates`
-- `atlasd /v1/doctor`
-- `atlasd /v1/profile`
-- `atlasd /v1/policy`
-- `atlasd /v1/permissions`
-- `atlasd /v1/memory` 与 `/v1/memory/search`
-- `atlasd /v1/tabs|search|windows|open|open-window|open-in-window|move-to-window|move-to-new-window|merge-window|open-devtools|open-devtools-panel|close-duplicates|activate-window|close-window|window-state|window-bounds|activate|close|navigate|context|semantic-context|selection|suggestions|memories|context-recommendations|organize|organize-window|organize-group-to-window|organize-group-into-window|organize-to-windows|organize-into-window|organize-window-to-windows|organize-window-into-window|organize-window-group-to-window|organize-window-group-into-window|devtools|devtools-panel|emulate-device`
-- `atlasd /v1/tabs/agent-plan`
-- `atlasd /v1/tabs/agent-execute`
-- `atlasd /v1/runtime/status|stage|verify|clear|install`
-- `atlasd /v1/runtime/plan` 与 `/v1/runtime/plan/clear`
-- `atlasd /v1/sidebar/status`、`/v1/sidebar/ask`、`/v1/sidebar/selection/ask` 与 `/v1/sidebar/summarize`
-- support root 下 managed Chromium runtime 的发现、manifest、verify、install plan 状态导出
-- launcher dry-run 与 session status 的 `runtime_source` 可观测性
-- `atlasctl launch-webapp --dry-run`
-- `atlasctl stop-webapp`
-- `atlasd --once`
+- `atlasctl` / `atlasd` 双入口
+- managed Chromium runtime 的 stage、verify、install、plan 与状态导出
+- 受管浏览器会话、mirror/import、history/downloads/bookmarks 打通
+- memory controls、memory list/search、page-scoped snippet 注入控制
+- sidebar provider registry、真实 `ask` / `selection-ask` / `summarize`
+- tabs list/search/windows/groups、窗口整理、DevTools、capture、auth-mode、agent-plan / agent-execute
+- 发布门禁与证据采集：`bash atlasx/scripts/e2e_gate.sh`、`bash atlasx/scripts/release_evidence.sh`
 
-当前安全边界：
+## 快速开始
+
+```bash
+cd atlasx
+go test ./...
+go run ./cmd/atlasctl doctor
+go run ./cmd/atlasctl status
+go run ./cmd/atlasd --once
+```
+
+如需真实发布门禁：
+
+```bash
+cd atlasx
+bash scripts/e2e_gate.sh
+bash scripts/release_evidence.sh
+```
+
+## 主要文档
+
+- 总索引：[docs/00-INDEX.md](docs/00-INDEX.md)
+- 实现与命令说明：[atlasx/README.md](atlasx/README.md)
+- 运行与恢复：[atlasx/docs/RUNBOOK.md](atlasx/docs/RUNBOOK.md)
+- E2E gate：[atlasx/docs/E2E-GATE.md](atlasx/docs/E2E-GATE.md)
+- 发布与审计记录：[docs/reviews/](docs/reviews/)
+
+## 安全边界
 
 - `atlasd` 默认只允许回环监听地址
-- 若要显式监听非回环地址，必须传 `--allow-remote-control`
-- 当前未实现真实 macOS 权限探测、权限提示或授权写路径
-
-当前阶段对齐与实施边界以 [`docs/00-INDEX.md`](docs/00-INDEX.md) 和 [`docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md`](docs/reviews/CR-STAGE-ALIGNMENT-2026-04-07.md) 为入口。
-运行手册与发布检查单见 [`atlasx/docs/RUNBOOK.md`](atlasx/docs/RUNBOOK.md)，真实 gate 入口见 [`atlasx/docs/E2E-GATE.md`](atlasx/docs/E2E-GATE.md)。
+- 非回环监听必须显式传 `--allow-remote-control`
+- sidebar 配置只落盘 `api_key_env`，不落盘真实密钥
+- 当前仍未实现真实 macOS TCC 探测、权限提示或授权写路径

@@ -2,13 +2,24 @@
 
 `AtlasX` 是一个面向 Intel x64 macOS 的 Atlas-like 重建项目。
 
-当前仓库这部分已经落下最小控制面骨架：
+当前仓库这部分已经是可构建、可测试、可发布的 Go 控制面实现，核心能力包括：
 
-- `atlasctl` 诊断、蓝图展示、fallback 启动
-- `atlasctl settings` 当前有效配置读取
-- `atlasd` 一次性初始化与本地健康检查
-- Profile、Config、Chrome runtime 探测
-- 产品蓝图与阶段划分
+- `atlasctl` / `atlasd` 双入口
+- managed Chromium runtime 的 stage、verify、install 与 plan 主链
+- 受管浏览器会话、mirror/import、history/downloads/bookmarks 数据面
+- sidebar provider registry 与真实 `ask` / `selection-ask` / `summarize`
+- tabs capture、auth-mode、organize、window controls、DevTools 与 agent-plan / agent-execute
+- `scripts/e2e_gate.sh` 与 `scripts/release_evidence.sh` 发布门禁
+
+## 快速开始
+
+```bash
+cd atlasx
+go test ./...
+go run ./cmd/atlasctl doctor
+go run ./cmd/atlasctl status
+go run ./cmd/atlasd --once
+```
 
 ## 命令
 
@@ -30,8 +41,10 @@ go run ./cmd/atlasctl memory search <question>
 go run ./cmd/atlasctl memory controls
 go run ./cmd/atlasctl memory set-persist <enabled|disabled>
 go run ./cmd/atlasctl memory set-page-visibility <visible|hidden>
+go run ./cmd/atlasctl memory set-site-visibility <host> <visible|hidden>
 go run ./cmd/atlasctl status
 go run ./cmd/atlasctl sidebar status
+go run ./cmd/atlasctl sidebar set-provider --id primary --provider openai-compatible --model gpt-5.4 --base-url https://example.com/v1 --api-key-env OPENAI_API_KEY --default
 go run ./cmd/atlasctl sidebar ask <target-id> <question>
 go run ./cmd/atlasctl sidebar selection-ask <target-id> <question>
 go run ./cmd/atlasctl sidebar summarize <target-id>
@@ -206,7 +219,7 @@ bash scripts/e2e_gate.sh
 - `POST /v1/import/chrome`
 - `POST /v1/import/safari`
 
-## 当前边界
+## 能力与边界
 
 - `launch-webapp` 只会启动 Atlas Web 入口，不等于官方原生 Atlas。
 - 当前控制面只覆盖离线诊断、配置、profile 和本地健康检查。
