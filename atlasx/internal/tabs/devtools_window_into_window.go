@@ -29,16 +29,16 @@ func (c Client) OpenDevToolsWindowIntoWindow(sourceWindowID int, targetWindowID 
 	for _, sourceTarget := range sourceWindow.Targets {
 		opened, err := c.OpenDevToolsInWindow(sourceTarget.ID, targetWindowID)
 		if err != nil {
-			return DevToolsWindowOpenResult{}, err
+			result.Returned = len(result.OpenedTargets)
+			return result, fmt.Errorf("open devtools for target %s in window %d: %w", sourceTarget.ID, targetWindowID, err)
 		}
 		result.OpenedTargets = append(result.OpenedTargets, DevToolsWindowOpenTarget{
 			SourceTargetID:    sourceTarget.ID,
 			ActivatedTargetID: opened.ActivatedTargetID,
 			Target:            opened.Target,
 		})
-		result.Returned = len(result.OpenedTargets)
 	}
-
+	result.Returned = len(result.OpenedTargets)
 	return result, nil
 }
 

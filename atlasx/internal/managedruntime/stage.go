@@ -107,10 +107,6 @@ func (r StageReport) Render() string {
 	)
 }
 
-func bundleBinaryPath(bundlePath string) string {
-	return filepath.Join(bundlePath, "Contents", "MacOS", chromiumBinaryName)
-}
-
 func copyTree(sourceRoot string, targetRoot string) error {
 	return filepath.WalkDir(sourceRoot, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -147,13 +143,17 @@ func copyFile(sourcePath string, targetPath string, mode fs.FileMode) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() {
+		_ = sourceFile.Close()
+	}()
 
 	targetFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}
-	defer targetFile.Close()
+	defer func() {
+		_ = targetFile.Close()
+	}()
 
 	_, err = io.Copy(targetFile, sourceFile)
 	return err
@@ -164,7 +164,9 @@ func fileSHA256(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {

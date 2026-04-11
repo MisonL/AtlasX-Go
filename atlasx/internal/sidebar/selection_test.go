@@ -23,13 +23,18 @@ func TestAskSelectionWithOpenAICompatibleProvider(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 
 	var capturedBody map[string]any
+	handlerErrCh := make(chan error, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read body failed: %v", err)
+			reportHandlerError(handlerErrCh, "read body failed: %v", err)
+			http.Error(w, "read body failed", http.StatusInternalServerError)
+			return
 		}
 		if err := json.Unmarshal(body, &capturedBody); err != nil {
-			t.Fatalf("decode body failed: %v", err)
+			reportHandlerError(handlerErrCh, "decode body failed: %v", err)
+			http.Error(w, "decode body failed", http.StatusBadRequest)
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Selected answer"}}]}`))
 	}))
@@ -67,6 +72,7 @@ func TestAskSelectionWithOpenAICompatibleProvider(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ask selection failed: %v", err)
 	}
+	requireNoHandlerError(t, handlerErrCh)
 	if response.Answer != "Selected answer" {
 		t.Fatalf("unexpected response: %+v", response)
 	}

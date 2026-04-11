@@ -15,7 +15,7 @@ import (
 
 func serveTabAgentPlan(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodGet)
 		return
 	}
 
@@ -33,7 +33,7 @@ func serveTabAgentPlan(w http.ResponseWriter, r *http.Request) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 
@@ -91,11 +91,6 @@ func handleAgentPlanLoadError(w http.ResponseWriter, err error) {
 			"capture_error":  captureErr.Context.CaptureError,
 			"error":          captureErr.Error(),
 		})
-		return
-	}
-	var retrievalErr *tabs.CaptureError
-	if errors.As(err, &retrievalErr) {
-		writeError(w, http.StatusBadGateway, err)
 		return
 	}
 	writeError(w, http.StatusBadGateway, err)

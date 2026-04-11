@@ -16,7 +16,7 @@ func runTabsContextRecommend(paths macos.Paths, client commandTabsClient, args [
 
 	context, err := client.Capture(args[0])
 	if err != nil {
-		printPageContext(context)
+		printCaptureContext(context, err)
 		return err
 	}
 

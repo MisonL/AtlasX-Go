@@ -25,7 +25,9 @@ func TestSetWindowBoundsReturnsUpdatedBounds(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -69,7 +71,7 @@ func TestSetWindowBoundsReturnsUpdatedBounds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("set window bounds failed: %v", err)
 	}
-	if result.WindowID != 7 || result.Left != 10 || result.Width != 1280 || result.Height != 720 {
+	if result.WindowID != 7 || result.Left != 10 || result.Top != 20 || result.Width != 1280 || result.Height != 720 {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 }

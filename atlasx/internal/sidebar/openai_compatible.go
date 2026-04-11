@@ -178,7 +178,9 @@ func buildContextSummary(context tabs.PageContext) string {
 }
 
 func decodeProviderResponse(response *http.Response, fallbackModel string) (string, string, bool, error) {
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {

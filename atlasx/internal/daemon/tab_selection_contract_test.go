@@ -20,7 +20,7 @@ func TestTabSelectionEndpointContract(t *testing.T) {
 			CapturedAt:             "2026-04-07T12:00:00Z",
 			SelectionPresent:       true,
 			SelectionTextTruncated: false,
-			SelectionTextLength:    20,
+			SelectionTextLength:    19,
 			SelectionTextLimit:     1024,
 		},
 	})

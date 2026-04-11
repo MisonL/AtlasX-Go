@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -155,6 +156,41 @@ func TestSidebarSetProviderRejectsMissingRequiredFields(t *testing.T) {
 	}
 }
 
+func TestSidebarSetProviderRejectsWhitespaceOnlyID(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{
+			"sidebar", "set-provider",
+			"--id", "   ",
+			"--provider", "openai",
+			"--model", "gpt-5.4",
+			"--base-url", "https://api.openai.com/v1",
+			"--api-key-env", "OPENAI_API_KEY",
+		})
+	})
+	if err == nil {
+		t.Fatal("expected sidebar set-provider to fail")
+	}
+	if !strings.Contains(err.Error(), settings.ErrSidebarProviderIDRequired.Error()) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestSidebarSummarizeRejectsExtraArguments(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	_, err := captureStdout(t, func() error {
+		return run([]string{"sidebar", "summarize", "tab-1", "extra"})
+	})
+	if err == nil {
+		t.Fatal("expected sidebar summarize to fail")
+	}
+	if !strings.Contains(err.Error(), "sidebar summarize does not accept extra arguments") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestSidebarSummarizeOutputsStructuredSummary(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("OPENAI_API_KEY", "test-key")
@@ -296,10 +332,13 @@ func TestSidebarSummarizeHidesMemoryWhenPageVisibilityDisabled(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 
 	var capturedRequestBody string
+	handlerErrCh := make(chan error, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read request body failed: %v", err)
+			handlerErrCh <- err
+			http.Error(w, "read request body failed", http.StatusInternalServerError)
+			return
 		}
 		capturedRequestBody = string(body)
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas summary"}}]}`))
@@ -356,11 +395,71 @@ func TestSidebarSummarizeHidesMemoryWhenPageVisibilityDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run sidebar summarize failed: %v", err)
 	}
+	select {
+	case handlerErr := <-handlerErrCh:
+		t.Fatalf("read request body failed: %v", handlerErr)
+	default:
+	}
 	if !strings.Contains(output, `summary="Atlas summary"`) {
 		t.Fatalf("unexpected output: %s", output)
 	}
 	if strings.Contains(capturedRequestBody, "Hidden memory answer") {
 		t.Fatalf("expected page visibility control to hide memory, got %s", capturedRequestBody)
+	}
+}
+
+func TestSidebarSummarizeHandlerReadErrorReportedInMainGoroutine(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("OPENAI_API_KEY", "test-key")
+
+	handlerErrCh := make(chan error, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerErrCh <- errors.New("synthetic handler read failure")
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	paths, err := macos.DiscoverPaths()
+	if err != nil {
+		t.Fatalf("discover paths failed: %v", err)
+	}
+	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
+		SidebarDefaultProvider: "primary",
+		SidebarProviders: []settings.SidebarProviderConfig{
+			{
+				ID:        "primary",
+				Provider:  "openai",
+				Model:     "gpt-5.4",
+				BaseURL:   server.URL,
+				APIKeyEnv: "OPENAI_API_KEY",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save config failed: %v", err)
+	}
+
+	restoreCommandTabsClient(t, &stubCommandTabsClient{
+		context: tabs.PageContext{
+			ID:    "tab-1",
+			Title: "Atlas",
+			URL:   "https://chatgpt.com/atlas",
+			Text:  "Atlas context",
+		},
+	})
+
+	_, err = captureStdout(t, func() error {
+		return run([]string{"sidebar", "summarize", "tab-1"})
+	})
+	if err == nil {
+		t.Fatal("expected sidebar summarize to fail")
+	}
+	select {
+	case handlerErr := <-handlerErrCh:
+		if handlerErr.Error() != "synthetic handler read failure" {
+			t.Fatalf("unexpected handler error: %v", handlerErr)
+		}
+	default:
+		t.Fatal("expected handler error to be reported")
 	}
 }
 

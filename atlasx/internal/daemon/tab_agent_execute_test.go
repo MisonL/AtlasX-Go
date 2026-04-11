@@ -28,9 +28,6 @@ func TestTabAgentExecuteRunsSummarizeStep(t *testing.T) {
 	if err != nil {
 		t.Fatalf("discover paths failed: %v", err)
 	}
-	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{}); err != nil {
-		t.Fatalf("save config failed: %v", err)
-	}
 	if err := settings.NewStore(paths.ConfigFile).Save(settings.Config{
 		SidebarDefaultProvider: "primary",
 		SidebarProviders: []settings.SidebarProviderConfig{{

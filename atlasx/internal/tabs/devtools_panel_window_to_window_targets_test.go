@@ -35,7 +35,9 @@ func TestOpenDevToolsPanelWindowToWindowsOpensEachSourceTargetInNewWindow(t *tes
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -134,7 +136,9 @@ func TestOpenDevToolsPanelWindowToWindowsRejectsUnknownSourceWindow(t *testing.T
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -180,7 +184,9 @@ func TestOpenDevToolsPanelWindowToWindowsReturnsEmptyWhenSourceWindowHasNoPageTa
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {

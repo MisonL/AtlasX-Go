@@ -50,7 +50,12 @@ func TestTabSuggestionsReturnsStructuredSuggestions(t *testing.T) {
 	}
 
 	payload := decodeObjectResponse(t, recorder)
-	if payload["returned"].(float64) != 3 || payload["memory_returned"].(float64) != 1 {
+	returned, ok := payload["returned"].(float64)
+	if !ok || returned != 3 {
+		t.Fatalf("unexpected payload: %+v", payload)
+	}
+	memoryReturned, ok := payload["memory_returned"].(float64)
+	if !ok || memoryReturned != 1 {
 		t.Fatalf("unexpected payload: %+v", payload)
 	}
 	suggestions, ok := payload["suggestions"].([]any)

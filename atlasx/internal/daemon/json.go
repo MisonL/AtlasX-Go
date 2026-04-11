@@ -36,7 +36,9 @@ func decodeRequiredJSON(r *http.Request, target any) error {
 	if r.Body == nil {
 		return errors.New("request body is required")
 	}
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
@@ -44,6 +46,8 @@ func decodeOptionalJSON(r *http.Request, target any) error {
 	if r.Body == nil || r.ContentLength == 0 {
 		return nil
 	}
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 	return json.NewDecoder(r.Body).Decode(target)
 }

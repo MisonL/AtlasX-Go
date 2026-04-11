@@ -1,3 +1,5 @@
+//go:build darwin
+
 package main
 
 import (
@@ -247,7 +249,7 @@ func TestTabsAgentExecuteRunsMemorySnippetStep(t *testing.T) {
 	}
 }
 
-func TestTabsAgentExecuteRejectsPreviewOnlyStep(t *testing.T) {
+func TestTabsAgentExecuteRejectsMissingStep(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	paths, err := macos.DiscoverPaths()

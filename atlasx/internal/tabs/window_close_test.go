@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -18,6 +19,7 @@ func TestCloseWindowClosesAllTargetsInWindow(t *testing.T) {
 
 	browserWSURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/devtools/browser/root"
 	var closedTargets []string
+	var closedTargetsMu sync.Mutex
 
 	mux.HandleFunc("/json/version", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"webSocketDebuggerUrl":"` + browserWSURL + `"}`))
@@ -29,11 +31,15 @@ func TestCloseWindowClosesAllTargetsInWindow(t *testing.T) {
 		]`))
 	})
 	mux.HandleFunc("/json/close/tab-1", func(w http.ResponseWriter, r *http.Request) {
+		closedTargetsMu.Lock()
 		closedTargets = append(closedTargets, "tab-1")
+		closedTargetsMu.Unlock()
 		w.WriteHeader(http.StatusOK)
 	})
 	mux.HandleFunc("/json/close/tab-2", func(w http.ResponseWriter, r *http.Request) {
+		closedTargetsMu.Lock()
 		closedTargets = append(closedTargets, "tab-2")
+		closedTargetsMu.Unlock()
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -43,7 +49,9 @@ func TestCloseWindowClosesAllTargetsInWindow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -83,7 +91,16 @@ func TestCloseWindowClosesAllTargetsInWindow(t *testing.T) {
 	if result.WindowID != 7 || result.Returned != 2 {
 		t.Fatalf("unexpected result: %+v", result)
 	}
-	if len(closedTargets) != 2 || closedTargets[0] != "tab-1" || closedTargets[1] != "tab-2" {
+	closedTargetsMu.Lock()
+	defer closedTargetsMu.Unlock()
+	if len(closedTargets) != 2 {
+		t.Fatalf("unexpected closed targets count: %d", len(closedTargets))
+	}
+	closedSet := make(map[string]int, len(closedTargets))
+	for _, targetID := range closedTargets {
+		closedSet[targetID]++
+	}
+	if closedSet["tab-1"] != 1 || closedSet["tab-2"] != 1 {
 		t.Fatalf("unexpected closed targets: %+v", closedTargets)
 	}
 }

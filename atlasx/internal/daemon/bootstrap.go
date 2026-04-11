@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -217,101 +216,97 @@ func Bootstrap() (Status, error) {
 
 func NewMux(_ Status) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", serveStatus)
-	mux.HandleFunc("/v1/status", serveStatus)
-	mux.HandleFunc("/v1/doctor", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/healthz", requireMethods(serveStatus, http.MethodGet))
+	mux.HandleFunc("/v1/status", requireMethods(serveStatus, http.MethodGet))
+	mux.HandleFunc("/v1/doctor", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveDoctor(w, r)
-	})
-	mux.HandleFunc("/v1/profile", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/profile", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveProfile(w, r)
-	})
-	mux.HandleFunc("/v1/policy", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/policy", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		servePolicy(w, r)
-	})
-	mux.HandleFunc("/v1/permissions", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/permissions", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		servePermissions(w, r)
-	})
-	mux.HandleFunc("/v1/settings", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/settings", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveSettings(w, r)
-	})
-	mux.HandleFunc("/v1/default-browser", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/default-browser", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveDefaultBrowserStatus(w, r)
-	})
-	mux.HandleFunc("/v1/default-browser/set", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/default-browser/set", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveDefaultBrowserSet(w, r)
-	})
-	mux.HandleFunc("/v1/logs", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/logs", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveLogsStatus(w, r)
-	})
-	mux.HandleFunc("/v1/updates", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/updates", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveUpdatesStatus(w, r)
-	})
-	mux.HandleFunc("/v1/memory", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/memory", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveMemoryList(w, r)
-	})
-	mux.HandleFunc("/v1/memory/controls", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/memory/controls", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveMemoryControls(w, r)
-	})
-	mux.HandleFunc("/v1/memory/search", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet, http.MethodPost))
+	mux.HandleFunc("/v1/memory/search", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveMemorySearch(w, r)
-	})
-	mux.HandleFunc("/v1/history", func(w http.ResponseWriter, _ *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/history", requireMethods(func(w http.ResponseWriter, _ *http.Request) {
 		serveBrowserData(w, browserdata.LoadHistory)
-	})
-	mux.HandleFunc("/v1/downloads", func(w http.ResponseWriter, _ *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/downloads", requireMethods(func(w http.ResponseWriter, _ *http.Request) {
 		serveBrowserData(w, browserdata.LoadDownloads)
-	})
-	mux.HandleFunc("/v1/bookmarks", func(w http.ResponseWriter, _ *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/bookmarks", requireMethods(func(w http.ResponseWriter, _ *http.Request) {
 		serveBrowserData(w, browserdata.LoadBookmarks)
-	})
-	mux.HandleFunc("/v1/history/open", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/history/open", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveBrowserOpenAction(w, r, browserdata.ResolveHistoryURL, "opened_history_index")
-	})
-	mux.HandleFunc("/v1/downloads/open", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/downloads/open", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveBrowserOpenAction(w, r, browserdata.ResolveDownloadURL, "opened_download_index")
-	})
-	mux.HandleFunc("/v1/bookmarks/open", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/bookmarks/open", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveBrowserOpenAction(w, r, browserdata.ResolveBookmarkURL, "opened_bookmark_index")
-	})
-	mux.HandleFunc("/v1/runtime/status", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/runtime/status", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeStatus(w, r)
-	})
-	mux.HandleFunc("/v1/runtime/stage", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/runtime/stage", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeStage(w, r)
-	})
-	mux.HandleFunc("/v1/runtime/clear", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/runtime/clear", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeClear(w, r)
-	})
-	mux.HandleFunc("/v1/runtime/verify", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/runtime/verify", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeVerify(w, r)
-	})
-	mux.HandleFunc("/v1/runtime/install", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/runtime/install", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimeInstall(w, r)
-	})
-	mux.HandleFunc("/v1/runtime/plan", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/runtime/plan", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimePlan(w, r)
-	})
-	mux.HandleFunc("/v1/runtime/plan/clear", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet, http.MethodPost))
+	mux.HandleFunc("/v1/runtime/plan/clear", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveRuntimePlanClear(w, r)
-	})
-	mux.HandleFunc("/v1/sidebar/status", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/sidebar/status", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarStatus(w, r)
-	})
-	mux.HandleFunc("/v1/sidebar/ask", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodGet))
+	mux.HandleFunc("/v1/sidebar/ask", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarAsk(w, r)
-	})
-	mux.HandleFunc("/v1/sidebar/selection/ask", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/sidebar/selection/ask", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarSelectionAsk(w, r)
-	})
-	mux.HandleFunc("/v1/sidebar/summarize", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/sidebar/summarize", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveSidebarSummarize(w, r)
-	})
+	}, http.MethodPost))
 	mux.HandleFunc("/v1/tabs", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
-			return
-		}
-		serveTabsList(w)
+		serveTabsList(w, r)
 	})
 	mux.HandleFunc("/v1/tabs/search", func(w http.ResponseWriter, r *http.Request) {
 		serveTabSearch(w, r)
@@ -469,14 +464,14 @@ func NewMux(_ Status) *http.ServeMux {
 			return map[string]string{"navigated": request.ID, "url": request.URL}, client.Navigate(request.ID, request.URL)
 		})
 	})
-	mux.HandleFunc("/v1/mirror/scan", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/mirror/scan", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveMirrorScan(w, r)
-	})
-	mux.HandleFunc("/v1/import/chrome", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/import/chrome", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveChromeImport(w, r)
-	})
-	mux.HandleFunc("/v1/import/safari", func(w http.ResponseWriter, r *http.Request) {
+	}, http.MethodPost))
+	mux.HandleFunc("/v1/import/safari", requireMethods(func(w http.ResponseWriter, r *http.Request) {
 		serveSafariImport(w, r)
-	})
+	}, http.MethodPost))
 	return mux
 }

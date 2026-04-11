@@ -316,7 +316,9 @@ func createBundleArchiveBytes(t *testing.T, bundlePath string) []byte {
 		if err != nil {
 			return err
 		}
-		defer source.Close()
+		defer func() {
+			_ = source.Close()
+		}()
 
 		_, err = io.Copy(writer, source)
 		return err

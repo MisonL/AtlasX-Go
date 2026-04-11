@@ -50,10 +50,8 @@ func (c Client) MergeWindow(sourceWindowID int, targetWindowID int) (WindowMerge
 	for _, sourceTarget := range sourceWindow.Targets {
 		opened, err := c.OpenInWindow(targetWindowID, sourceTarget.URL)
 		if err != nil {
-			return WindowMergeResult{}, err
-		}
-		if err := c.Close(sourceTarget.ID); err != nil {
-			return WindowMergeResult{}, err
+			result.Returned = len(result.MovedTargets)
+			return result, fmt.Errorf("open target %s in window %d: %w", sourceTarget.ID, targetWindowID, err)
 		}
 		result.MovedTargets = append(result.MovedTargets, WindowMergeTarget{
 			SourceTargetID:    sourceTarget.ID,
@@ -61,7 +59,10 @@ func (c Client) MergeWindow(sourceWindowID int, targetWindowID int) (WindowMerge
 			Target:            opened.Target,
 		})
 		result.Returned = len(result.MovedTargets)
+		if err := c.Close(sourceTarget.ID); err != nil {
+			return result, fmt.Errorf("close source target %s: %w", sourceTarget.ID, err)
+		}
 	}
-
+	result.Returned = len(result.MovedTargets)
 	return result, nil
 }

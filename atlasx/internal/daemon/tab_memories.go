@@ -20,7 +20,7 @@ type tabMemoriesResponse struct {
 
 func serveTabMemories(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodGet)
 		return
 	}
 
@@ -38,7 +38,7 @@ func serveTabMemories(w http.ResponseWriter, r *http.Request) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 
@@ -50,7 +50,7 @@ func serveTabMemories(w http.ResponseWriter, r *http.Request) {
 				"id":             captureErr.Context.ID,
 				"title":          captureErr.Context.Title,
 				"url":            captureErr.Context.URL,
-				"text":           captureErr.Context.Text,
+				"text_snippet":   truncateTextSnippet(captureErr.Context.Text, 200),
 				"captured_at":    captureErr.Context.CapturedAt,
 				"text_truncated": captureErr.Context.TextTruncated,
 				"text_length":    captureErr.Context.TextLength,

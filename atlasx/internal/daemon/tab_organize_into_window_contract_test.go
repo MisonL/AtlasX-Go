@@ -48,6 +48,7 @@ func TestTabOrganizeIntoWindowEndpointContract(t *testing.T) {
 	})
 
 	request := httptest.NewRequest(http.MethodPost, "/v1/tabs/organize-into-window", bytes.NewBufferString(`{"window_id":11}`))
+	request.Header.Set("Content-Type", "application/json")
 	recorder := httptest.NewRecorder()
 
 	NewMux(Status{}).ServeHTTP(recorder, request)

@@ -41,6 +41,7 @@ func runSidebarSelectionAsk(args []string) error {
 
 	context, memorySnippets, err := loadSidebarCommandContext(paths, command, traceID, *providerID, tabID, selectionQuestion)
 	if err != nil {
+		// loadSidebarCommandContext already persists the trace result on failure.
 		return err
 	}
 

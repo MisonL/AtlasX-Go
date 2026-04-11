@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -29,7 +29,14 @@ func TestTabDevToolsPanelEndpointReturnsFrontendURL(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
 	}
-	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"devtools_frontend_url":"http://127.0.0.1:9222/devtools/inspector.html?panel=network\u0026ws=127.0.0.1%3A9222%2Fdevtools%2Fpage%2F1"`)) {
+	var response struct {
+		DevToolsFrontendURL string `json:"devtools_frontend_url"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+	expected := "http://127.0.0.1:9222/devtools/inspector.html?panel=network&ws=127.0.0.1%3A9222%2Fdevtools%2Fpage%2F1"
+	if response.DevToolsFrontendURL != expected {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
 	}
 }

@@ -83,7 +83,9 @@ func Load(paths macos.Paths) ([]Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	events := make([]Event, 0)
 	scanner := bufio.NewScanner(file)
@@ -166,7 +168,9 @@ func appendEvent(paths macos.Paths, event Event) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	data, err := json.Marshal(event)
 	if err != nil {

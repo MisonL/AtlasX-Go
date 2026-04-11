@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"atlasx/internal/managedruntime"
 	"atlasx/internal/platform/macos"
@@ -14,6 +15,8 @@ import (
 var runManagedRuntimeInstall = func(paths macos.Paths) (managedruntime.InstallReport, error) {
 	return managedruntime.Install(paths, managedruntime.InstallOptions{})
 }
+
+var runManagedRuntimeVerify = managedruntime.Verify
 
 func runRuntime(args []string) error {
 	if len(args) == 0 {
@@ -103,8 +106,10 @@ func runRuntimeVerify() error {
 		return err
 	}
 
-	report, err := managedruntime.Verify(paths)
-	fmt.Print(report.Render())
+	report, err := runManagedRuntimeVerify(paths)
+	if report != (managedruntime.VerifyReport{}) {
+		fmt.Print(report.Render())
+	}
 	if err != nil {
 		return err
 	}
@@ -119,7 +124,9 @@ func runRuntimeInstall() error {
 	}
 
 	report, err := runManagedRuntimeInstall(paths)
-	fmt.Print(report.Render())
+	if report != (managedruntime.InstallReport{}) {
+		fmt.Print(report.Render())
+	}
 	if err != nil {
 		return err
 	}
@@ -211,6 +218,9 @@ func runRuntimePlanResolve(args []string) error {
 
 	resolvedArchivePath := *archivePath
 	if resolvedArchivePath == "" {
+		if strings.TrimSpace(*version) == "" {
+			return errors.New("runtime plan resolve requires --version when --archive-path is not provided")
+		}
 		resolvedArchivePath = managedruntime.DefaultInstallArchivePath(paths, *version)
 	}
 	resolvedBundlePath := *stagedBundlePath

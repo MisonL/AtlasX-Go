@@ -15,7 +15,7 @@ func runTabsMemories(paths macos.Paths, client commandTabsClient, args []string)
 
 	context, err := client.Capture(args[0])
 	if err != nil {
-		printPageContext(context)
+		printCaptureContext(context, err)
 		return err
 	}
 

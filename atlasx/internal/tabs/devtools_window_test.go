@@ -35,7 +35,9 @@ func TestOpenDevToolsWindowUsesResolvedFrontendURL(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -119,7 +121,9 @@ func TestOpenDevToolsInWindowActivatesWindowAndOpensDevToolsURL(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -183,7 +187,9 @@ func TestOpenDevToolsInWindowRejectsUnknownWindow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 	})
 
 	client := Client{baseURL: server.URL, httpClient: *server.Client()}
@@ -219,7 +225,9 @@ func TestOpenDevToolsPanelWindowUsesPanelFrontendURL(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -303,7 +311,9 @@ func TestOpenDevToolsPanelInWindowActivatesWindowAndOpensPanelURL(t *testing.T) 
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -367,7 +377,9 @@ func TestOpenDevToolsPanelInWindowRejectsUnknownWindow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 	})
 
 	client := Client{baseURL: server.URL, httpClient: *server.Client()}

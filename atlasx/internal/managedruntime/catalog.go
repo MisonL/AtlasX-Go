@@ -128,7 +128,9 @@ func loadCatalogFromHTTPS(source string, client *http.Client) (Catalog, error) {
 	if err != nil {
 		return Catalog{}, err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return Catalog{}, fmt.Errorf("managed runtime catalog returned status %d", response.StatusCode)

@@ -154,7 +154,9 @@ func Install(paths macos.Paths, opts InstallOptions) (InstallReport, error) {
 		return fail(err)
 	}
 	cleanup.extractRoot = extractRoot
-	defer os.RemoveAll(extractRoot)
+	defer func() {
+		_ = os.RemoveAll(extractRoot)
+	}()
 
 	extractedBundlePath, err := extractBundleArchive(plan.ArchivePath, extractRoot)
 	if err != nil {
@@ -269,7 +271,9 @@ func downloadInstallArchive(client *http.Client, sourceURL string, archivePath s
 	if err != nil {
 		return "", err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("managed runtime download returned status %d", response.StatusCode)
@@ -300,7 +304,9 @@ func extractBundleArchive(archivePath string, extractRoot string) (string, error
 	if err != nil {
 		return "", err
 	}
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	for _, file := range reader.File {
 		targetPath := filepath.Join(extractRoot, filepath.Clean(file.Name))
@@ -331,13 +337,17 @@ func extractZipFile(file *zip.File, targetPath string) error {
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func() {
+		_ = source.Close()
+	}()
 
 	target, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, file.Mode())
 	if err != nil {
 		return err
 	}
-	defer target.Close()
+	defer func() {
+		_ = target.Close()
+	}()
 
 	_, err = io.Copy(target, source)
 	return err

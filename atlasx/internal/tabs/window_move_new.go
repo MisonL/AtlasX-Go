@@ -15,7 +15,9 @@ func (c Client) MoveToNewWindow(targetID string) (WindowMoveToNewResult, error) 
 	}
 
 	var sourceTarget Target
-	sourceWindowID := 0
+	var sourceWindowID int
+	found := false
+WindowLoop:
 	for _, window := range windows {
 		for _, target := range window.Targets {
 			if target.ID != targetID {
@@ -23,10 +25,12 @@ func (c Client) MoveToNewWindow(targetID string) (WindowMoveToNewResult, error) 
 			}
 			sourceTarget = target
 			sourceWindowID = window.WindowID
+			found = true
+			break WindowLoop
 		}
 	}
 
-	if sourceWindowID == 0 {
+	if !found {
 		return WindowMoveToNewResult{}, fmt.Errorf("page target %s not found", targetID)
 	}
 

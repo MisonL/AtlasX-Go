@@ -27,7 +27,9 @@ func TestEmulateDeviceAppliesPreset(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var first cdpCommandRequest
 		if err := connection.ReadJSON(&first); err != nil {
@@ -83,7 +85,9 @@ func TestEmulateDeviceClearsPreset(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var first cdpCommandRequest
 		if err := connection.ReadJSON(&first); err != nil {

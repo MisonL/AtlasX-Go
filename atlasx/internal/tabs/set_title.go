@@ -14,12 +14,23 @@ type TitleUpdateResult struct {
 }
 
 type titleEvaluateResult struct {
-	Result titleRemoteObject `json:"result"`
+	Result           titleRemoteObject      `json:"result"`
+	ExceptionDetails *titleExceptionDetails `json:"exceptionDetails,omitempty"`
 }
 
 type titleRemoteObject struct {
 	Type  string           `json:"type"`
 	Value titleResultValue `json:"value"`
+}
+
+type titleExceptionDetails struct {
+	Text      string                `json:"text"`
+	Exception *titleExceptionObject `json:"exception,omitempty"`
+}
+
+type titleExceptionObject struct {
+	Description string `json:"description"`
+	Value       string `json:"value"`
 }
 
 type titleResultValue struct {
@@ -78,6 +89,20 @@ func updatePageTitle(websocketURL string, title string) (titleResultValue, error
 	var payload titleEvaluateResult
 	if err := json.Unmarshal(response.Result, &payload); err != nil {
 		return titleResultValue{}, err
+	}
+	if payload.ExceptionDetails != nil {
+		message := strings.TrimSpace(payload.ExceptionDetails.Text)
+		if payload.ExceptionDetails.Exception != nil {
+			if description := strings.TrimSpace(payload.ExceptionDetails.Exception.Description); description != "" {
+				message = description
+			} else if value := strings.TrimSpace(payload.ExceptionDetails.Exception.Value); value != "" {
+				message = value
+			}
+		}
+		if message == "" {
+			message = "unknown JavaScript error"
+		}
+		return titleResultValue{}, fmt.Errorf("runtime evaluate failed: %s", message)
 	}
 	if payload.Result.Type != "object" {
 		return titleResultValue{}, fmt.Errorf("unexpected runtime result type %q", payload.Result.Type)

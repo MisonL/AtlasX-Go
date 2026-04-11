@@ -94,7 +94,9 @@ func TestOpenWindowCreatesNewWindowTarget(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -244,7 +246,9 @@ func TestCapturePageContext(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -317,7 +321,9 @@ func TestCapturePageContextIncludesTruncationMetadata(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -375,7 +381,9 @@ func TestCapturePageContextReturnsStructuredFailure(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -422,6 +430,18 @@ func TestCaptureTextExpressionUsesLimit(t *testing.T) {
 	}
 	if !strings.Contains(expression, "text_truncated") || !strings.Contains(expression, "text_length") {
 		t.Fatalf("missing structured fields in expression: %s", expression)
+	}
+}
+
+func TestCaptureErrorHandlesNilCause(t *testing.T) {
+	var captureErr *CaptureError
+	if captureErr.Error() != "capture error: unknown cause" {
+		t.Fatalf("unexpected nil receiver error: %s", captureErr.Error())
+	}
+
+	captureErr = &CaptureError{}
+	if captureErr.Error() != "capture error: unknown cause" {
+		t.Fatalf("unexpected nil cause error: %s", captureErr.Error())
 	}
 }
 

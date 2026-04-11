@@ -3,16 +3,34 @@ package sidebar
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"atlasx/internal/settings"
 	"atlasx/internal/tabs"
 )
+
+func reportHandlerError(errCh chan error, format string, args ...any) {
+	select {
+	case errCh <- fmt.Errorf(format, args...):
+	default:
+	}
+}
+
+func requireNoHandlerError(t *testing.T, errCh chan error) {
+	t.Helper()
+	select {
+	case err := <-errCh:
+		t.Fatalf("handler error: %v", err)
+	default:
+	}
+}
 
 func TestStatusWithoutProvider(t *testing.T) {
 	status := FromSettings(settings.Config{}).Status()
@@ -117,16 +135,23 @@ func TestAskWithOpenAICompatibleProvider(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 
 	var capturedBody map[string]any
+	handlerErrCh := make(chan error, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test-key" {
-			t.Fatalf("unexpected auth header: %s", r.Header.Get("Authorization"))
+			reportHandlerError(handlerErrCh, "unexpected auth header: %s", r.Header.Get("Authorization"))
+			http.Error(w, "unexpected auth header", http.StatusBadRequest)
+			return
 		}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read body failed: %v", err)
+			reportHandlerError(handlerErrCh, "read body failed: %v", err)
+			http.Error(w, "read body failed", http.StatusInternalServerError)
+			return
 		}
 		if err := json.Unmarshal(body, &capturedBody); err != nil {
-			t.Fatalf("decode body failed: %v", err)
+			reportHandlerError(handlerErrCh, "decode body failed: %v", err)
+			http.Error(w, "decode body failed", http.StatusBadRequest)
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas answer"}}]}`))
 	}))
@@ -160,6 +185,7 @@ func TestAskWithOpenAICompatibleProvider(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ask failed: %v", err)
 	}
+	requireNoHandlerError(t, handlerErrCh)
 	if response.Answer != "Atlas answer" {
 		t.Fatalf("unexpected response: %+v", response)
 	}
@@ -188,13 +214,18 @@ func TestAskWithMemoryIncludesRelevantHistory(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 
 	var capturedBody map[string]any
+	handlerErrCh := make(chan error, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read body failed: %v", err)
+			reportHandlerError(handlerErrCh, "read body failed: %v", err)
+			http.Error(w, "read body failed", http.StatusInternalServerError)
+			return
 		}
 		if err := json.Unmarshal(body, &capturedBody); err != nil {
-			t.Fatalf("decode body failed: %v", err)
+			reportHandlerError(handlerErrCh, "decode body failed: %v", err)
+			http.Error(w, "decode body failed", http.StatusBadRequest)
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas answer"}}]}`))
 	}))
@@ -227,6 +258,7 @@ func TestAskWithMemoryIncludesRelevantHistory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ask with memory failed: %v", err)
 	}
+	requireNoHandlerError(t, handlerErrCh)
 
 	messages, ok := capturedBody["messages"].([]any)
 	if !ok || len(messages) != 2 {
@@ -249,13 +281,18 @@ func TestSummarizeWithOpenAICompatibleProvider(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "test-key")
 
 	var capturedBody map[string]any
+	handlerErrCh := make(chan error, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read body failed: %v", err)
+			reportHandlerError(handlerErrCh, "read body failed: %v", err)
+			http.Error(w, "read body failed", http.StatusInternalServerError)
+			return
 		}
 		if err := json.Unmarshal(body, &capturedBody); err != nil {
-			t.Fatalf("decode body failed: %v", err)
+			reportHandlerError(handlerErrCh, "decode body failed: %v", err)
+			http.Error(w, "decode body failed", http.StatusBadRequest)
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Atlas summary"}}]}`))
 	}))
@@ -290,6 +327,7 @@ func TestSummarizeWithOpenAICompatibleProvider(t *testing.T) {
 	if err != nil {
 		t.Fatalf("summarize failed: %v", err)
 	}
+	requireNoHandlerError(t, handlerErrCh)
 	if response.Summary != "Atlas summary" {
 		t.Fatalf("unexpected response: %+v", response)
 	}
@@ -325,9 +363,12 @@ func TestAskAllowsProviderOverride(t *testing.T) {
 	}))
 	defer openAIServer.Close()
 
+	handlerErrCh := make(chan error, 1)
 	openRouterServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("HTTP-Referer") != "https://atlasx.local" {
-			t.Fatalf("missing openrouter header: %s", r.Header.Get("HTTP-Referer"))
+			reportHandlerError(handlerErrCh, "missing openrouter header: %s", r.Header.Get("HTTP-Referer"))
+			http.Error(w, "missing openrouter header", http.StatusBadRequest)
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"openai/gpt-5","choices":[{"message":{"content":"OpenRouter answer"}}]}`))
 	}))
@@ -365,6 +406,7 @@ func TestAskAllowsProviderOverride(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ask failed: %v", err)
 	}
+	requireNoHandlerError(t, handlerErrCh)
 	if response.Provider != "openrouter" || response.Model != "openai/gpt-5" {
 		t.Fatalf("unexpected response: %+v", response)
 	}
@@ -483,9 +525,9 @@ func TestAskRetriesTimeoutOnceAndReturnsProviderFailure(t *testing.T) {
 		providerRequestTimeout = previousTimeout
 	})
 
-	attempts := 0
+	var attempts atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		attempts++
+		attempts.Add(1)
 		time.Sleep(providerRequestTimeout + 200*time.Millisecond)
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"late answer"}}]}`))
 	}))
@@ -515,7 +557,7 @@ func TestAskRetriesTimeoutOnceAndReturnsProviderFailure(t *testing.T) {
 	if !errors.Is(err, ErrProviderFailed) {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if attempts != providerRetryAttempts+1 {
-		t.Fatalf("unexpected attempt count: %d", attempts)
+	if int(attempts.Load()) != providerRetryAttempts+1 {
+		t.Fatalf("unexpected attempt count: %d", attempts.Load())
 	}
 }

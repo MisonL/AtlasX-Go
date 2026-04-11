@@ -152,7 +152,7 @@ type chromeImportRequest struct {
 
 func serveSidebarStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodGet)
 		return
 	}
 
@@ -222,7 +222,7 @@ func serveSidebarAsk(w http.ResponseWriter, r *http.Request) {
 	client, err := newTabsClient(paths)
 	if err != nil {
 		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
-		writeSidebarAskError(w, http.StatusConflict, traceID, err)
+		writeSidebarTabsClientUnavailable(w, traceID, err)
 		return
 	}
 
@@ -330,7 +330,7 @@ func serveSidebarSummarize(w http.ResponseWriter, r *http.Request) {
 	client, err := newTabsClient(paths)
 	if err != nil {
 		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
-		writeSidebarAskError(w, http.StatusConflict, traceID, err)
+		writeSidebarTabsClientUnavailable(w, traceID, err)
 		return
 	}
 
@@ -414,7 +414,7 @@ func serveBrowserData[T any](w http.ResponseWriter, loader dataLoader[T]) {
 
 func serveBrowserOpenAction(w http.ResponseWriter, r *http.Request, resolver indexedURLResolver, successKey string) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 
@@ -446,7 +446,7 @@ func serveBrowserOpenAction(w http.ResponseWriter, r *http.Request, resolver ind
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 
@@ -463,7 +463,12 @@ func serveBrowserOpenAction(w http.ResponseWriter, r *http.Request, resolver ind
 	})
 }
 
-func serveTabsList(w http.ResponseWriter) {
+func serveTabsList(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w, r.Method, http.MethodGet)
+		return
+	}
+
 	paths, err := discoverPaths()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
@@ -472,7 +477,7 @@ func serveTabsList(w http.ResponseWriter) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 
@@ -505,7 +510,7 @@ func serveTabContext(w http.ResponseWriter, r *http.Request) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 
@@ -545,7 +550,7 @@ func serveTabContext(w http.ResponseWriter, r *http.Request) {
 
 func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 
@@ -571,7 +576,7 @@ func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 
@@ -586,7 +591,7 @@ func serveTabAction(w http.ResponseWriter, r *http.Request, action tabAction) {
 
 func serveMirrorScan(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 
@@ -637,7 +642,7 @@ func decodePositiveIntQuery(r *http.Request, name string) (int, error) {
 
 func serveChromeImport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 
@@ -699,7 +704,7 @@ func nonEmptyURLs(values ...string) []string {
 
 func serveSafariImport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 

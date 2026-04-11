@@ -87,7 +87,9 @@ func (c Client) List() ([]Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status %d", response.StatusCode)
@@ -125,7 +127,9 @@ func (c Client) Open(targetURL string) (Target, error) {
 	if err != nil {
 		return Target{}, err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return Target{}, unexpectedStatus(response)
@@ -195,7 +199,9 @@ func (c Client) Activate(targetID string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return unexpectedStatus(response)
@@ -213,7 +219,9 @@ func (c Client) Close(targetID string) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return unexpectedStatus(response)
@@ -271,7 +279,9 @@ func (c Client) browserWS() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status %d", response.StatusCode)

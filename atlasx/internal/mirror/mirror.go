@@ -351,7 +351,9 @@ func querySQLiteJSON(sourcePath string, query string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	copyPath := filepath.Join(tmpDir, "source.sqlite")
 	if err := copySQLiteSource(sourcePath, copyPath); err != nil {
@@ -371,13 +373,17 @@ func copySQLiteSource(sourcePath string, destPath string) error {
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func() {
+		_ = source.Close()
+	}()
 
 	dest, err := os.Create(destPath)
 	if err != nil {
 		return err
 	}
-	defer dest.Close()
+	defer func() {
+		_ = dest.Close()
+	}()
 
 	if _, err := io.Copy(dest, source); err != nil {
 		return err

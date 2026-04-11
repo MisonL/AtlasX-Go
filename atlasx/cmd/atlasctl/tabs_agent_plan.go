@@ -75,15 +75,13 @@ func runTabsAgentExecute(paths macos.Paths, client commandTabsClient, args []str
 	batch, err := agentplan.ExecuteBatch(config, context, memorySnippets, plan, stepIDs, *confirm, agentplan.ExecutionActions{
 		ActivateTab: client.Activate,
 	}, *maxSteps)
-	batch.TraceID = traceID
-	for index := range batch.Results {
-		batch.Results[index].TraceID = traceID
-	}
 	if err != nil {
-		_ = finishSidebarCommand(paths, traceID, err)
+		annotateBatchTrace(&batch, traceID)
+		_ = finishSidebarCommand(paths, traceID, err) // Best-effort: preserve the original execution error for the caller.
 		printAgentBatchExecution(batch)
 		return err
 	}
+	annotateBatchTrace(&batch, traceID)
 
 	if err := finishSidebarCommand(paths, traceID, nil); err != nil {
 		return err
@@ -95,7 +93,7 @@ func runTabsAgentExecute(paths macos.Paths, client commandTabsClient, args []str
 func loadCommandAgentPlan(paths macos.Paths, client commandTabsClient, targetID string) (tabs.PageContext, []string, agentplan.Plan, error) {
 	context, err := client.Capture(targetID)
 	if err != nil {
-		printPageContext(context)
+		printCaptureContext(context, err)
 		return tabs.PageContext{}, nil, agentplan.Plan{}, err
 	}
 
@@ -168,6 +166,13 @@ func printAgentPlan(plan agentplan.Plan) {
 		fmt.Printf("reason=%q\n", step.Reason)
 		fmt.Printf("prompt=%q\n", step.Prompt)
 		fmt.Printf("snippet=%q\n", step.Snippet)
+	}
+}
+
+func annotateBatchTrace(batch *agentplan.BatchExecutionResult, traceID string) {
+	batch.TraceID = traceID
+	for index := range batch.Results {
+		batch.Results[index].TraceID = traceID
 	}
 }
 

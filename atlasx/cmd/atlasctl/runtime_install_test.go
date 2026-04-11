@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"testing"
 
 	"atlasx/internal/managedruntime"
@@ -43,4 +44,54 @@ func TestRuntimeInstallCommandRendersReport(t *testing.T) {
 		"current_phase=staged",
 		"verified=true",
 	)
+}
+
+func TestRuntimeInstallCommandSkipsEmptyReportOnFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previousInstall := runManagedRuntimeInstall
+	runManagedRuntimeInstall = func(paths macos.Paths) (managedruntime.InstallReport, error) {
+		return managedruntime.InstallReport{}, errors.New("install failed")
+	}
+	t.Cleanup(func() {
+		runManagedRuntimeInstall = previousInstall
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"runtime", "install"})
+	})
+	if err == nil {
+		t.Fatal("expected runtime install to fail")
+	}
+	if err.Error() != "install failed" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if output != "" {
+		t.Fatalf("expected no rendered report, got %q", output)
+	}
+}
+
+func TestRuntimeVerifyCommandSkipsEmptyReportOnFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	previousVerify := runManagedRuntimeVerify
+	runManagedRuntimeVerify = func(paths macos.Paths) (managedruntime.VerifyReport, error) {
+		return managedruntime.VerifyReport{}, errors.New("verify failed")
+	}
+	t.Cleanup(func() {
+		runManagedRuntimeVerify = previousVerify
+	})
+
+	output, err := captureStdout(t, func() error {
+		return run([]string{"runtime", "verify"})
+	})
+	if err == nil {
+		t.Fatal("expected runtime verify to fail")
+	}
+	if err.Error() != "verify failed" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if output != "" {
+		t.Fatalf("expected no rendered report, got %q", output)
+	}
 }

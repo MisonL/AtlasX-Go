@@ -19,7 +19,7 @@ type tabAgentExecuteRequest struct {
 
 func serveTabAgentExecute(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 
@@ -58,7 +58,7 @@ func serveTabAgentExecute(w http.ResponseWriter, r *http.Request) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeSidebarAskError(w, http.StatusConflict, traceID, err)
+		writeSidebarTabsClientUnavailable(w, traceID, err)
 		return
 	}
 
@@ -89,14 +89,18 @@ func serveTabAgentExecute(w http.ResponseWriter, r *http.Request) {
 	batch, err := agentplan.ExecuteBatch(config, context, memorySnippets, plan, stepIDs, request.Confirm, agentplan.ExecutionActions{
 		ActivateTab: client.Activate,
 	}, request.MaxSteps)
+	if err != nil {
+		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
+		batch.TraceID = traceID
+		for index := range batch.Results {
+			batch.Results[index].TraceID = traceID
+		}
+		writeJSON(w, agentExecuteStatusCode(err), batch)
+		return
+	}
 	batch.TraceID = traceID
 	for index := range batch.Results {
 		batch.Results[index].TraceID = traceID
-	}
-	if err != nil {
-		_ = sidebar.SaveRuntimeResult(paths, traceID, err)
-		writeJSON(w, agentExecuteStatusCode(err), batch)
-		return
 	}
 	if err := sidebar.SaveRuntimeResult(paths, traceID, nil); err != nil {
 		writeSidebarAskError(w, http.StatusInternalServerError, traceID, err)

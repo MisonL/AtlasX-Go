@@ -217,6 +217,8 @@ func TestPolicyStatusContract(t *testing.T) {
 }
 
 func TestPermissionsStatusContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
 	output, err := captureStdout(t, func() error {
 		return run([]string{"permissions", "status"})
 	})
@@ -276,6 +278,8 @@ func TestTabsAgentPlanContract(t *testing.T) {
 }
 
 func TestTabsAuthModeContract(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
 	restoreCommandTabsClient(t, &stubCommandTabsClient{
 		authMode: tabs.AuthModeView{
 			ID:                     "tab-1",

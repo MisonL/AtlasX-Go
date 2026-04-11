@@ -26,7 +26,9 @@ func TestCaptureSelection(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -95,7 +97,9 @@ func TestCaptureSelectionReturnsStructuredFailure(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -126,5 +130,24 @@ func TestCaptureSelectionReturnsStructuredFailure(t *testing.T) {
 	}
 	if captureErr.Context.CaptureError == "" {
 		t.Fatalf("expected capture error in context: %+v", captureErr.Context)
+	}
+}
+
+func TestSelectionCaptureErrorHandlesNilCause(t *testing.T) {
+	var captureErr *SelectionCaptureError
+	if captureErr.Error() != "selection capture error: unknown cause" {
+		t.Fatalf("unexpected nil receiver error: %s", captureErr.Error())
+	}
+
+	captureErr = &SelectionCaptureError{}
+	if captureErr.Error() != "selection capture error: unknown cause" {
+		t.Fatalf("unexpected nil cause error: %s", captureErr.Error())
+	}
+}
+
+func TestCaptureSelectionExpressionHandlesMissingSelectionObject(t *testing.T) {
+	expression := captureSelectionExpression()
+	if !strings.Contains(expression, "const rawSelection = typeof window.getSelection === \"function\" ? window.getSelection() : null;") {
+		t.Fatalf("missing null-safe selection handling: %s", expression)
 	}
 }

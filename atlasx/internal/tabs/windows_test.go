@@ -32,7 +32,9 @@ func TestWindowsGroupsPageTargetsByWindow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -43,7 +45,7 @@ func TestWindowsGroupsPageTargetsByWindow(t *testing.T) {
 		}
 
 		targetID, _ := request.Params["targetId"].(string)
-		payload := map[string]any{}
+		var payload map[string]any
 		switch targetID {
 		case "tab-1":
 			payload = map[string]any{

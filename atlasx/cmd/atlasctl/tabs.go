@@ -537,7 +537,7 @@ func runTabs(args []string) error {
 		fmt.Printf("group_id=%s label=%q window_id=%d returned=%d\n", result.GroupID, result.Label, result.WindowID, result.Returned)
 		for index, moved := range result.MovedTargets {
 			fmt.Printf(
-				"index=%d source_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
+				"moved_index=%d source_window_id=%d source_target_id=%s activated_target_id=%s id=%s type=%s title=%q url=%s\n",
 				index,
 				moved.SourceWindowID,
 				moved.SourceTargetID,
@@ -635,7 +635,7 @@ func runTabsCapture(paths macos.Paths, client commandTabsClient, args []string) 
 
 	context, err := client.Capture(args[0])
 	if err != nil {
-		printPageContext(context)
+		printCaptureContext(context, err)
 		return err
 	}
 	if _, err := memory.AppendPageCaptureControlled(paths, memory.PageCaptureInput{
@@ -644,6 +644,7 @@ func runTabsCapture(paths macos.Paths, client commandTabsClient, args []string) 
 		Title:      context.Title,
 		URL:        context.URL,
 	}); err != nil {
+		printPageContext(context)
 		return err
 	}
 	printPageContext(context)
@@ -703,6 +704,18 @@ func printPageContext(context tabs.PageContext) {
 		context.CaptureError,
 	)
 	fmt.Printf("text=%q\n", context.Text)
+}
+
+func printCaptureContext(context tabs.PageContext, err error) {
+	var captureErr *tabs.CaptureError
+	if errors.As(err, &captureErr) {
+		printPageContext(captureErr.Context)
+		return
+	}
+	if context == (tabs.PageContext{}) {
+		return
+	}
+	printPageContext(context)
 }
 
 func printSelectionContext(context tabs.SelectionContext) {

@@ -28,6 +28,9 @@ type SelectionCaptureError struct {
 }
 
 func (e *SelectionCaptureError) Error() string {
+	if e == nil || e.Cause == nil {
+		return "selection capture error: unknown cause"
+	}
 	return e.Cause.Error()
 }
 
@@ -127,7 +130,8 @@ func captureSelectionExpression() string {
 	return fmt.Sprintf(`(() => {
 		const normalize = (value) => (value || "").replace(/\s+/g, " ").trim();
 		const limit = %d;
-		const selection = window.getSelection ? normalize(window.getSelection().toString()) : "";
+		const rawSelection = typeof window.getSelection === "function" ? window.getSelection() : null;
+		const selection = rawSelection ? normalize(rawSelection.toString()) : "";
 		let text = selection;
 		if (!text) {
 			const active = document.activeElement;

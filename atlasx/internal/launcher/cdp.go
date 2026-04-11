@@ -107,7 +107,9 @@ func populateVersion(endpoint string, report *CDPReport) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status %d", response.StatusCode)

@@ -145,13 +145,17 @@ func copyFile(sourcePath string, destPath string) error {
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func() {
+		_ = source.Close()
+	}()
 
 	dest, err := os.Create(destPath)
 	if err != nil {
 		return err
 	}
-	defer dest.Close()
+	defer func() {
+		_ = dest.Close()
+	}()
 
 	if _, err := io.Copy(dest, source); err != nil {
 		return err

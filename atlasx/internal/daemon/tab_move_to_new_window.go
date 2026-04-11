@@ -8,7 +8,7 @@ import (
 
 func serveTabMoveToNewWindow(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodPost)
 		return
 	}
 
@@ -17,7 +17,8 @@ func serveTabMoveToNewWindow(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	if strings.TrimSpace(request.ID) == "" {
+	request.ID = strings.TrimSpace(request.ID)
+	if request.ID == "" {
 		writeError(w, http.StatusBadRequest, fmt.Errorf("id is required"))
 		return
 	}
@@ -30,7 +31,7 @@ func serveTabMoveToNewWindow(w http.ResponseWriter, r *http.Request) {
 
 	client, err := newTabsClient(paths)
 	if err != nil {
-		writeError(w, http.StatusConflict, err)
+		writeTabsClientUnavailable(w, err)
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 )
 
 const maxCapturedTextLength = 4096
+const cdpCommandTimeout = 10 * time.Second
 
 type PageContext struct {
 	ID            string `json:"id"`
@@ -29,6 +30,9 @@ type CaptureError struct {
 }
 
 func (e *CaptureError) Error() string {
+	if e == nil || e.Cause == nil {
+		return "capture error: unknown cause"
+	}
 	return e.Cause.Error()
 }
 
@@ -123,17 +127,28 @@ func capturePageText(websocketURL string) (captureTextResult, error) {
 }
 
 func runPageCommand(websocketURL string, request cdpCommandRequest) (cdpCommandResponse, error) {
-	connection, _, err := websocket.DefaultDialer.Dial(websocketURL, nil)
+	dialer := websocket.Dialer{
+		HandshakeTimeout: cdpCommandTimeout,
+	}
+	connection, _, err := dialer.Dial(websocketURL, nil)
 	if err != nil {
 		return cdpCommandResponse{}, err
 	}
-	defer connection.Close()
+	defer func() {
+		_ = connection.Close()
+	}()
 
+	if err := connection.SetWriteDeadline(time.Now().Add(cdpCommandTimeout)); err != nil {
+		return cdpCommandResponse{}, err
+	}
 	if err := connection.WriteJSON(request); err != nil {
 		return cdpCommandResponse{}, err
 	}
 
 	for {
+		if err := connection.SetReadDeadline(time.Now().Add(cdpCommandTimeout)); err != nil {
+			return cdpCommandResponse{}, err
+		}
 		var response cdpCommandResponse
 		if err := connection.ReadJSON(&response); err != nil {
 			return cdpCommandResponse{}, err

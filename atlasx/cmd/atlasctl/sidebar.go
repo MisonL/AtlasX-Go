@@ -27,6 +27,7 @@ func runSidebar(args []string) error {
 	case "summarize":
 		return runSidebarSummarize(args[1:])
 	case "selection-ask":
+		// Implemented in sidebar_selection.go.
 		return runSidebarSelectionAsk(args[1:])
 	case "set-provider":
 		return runSidebarSetProvider(args[1:])
@@ -62,6 +63,9 @@ func runSidebarStatus(args []string) error {
 func runSidebarSummarize(args []string) error {
 	if len(args) < 1 {
 		return errors.New("missing target id for sidebar summarize")
+	}
+	if len(args) > 1 {
+		return errors.New("sidebar summarize does not accept extra arguments")
 	}
 
 	paths, command, err := prepareSidebarCommand()
@@ -170,11 +174,11 @@ func runSidebarSetProvider(args []string) error {
 	}
 
 	updated, err := settings.UpsertSidebarProvider(config, settings.SidebarProviderConfig{
-		ID:        *id,
-		Provider:  *providerType,
-		Model:     *model,
-		BaseURL:   *baseURL,
-		APIKeyEnv: *apiKeyEnv,
+		ID:        strings.TrimSpace(*id),
+		Provider:  strings.TrimSpace(*providerType),
+		Model:     strings.TrimSpace(*model),
+		BaseURL:   strings.TrimSpace(*baseURL),
+		APIKeyEnv: strings.TrimSpace(*apiKeyEnv),
 	}, *setDefault)
 	if err != nil {
 		return err
@@ -276,6 +280,9 @@ func appendSidebarCommandTurn(paths macos.Paths, traceID string, context tabs.Pa
 
 func finishSidebarCommand(paths macos.Paths, traceID string, commandErr error) error {
 	if saveErr := sidebar.SaveRuntimeResult(paths, traceID, commandErr); saveErr != nil {
+		if commandErr != nil {
+			return errors.Join(commandErr, fmt.Errorf("save runtime result failed: %w", saveErr))
+		}
 		return saveErr
 	}
 	return commandErr

@@ -25,7 +25,9 @@ func TestSetTitleUpdatesPageTitle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("upgrade failed: %v", err)
 		}
-		defer connection.Close()
+		defer func() {
+			_ = connection.Close()
+		}()
 
 		var request cdpCommandRequest
 		if err := connection.ReadJSON(&request); err != nil {
@@ -105,6 +107,56 @@ func TestSetTitleRejectsTargetWithoutWebSocket(t *testing.T) {
 	if _, err := client.SetTitle("tab-1", "Atlas"); err == nil {
 		t.Fatal("expected set title to fail")
 	} else if !strings.Contains(err.Error(), "target does not expose a websocket debugger url") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestSetTitleSurfacesRuntimeExceptionDetails(t *testing.T) {
+	upgrader := websocket.Upgrader{}
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	mux.HandleFunc("/json/list", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`[
+			{"id":"tab-1","type":"page","title":"Before","url":"https://openai.com/work","webSocketDebuggerUrl":"ws` + strings.TrimPrefix(server.URL, "http") + `/devtools/page/tab-1"}
+		]`))
+	})
+	mux.HandleFunc("/devtools/page/tab-1", func(w http.ResponseWriter, r *http.Request) {
+		connection, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			t.Fatalf("upgrade failed: %v", err)
+		}
+		defer func() {
+			_ = connection.Close()
+		}()
+
+		var request cdpCommandRequest
+		if err := connection.ReadJSON(&request); err != nil {
+			t.Fatalf("read request failed: %v", err)
+		}
+		if err := connection.WriteJSON(cdpCommandResponse{
+			ID: request.ID,
+			Result: mustMarshalJSON(t, map[string]any{
+				"result": map[string]any{
+					"type": "undefined",
+				},
+				"exceptionDetails": map[string]any{
+					"text": "Uncaught",
+					"exception": map[string]any{
+						"description": "ReferenceError: document is not defined",
+					},
+				},
+			}),
+		}); err != nil {
+			t.Fatalf("write response failed: %v", err)
+		}
+	})
+
+	client := Client{baseURL: server.URL, httpClient: *server.Client()}
+	if _, err := client.SetTitle("tab-1", "Atlas Workbench"); err == nil {
+		t.Fatal("expected set title to fail")
+	} else if !strings.Contains(err.Error(), "ReferenceError: document is not defined") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

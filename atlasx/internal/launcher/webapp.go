@@ -79,7 +79,7 @@ func Run(opts Options) (Result, error) {
 		return result, nil
 	}
 
-	cmd := exec.Command(detection.BinaryPath, args...)
+	var cmd *exec.Cmd
 	if result.Managed {
 		cmd = buildManagedLaunchCommand(detection.BinaryPath, args)
 	} else {

@@ -1,12 +1,18 @@
 package daemon
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"atlasx/internal/memory"
 )
+
+const maxMemoryQueryLimit = 1000
+const memoryOperationTimeout = 2 * time.Second
 
 type memoryListResponse struct {
 	Root          string         `json:"root"`
@@ -30,13 +36,17 @@ type memorySearchResponse struct {
 
 func serveMemoryList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodGet)
 		return
 	}
 
 	limit, err := parseOptionalLimit(r.URL.Query().Get("limit"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if limit > maxMemoryQueryLimit {
+		writeError(w, http.StatusBadRequest, fmt.Errorf("limit exceeds maximum of %d", maxMemoryQueryLimit))
 		return
 	}
 
@@ -46,27 +56,34 @@ func serveMemoryList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summary, events, err := memory.LoadRecent(paths, limit)
+	recent, err := runWithTimeout(r.Context(), memoryOperationTimeout, func() (memoryRecentResult, error) {
+		summary, events, err := memory.LoadRecent(paths, limit)
+		return memoryRecentResult{summary: summary, events: events}, err
+	})
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, fmt.Errorf("memory list timed out"))
+			return
+		}
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, memoryListResponse{
-		Root:          summary.Root,
-		EventsFile:    summary.EventsFile,
-		Present:       summary.Present,
-		EventCount:    summary.EventCount,
-		LastEventAt:   summary.LastEventAt,
-		LastEventKind: summary.LastEventKind,
-		Returned:      len(events),
-		Events:        events,
+		Root:          recent.summary.Root,
+		EventsFile:    recent.summary.EventsFile,
+		Present:       recent.summary.Present,
+		EventCount:    recent.summary.EventCount,
+		LastEventAt:   recent.summary.LastEventAt,
+		LastEventKind: recent.summary.LastEventKind,
+		Returned:      len(recent.events),
+		Events:        recent.events,
 	})
 }
 
 func serveMemorySearch(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodGet)
 		return
 	}
 
@@ -79,6 +96,10 @@ func serveMemorySearch(w http.ResponseWriter, r *http.Request) {
 	limit, err := parseOptionalLimit(r.URL.Query().Get("limit"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if limit > maxMemoryQueryLimit {
+		writeError(w, http.StatusBadRequest, fmt.Errorf("limit exceeds maximum of %d", maxMemoryQueryLimit))
 		return
 	}
 
@@ -95,8 +116,14 @@ func serveMemorySearch(w http.ResponseWriter, r *http.Request) {
 		Question: question,
 		Limit:    limit,
 	}
-	snippets, err := memory.FindRelevantSnippets(paths, input)
+	snippets, err := runWithTimeout(r.Context(), memoryOperationTimeout, func() ([]string, error) {
+		return memory.FindRelevantSnippets(paths, input)
+	})
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			writeError(w, http.StatusGatewayTimeout, fmt.Errorf("memory search timed out"))
+			return
+		}
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -119,8 +146,14 @@ func serveMemoryControls(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		controls, err := memory.LoadControls(paths)
+		controls, err := runWithTimeout(r.Context(), memoryOperationTimeout, func() (memory.Controls, error) {
+			return memory.LoadControls(paths)
+		})
 		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				writeError(w, http.StatusGatewayTimeout, fmt.Errorf("memory controls load timed out"))
+				return
+			}
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -144,14 +177,49 @@ func serveMemoryControls(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		controls, err := memory.UpdateControls(paths, request)
+		controls, err := runWithTimeout(r.Context(), memoryOperationTimeout, func() (memory.Controls, error) {
+			return memory.UpdateControls(paths, request)
+		})
 		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				writeError(w, http.StatusGatewayTimeout, fmt.Errorf("memory controls update timed out"))
+				return
+			}
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, controls)
 	default:
-		writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("method %s is not allowed", r.Method))
+		writeMethodNotAllowed(w, r.Method, http.MethodGet, http.MethodPost)
+	}
+}
+
+type memoryRecentResult struct {
+	summary memory.Summary
+	events  []memory.Event
+}
+
+type memoryTimeoutResult[T any] struct {
+	value T
+	err   error
+}
+
+func runWithTimeout[T any](ctx context.Context, timeout time.Duration, fn func() (T, error)) (T, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	resultCh := make(chan memoryTimeoutResult[T], 1)
+	go func() {
+		value, err := fn()
+		resultCh <- memoryTimeoutResult[T]{value: value, err: err}
+	}()
+
+	select {
+	case <-ctx.Done():
+		var zero T
+		return zero, ctx.Err()
+	case result := <-resultCh:
+		return result.value, result.err
 	}
 }
 

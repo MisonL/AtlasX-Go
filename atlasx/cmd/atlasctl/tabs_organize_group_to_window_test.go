@@ -53,7 +53,7 @@ func TestTabsOrganizeGroupToWindowOutputsMovedTargets(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run tabs organize-group-to-window failed: %v", err)
 	}
-	for _, fragment := range []string{"group_id=host:chatgpt.com", "window_id=11", "source_target_id=tab-2", "id=new-2"} {
+	for _, fragment := range []string{"group_id=host:chatgpt.com", "window_id=11", "moved_index=1", "source_target_id=tab-2", "id=new-2"} {
 		if !strings.Contains(output, fragment) {
 			t.Fatalf("expected output to contain %q, got %s", fragment, output)
 		}

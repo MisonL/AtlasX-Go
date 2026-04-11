@@ -7,9 +7,15 @@ import (
 )
 
 func TestDevToolsTargetResolvesRelativeFrontendURL(t *testing.T) {
+	handlerErrs := make(chan string, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/json/list" {
-			t.Fatalf("unexpected path: %s", r.URL.Path)
+			select {
+			case handlerErrs <- "unexpected path: " + r.URL.Path:
+			default:
+			}
+			http.Error(w, "unexpected path", http.StatusNotFound)
+			return
 		}
 		_, _ = w.Write([]byte(`[{"id":"1","type":"page","title":"Atlas","url":"https://chatgpt.com/atlas","devtoolsFrontendUrl":"/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1"}]`))
 	}))
@@ -22,6 +28,11 @@ func TestDevToolsTargetResolvesRelativeFrontendURL(t *testing.T) {
 	}
 	if target.DevToolsFrontendURL != server.URL+"/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1" {
 		t.Fatalf("unexpected devtools url: %+v", target)
+	}
+	select {
+	case handlerErr := <-handlerErrs:
+		t.Fatal(handlerErr)
+	default:
 	}
 }
 
@@ -58,9 +69,15 @@ func TestResolveDevToolsPanelURLRejectsBlankPanel(t *testing.T) {
 }
 
 func TestDevToolsPanelTargetResolvesPanelFrontendURL(t *testing.T) {
+	handlerErrs := make(chan string, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/json/list" {
-			t.Fatalf("unexpected path: %s", r.URL.Path)
+			select {
+			case handlerErrs <- "unexpected path: " + r.URL.Path:
+			default:
+			}
+			http.Error(w, "unexpected path", http.StatusNotFound)
+			return
 		}
 		_, _ = w.Write([]byte(`[{"id":"1","type":"page","title":"Atlas","url":"https://chatgpt.com/atlas","devtoolsFrontendUrl":"/devtools/inspector.html?ws=127.0.0.1:9222/devtools/page/1"}]`))
 	}))
@@ -74,5 +91,10 @@ func TestDevToolsPanelTargetResolvesPanelFrontendURL(t *testing.T) {
 	expected := server.URL + "/devtools/inspector.html?panel=network&ws=127.0.0.1%3A9222%2Fdevtools%2Fpage%2F1"
 	if target.DevToolsFrontendURL != expected {
 		t.Fatalf("unexpected devtools panel url: %+v", target)
+	}
+	select {
+	case handlerErr := <-handlerErrs:
+		t.Fatal(handlerErr)
+	default:
 	}
 }

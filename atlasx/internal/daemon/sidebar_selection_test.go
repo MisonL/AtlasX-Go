@@ -1,7 +1,10 @@
+//go:build darwin
+
 package daemon
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,17 +20,21 @@ import (
 func TestSidebarSelectionAskEndpointReturnsStructuredAnswer(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("OPENAI_API_KEY", "test-key")
+	var handlerErr error
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read body failed: %v", err)
+			handlerErr = fmt.Errorf("read body failed: %v", err)
+			return
 		}
 		if !bytes.Contains(body, []byte("Atlas isolates profile state.")) {
-			t.Fatalf("selection text missing from request: %s", string(body))
+			handlerErr = fmt.Errorf("selection text missing from request: %s", string(body))
+			return
 		}
 		if !bytes.Contains(body, []byte("这句话是什么意思？")) {
-			t.Fatalf("selection question missing from request: %s", string(body))
+			handlerErr = fmt.Errorf("selection question missing from request: %s", string(body))
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Selected answer"}}]}`))
 	}))
@@ -61,7 +68,7 @@ func TestSidebarSelectionAskEndpointReturnsStructuredAnswer(t *testing.T) {
 			CapturedAt:             "2026-04-06T12:00:00Z",
 			SelectionPresent:       true,
 			SelectionTextTruncated: false,
-			SelectionTextLength:    20,
+			SelectionTextLength:    19,
 			SelectionTextLimit:     1024,
 		},
 		context: tabs.PageContext{
@@ -84,6 +91,9 @@ func TestSidebarSelectionAskEndpointReturnsStructuredAnswer(t *testing.T) {
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if handlerErr != nil {
+		t.Fatalf("handler error: %v", handlerErr)
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"answer":"Selected answer"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
@@ -110,14 +120,17 @@ func TestSidebarSelectionAskEndpointReturnsStructuredAnswer(t *testing.T) {
 func TestSidebarSelectionAskEndpointAutoCapturesSelection(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("OPENAI_API_KEY", "test-key")
+	var handlerErr error
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("read body failed: %v", err)
+			handlerErr = fmt.Errorf("read body failed: %v", err)
+			return
 		}
 		if !bytes.Contains(body, []byte("Atlas auto selection")) {
-			t.Fatalf("auto selection missing from request: %s", string(body))
+			handlerErr = fmt.Errorf("auto selection missing from request: %s", string(body))
+			return
 		}
 		_, _ = w.Write([]byte(`{"model":"gpt-5.4","choices":[{"message":{"content":"Auto selected answer"}}]}`))
 	}))
@@ -174,6 +187,9 @@ func TestSidebarSelectionAskEndpointAutoCapturesSelection(t *testing.T) {
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("unexpected status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if handlerErr != nil {
+		t.Fatalf("handler error: %v", handlerErr)
 	}
 	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"answer":"Auto selected answer"`)) {
 		t.Fatalf("unexpected response body: %s", recorder.Body.String())
@@ -262,7 +278,7 @@ func TestSidebarSelectionAskEndpointSkipsMemoryWhenPersistenceDisabled(t *testin
 			CapturedAt:             "2026-04-06T12:00:00Z",
 			SelectionPresent:       true,
 			SelectionTextTruncated: false,
-			SelectionTextLength:    20,
+			SelectionTextLength:    19,
 			SelectionTextLimit:     1024,
 		},
 		context: tabs.PageContext{

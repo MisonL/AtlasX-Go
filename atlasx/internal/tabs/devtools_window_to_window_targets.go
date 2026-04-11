@@ -52,8 +52,8 @@ func (c Client) OpenDevToolsWindowToWindows(sourceWindowID int) (DevToolsWindowT
 			SourceTargetID: sourceTarget.ID,
 			Target:         opened,
 		})
-		result.Returned = len(result.OpenedTargets)
 	}
+	result.Returned = len(result.OpenedTargets)
 	return result, nil
 }
 
